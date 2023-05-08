@@ -9,7 +9,9 @@ class Book:
         
 
     def add_user_to_notify(self, user_id):
-        self.usersToNotify.append(user_id)
+        if (user_id not in self.usersToNotify):
+            self.usersToNotify.append(user_id)
 
     def remove_user_to_notify(self, user_id):
-        self.usersToNotify.remove(user_id)
+        if (user_id in self.usersToNotify):
+            self.usersToNotify.remove(user_id)

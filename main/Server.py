@@ -18,14 +18,17 @@ class Server:
     def add_new_library(self, name, location, photo):
         id = len(self.libraries)
         self.libraries[id] = Library(id, name, location, photo)
+        return json.dumps({"status": 200})
     
     # Add library to users favorites
     def add_favorite_lib(self, lib_id, user_id):
         self.users[user_id].add_library(lib_id)
+        return json.dumps({"status": 200})
 
     # Remove library from users favorites
     def remove_favorite_lib(self, lib_id, user_id):
         self.users[user_id].remove_library(lib_id)
+        return json.dumps({"status": 200})
 
     # Get libraries with the given book available
     def filter_libraries_with_book(self, book_id):
@@ -42,17 +45,20 @@ class Server:
         id = len(self.books)
         self.books[id] = Book(id, title, photo, barcode, lib_id)
         self.libraries[lib_id].add_book(id)
+        return json.dumps({"status": 200})
 
     # User checkin book at a library
     def checkin_book(self, book_id, lib_id, user_id):        
         self.users[user_id].checkin_book(book_id)
         self.libraries[lib_id].remove_book(book_id)
+        return json.dumps({"status": 200})
 
     # User return book at library
     def return_book(self, book_id, lib_id, user_id):
         self.users[user_id].return_book(book_id)
         self.libraries[lib_id].add_book(book_id)
         self.notify_users(book_id, lib_id)
+        return json.dumps({"status": 200})
 
     # Filter book by title
     def filter_books_by_title(self, filter_title):
@@ -66,14 +72,17 @@ class Server:
     def add_new_user(self, username, password):        
         id = len(self.users)
         self.users[id] = User(id, username, password)
+        return json.dumps({"status": 200})
 
     # Add user to book notifications
     def add_user_book_notif(self, user_id, book_id):
         self.books[book_id].add_user_to_notify(user_id)
+        return json.dumps({"status": 200})
 
     # Remove user from book notifications
     def remove_user_book_notif(self, user_id, book_id):
         self.books[book_id].remove_user_to_notify(user_id)
+        return json.dumps({"status": 200})
 
     # Notify all users when book available in favorite libraries
     def notify_users(self, book_id, lib_id):    
@@ -103,6 +112,6 @@ class Server:
         return json.dumps(list(self.books.values()), default=vars)
     
     def get_users(self):
-        return json.dumps(list(self.users), default=vars)
+        return json.dumps(list(self.users.values()), default=vars)
 
 
