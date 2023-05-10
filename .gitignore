@@ -1,0 +1,7 @@
+# vscode
+.vscode/
+
+# caches
+__pycache__/
+main/__pycache__/
+models/__pycache__/

@@ -1,5 +1,5 @@
 import json
-from Server import Server
+from server import Server
 from flask import Flask
 from flask import request
 
@@ -40,7 +40,7 @@ def add_favorite_library_to_user(userId=None):
 #   - userId: int - user from which to remove library
 #   - libId: int - library to remove
 @app.route("/users/<userId>/libraries/<libId>", methods=['DELETE'])
-def add_favorite_library_to_user(userId=None, libId=None):
+def remove_favorite_library_from_user(userId=None, libId=None):
     return server.remove_favorite_lib(libId, userId)
 
 
@@ -90,10 +90,10 @@ def create_library():
 # Get libraries with given book available
 # query:
 #   - bookId: int
-@app.route("/libraries/books/filter", ['GET'])
+@app.route("/libraries/books/filter", methods=['GET'])
 def get_libraries_with_book():
     book_id = request.args.get("bookId")
-    return server.filter_libraries_with_book(book_id);
+    return server.filter_libraries_with_book(book_id)
 
 
 

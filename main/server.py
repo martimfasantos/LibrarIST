@@ -1,10 +1,13 @@
 import json
 import sys
-sys.path.append("../models")
+import os.path
 
-from Book import Book
-from Library import Library
-from User import User
+models_path = os.path.abspath(os.path.join(os.path.dirname(__file__),'../models'))
+sys.path.append(models_path)
+
+from book import Book
+from library import Library
+from user import User
 
 class Server:
 
