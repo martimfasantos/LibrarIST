@@ -6,3 +6,7 @@ server/.vscode/
 server/__pycache__/
 server/main/__pycache__/
 server/models/__pycache__/
+
+# android studio caches
+.idea/
+.gradle/
