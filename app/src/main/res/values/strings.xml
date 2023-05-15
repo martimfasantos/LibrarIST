@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">LibrarIST</string>
+    <string name="action_settings">Settings</string>
+    <string name="library_info">Search Library Info</string>
+    <string name="insert_library_name">Insert Library Name…</string>
+    <string name="add_remove_favorites">Add/Remove\n Favorites</string>
+    <string name="check_in_book">Check in Book</string>
+    <string name="check_out_book">Check out Book</string>
+    <string name="no_library_selected">No Library Selected</string>
+    <string name="available_books">Available books</string>
+    <string name="add_remove_from_favorites">Add/Remove\nfrom Favorites</string>
+    <string name="find_in_map">Find in map!</string>
+    <string name="location_not_found">Location not found</string>
+</resources>

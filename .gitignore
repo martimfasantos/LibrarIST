@@ -1,7 +1,8 @@
 # vscode
 .vscode/
+server/.vscode/
 
 # caches
-__pycache__/
-main/__pycache__/
-models/__pycache__/
+server/__pycache__/
+server/main/__pycache__/
+server/models/__pycache__/
