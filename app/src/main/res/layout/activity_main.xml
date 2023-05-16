@@ -14,6 +14,13 @@
         app:layout_constraintStart_toStartOf="parent"
         android:orientation="vertical">
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_gravity="center_horizontal|center_vertical"
+            android:gravity="center" >
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -21,6 +28,13 @@
             android:text="@string/app_name"
             android:textSize="@android:dimen/app_icon_size"
             android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:layout_marginStart="10dp"
+                android:src="@drawable/librarist_logo_round" />
+        </LinearLayout>
 
         <RelativeLayout
             android:layout_width="wrap_content"
@@ -55,24 +69,82 @@
                 android:text="@string/library_info" />
         </RelativeLayout>
 
-    <Button
-        android:id="@+id/button1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="100dp"
-        android:onClick="startService"
-        android:text="Start Service" />
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/button2"
+            <EditText
+                android:id="@+id/location_input"
+                android:layout_width="210dp"
+                android:layout_height="65dp"
+                android:layout_centerVertical="true"
+                android:text=""
+                android:hint="@string/insert_location"
+                android:inputType="text"
+                tools:ignore="LabelFor"
+                android:autofillHints="" />
+
+            <Button
+                android:id="@+id/go_to_location_btn"
+                android:layout_width="300dp"
+                android:layout_height="63dp"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="37dp"
+                android:layout_toEndOf="@+id/location_input"
+                android:text="@string/go_to_location" />
+        </RelativeLayout>
+
+<!--        MAP         -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="330dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginBottom="20dp"
+            android:layout_gravity="center" >
+
+            <fragment
+                android:id="@+id/map"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:name="com.google.android.gms.maps.SupportMapFragment" />
+
+        </RelativeLayout>
+
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="63dp"
-        android:layout_marginBottom="20dp"
-        android:onClick="stopService"
-        android:text="Stop Service" />
+        android:orientation="horizontal"
+        android:layout_gravity="center_horizontal|center_vertical"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/button1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:onClick="startService"
+            android:text="Start Service" />
+
+        <Button
+            android:id="@+id/button2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginStart="20dp"
+            android:onClick="stopService"
+            android:text="Stop Service" />
+    </LinearLayout>
+
 
     </LinearLayout>
 

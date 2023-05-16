@@ -106,6 +106,16 @@ public class LibraryInfoActivity extends AppCompatActivity {
             }
         });
 
+        CardView return_to_main_btn = findViewById(R.id.return_to_main_btn);
+        return_to_main_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(getApplicationContext(), "Returned to Main!", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        });
+
+
 
     }
 }

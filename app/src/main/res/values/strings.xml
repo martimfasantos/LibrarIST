@@ -11,4 +11,7 @@
     <string name="add_remove_from_favorites">Add/Remove\nfrom Favorites</string>
     <string name="find_in_map">Find in map!</string>
     <string name="location_not_found">Location not found</string>
+    <string name="insert_location">Insert Location…</string>
+    <string name="go_to_location">Go to Location</string>
+    <string name="back">BACK</string>
 </resources>

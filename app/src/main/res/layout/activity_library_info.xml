@@ -41,10 +41,11 @@
     </LinearLayout>
     
     <GridLayout
+        android:id="@+id/library_actions"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/library_location_info"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="25dp"
         android:layout_centerHorizontal="true"
         android:rowCount="2"
         android:columnCount="2" >
@@ -202,9 +203,46 @@
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
-
-
     </GridLayout>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/return_to_main_btn"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_below="@id/library_actions"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:layout_gravity="fill"
+        app:cardBackgroundColor="@color/almost_white"
+        app:cardCornerRadius="25dp"
+        app:cardElevation="8dp"
+        app:cardUseCompatPadding="true" >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:gravity="center"
+            android:orientation="vertical" >
+
+            <ImageView
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:src="@drawable/return_arrow"
+                android:gravity="center"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/back"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textAlignment="center"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
 
 
