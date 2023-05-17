@@ -2,6 +2,8 @@ package pt.ulisboa.tecnico.cmov.librarist;
 
 import android.content.Intent;
 
+import android.app.AlertDialog;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -143,6 +145,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Get the current location of the device and set the position of the map.
         getDeviceLocation();
+
+        //PopUp para perguntar o titulo da library
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+
+        // Create OnClick listener to allow creation of new markers by clicking an empty place in the map
+        createMapOnClick(alertDialogBuilder);
+
+        //Create OnClick listener to access the library's page when clicking a marker
+        //createMarkerOnClick(alertDialogBuilder);
+
     }
 
     private void goToLocation(LatLng coordinates) {
@@ -287,4 +299,103 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
+
+    private void createMapOnClick (AlertDialog.Builder alertDialogBuilder){
+
+        // Setting a click event handler for the map
+        mMap.setOnMapClickListener(latLng -> {
+
+            // Creating a marker
+            MarkerOptions markerOptions = new MarkerOptions();
+
+            // Setting the position for the marker
+            markerOptions.position(latLng);
+
+            // Display AlertDialog to get the title for the marker
+            alertDialogBuilder.setTitle("New Library's Name:");
+            final EditText input = new EditText(this);
+            alertDialogBuilder.setView(input);
+
+            // Set up the dialog buttons
+            alertDialogBuilder
+                    .setPositiveButton("Create", (dialog, which) -> {
+                        String title = input.getText().toString();
+                        markerOptions.title(title);
+
+                        // Animating to the touched position
+                        mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+
+                        // Placing a marker on the touched position
+                        mMap.addMarker(markerOptions);
+                    })
+                    .setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+            // Show the AlertDialog
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+
+            // Setting the title for the marker.
+            // This will be displayed on taping the marker
+            //markerOptions.title(  "@" + latLng.latitude + " : " + latLng.longitude);
+
+            // Clears the previously touched position
+            //mMap.clear();
+        });
+    }
+
+    /*
+    private void createMarkerOnClick(){
+
+        mMap.setOnMarkerClickListener(marker -> {
+            // Retrieve the library's information associated with the clicked marker
+            // You'll need to maintain a data structure (e.g., List or HashMap) to store the library details
+            Library library = libraryMap.get(marker.getId()); // Retrieve the Library object from the map using the marker ID
+
+            // Inflate the library information panel layout
+            View libraryInfoView = getLayoutInflater().inflate(R.layout.library_info_layout, null);
+
+            // Find and set the library information on the views within the layout
+            TextView libraryNameTextView = libraryInfoView.findViewById(R.id.library_name_textview);
+            libraryNameTextView.setText(library.getName());
+
+            // Set the library's location on the map
+            // Create a GoogleMap.OnMapClickListener to open the location on the map when clicked
+            TextView libraryLocationTextView = libraryInfoView.findViewById(R.id.library_location_textview);
+            libraryLocationTextView.setOnClickListener(v -> {
+                // Open the location on the map using library.getLocation()
+                // Implement the necessary logic to display the library's location on the map
+            });
+
+            // Set the library's photo
+            //ImageView libraryPhotoImageView = libraryInfoView.findViewById(R.id.library_photo_imageview);
+            //libraryPhotoImageView.setImageResource(library.getPhotoResId()); // Set the library photo using resource ID or any other mechanism
+
+            // Set click listeners for the navigation button, favorites button, and check-in/donate button
+            Button navigateButton = libraryInfoView.findViewById(R.id.navigate_button);
+            navigateButton.setOnClickListener(v -> {
+                // Implement logic to navigate the user to the library's location
+            });
+
+            Button favoritesButton = libraryInfoView.findViewById(R.id.favorites_button);
+            favoritesButton.setOnClickListener(v -> {
+                // Implement logic to add/remove the library from the user's favorites
+            });
+
+            Button checkInButton = libraryInfoView.findViewById(R.id.check_in_button);
+            checkInButton.setOnClickListener(v -> {
+                // Implement logic to handle book check-in/donation, including barcode scanning
+            });
+
+            // Create an AlertDialog with the library information panel layout
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+            alertDialogBuilder.setView(libraryInfoView);
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+
+            return true;
+        });
+
+    }
+        */
+    
 }
