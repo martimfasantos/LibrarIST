@@ -143,6 +143,15 @@
             android:layout_marginStart="20dp"
             android:onClick="stopService"
             android:text="Stop Service" />
+
+        <Button
+            android:id="@+id/go_to_book_menu_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginStart="20dp"
+            android:onClick="startBookMenuActivity"
+            android:text="Books" />
     </LinearLayout>
 
 

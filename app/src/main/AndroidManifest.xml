@@ -13,6 +13,9 @@
         android:theme="@style/Theme.LibrarIST"
         tools:targetApi="31">
         <activity
+            android:name=".BookMenuActivity"
+            android:exported="false" />
+        <activity
             android:name=".LibraryInfoActivity"
             android:exported="false" />
         <activity

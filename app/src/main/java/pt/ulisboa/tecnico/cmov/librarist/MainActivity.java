@@ -133,4 +133,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
+
+    public void startBookMenuActivity(View view) {
+        Intent intent = new Intent(MainActivity.this, BookMenuActivity.class);
+        startActivity(intent);
+    }
 }
