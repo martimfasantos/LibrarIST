@@ -4,11 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_margin="10dp"
     tools:context=".MainActivity">
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -36,80 +37,47 @@
                 android:src="@drawable/librarist_logo_round" />
         </LinearLayout>
 
-        <RelativeLayout
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_gravity="center"
+            android:gravity="center"
             android:orientation="horizontal">
 
             <EditText
-                android:id="@+id/library_name_input"
-                android:layout_width="223dp"
-                android:layout_height="65dp"
-                android:layout_centerVertical="true"
+                android:id="@+id/address_input"
+                android:layout_width="335dp"
+                android:layout_height="45dp"
+                android:layout_gravity="center"
                 android:text=""
-                android:hint="@string/insert_library_name"
+                android:hint="@string/search_address"
                 android:inputType="text"
                 tools:ignore="LabelFor"
                 android:autofillHints="" />
 
-            <Button
-                android:id="@+id/library_info_btn"
-                android:layout_width="142dp"
-                android:layout_height="63dp"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="37dp"
-                android:layout_toEndOf="@+id/library_name_input"
-                android:text="@string/library_info" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:orientation="horizontal">
-
-            <EditText
-                android:id="@+id/location_input"
-                android:layout_width="210dp"
-                android:layout_height="65dp"
-                android:layout_centerVertical="true"
-                android:text=""
-                android:hint="@string/insert_location"
-                android:inputType="text"
-                tools:ignore="LabelFor"
-                android:autofillHints="" />
-
-            <Button
-                android:id="@+id/go_to_location_btn"
-                android:layout_width="300dp"
-                android:layout_height="63dp"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="37dp"
-                android:layout_toEndOf="@+id/location_input"
-                android:text="@string/go_to_location" />
-        </RelativeLayout>
+            <ImageButton
+                android:id="@+id/search_address_btn"
+                android:src="@drawable/search"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:scaleType="fitCenter"
+                android:background="@null"
+                android:padding="5dp"/>
+        </LinearLayout>
 
 <!--        MAP         -->
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="330dp"
+            android:layout_height="450dp"
             android:layout_marginTop="10dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
-            android:layout_marginBottom="20dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_marginBottom="5dp"
             android:layout_gravity="center" >
 
             <fragment
@@ -120,40 +88,43 @@
 
         </RelativeLayout>
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_gravity="center_horizontal|center_vertical"
-        android:gravity="center">
 
-        <Button
-            android:id="@+id/button1"
+        <androidx.cardview.widget.CardView
+            android:id="@+id/books_btn"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="85dp"
             android:layout_gravity="center"
-            android:onClick="startService"
-            android:text="Start Service" />
+            app:cardBackgroundColor="@color/almost_white"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="5dp"
+            app:cardUseCompatPadding="true">
 
-        <Button
-            android:id="@+id/button2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_marginStart="20dp"
-            android:onClick="stopService"
-            android:text="Stop Service" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:layout_margin="10dp"
+                android:orientation="horizontal" >
 
-        <Button
-            android:id="@+id/go_to_book_menu_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_marginStart="20dp"
-            android:onClick="startBookMenuActivity"
-            android:text="Books" />
-    </LinearLayout>
+                <ImageView
+                    android:id="@+id/favorite_library"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:src="@drawable/books" />
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="2dp"
+                    android:text="@string/books"
+                    android:textSize="18sp"
+                    android:textAlignment="center"
+                    android:textColor="@color/black" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
     </LinearLayout>
 

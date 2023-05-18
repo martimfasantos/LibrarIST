@@ -3,11 +3,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:layout_margin="20dp">
+    android:layout_margin="10dp">
 
     <TextView
         android:id="@+id/menu_books_title"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Books"
         android:textSize="40sp"
@@ -21,29 +21,38 @@
         android:layout_below="@id/menu_books_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="25dp">
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="horizontal">
 
         <EditText
-            android:id="@+id/book_search_filter"
-            android:layout_width="260dp"
-            android:layout_height="50dp"
-            android:layout_gravity="top"
-            android:hint="Insert title" />
+            android:id="@+id/book_title_input"
+            android:layout_width="335dp"
+            android:layout_height="45dp"
+            android:layout_gravity="center"
+            android:hint="@string/insert_book_title"
+            android:inputType="text"
+            android:autofillHints="" />
 
-        <Button
-            android:id="@+id/book_search_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="15dp"
-            android:text="Search" />
-
+        <ImageButton
+            android:id="@+id/search_address_btn"
+            android:src="@drawable/search"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter"
+            android:background="@null"
+            android:padding="5dp"/>
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/div_books_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         android:layout_below="@id/div_search_book"
         android:orientation="vertical" >
     </LinearLayout>

@@ -16,7 +16,8 @@ import android.widget.Toast;
 
 public class LibraryInfoActivity extends AppCompatActivity {
 
-    public final static String EXTRA_MESSAGE = "pt.ulisboa.tecnico.cmov.librarist.MESSAGE";
+    private String libraryName;
+    private String libraryAddress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,19 +25,13 @@ public class LibraryInfoActivity extends AppCompatActivity {
         setContentView(R.layout.activity_library_info);
         Log.d("MainActivity", "Hey, here is my fancy debug message!");
 
-        // Get the message from the intent
-        Intent intent = getIntent();
-        String message = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
-
-        // Set text from intent into Library Name Title text view
-        TextView textView = findViewById(R.id.library_name_title);
-        textView.setText(message);
+        // Parse intent and its information
+        parseIntent();
 
         CardView add_remove_favorites_btn = findViewById(R.id.library_add_remove_favorites_btn);
         add_remove_favorites_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "Book added to your favorites!", Toast.LENGTH_SHORT).show();
 
                 ImageView favoriteButton = findViewById(R.id.favorite_library);
                 boolean selected = favoriteButton.getTag().equals("selected");
@@ -44,12 +39,12 @@ public class LibraryInfoActivity extends AppCompatActivity {
                 if (!selected){
                     favoriteButton.setImageResource(R.drawable.library_favorite_selected);
                     favoriteButton.setTag("selected");
-                    Toast.makeText(getApplicationContext(), "Book add to your favorites!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Library added to your favorites!", Toast.LENGTH_SHORT).show();
 
                 } else { // if it was already selected
                     favoriteButton.setImageResource(R.drawable.library_favorite_unselected);
                     favoriteButton.setTag("unselected");
-                    Toast.makeText(getApplicationContext(), "Book removed from your favorites!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Library removed from your favorites!", Toast.LENGTH_SHORT).show();
                 }
 
                 // TODO IMPLEMENT THIS
@@ -116,6 +111,28 @@ public class LibraryInfoActivity extends AppCompatActivity {
         });
 
 
+
+    }
+
+    private void parseIntent(){
+
+        // Get the message from the intent
+        Intent intent = getIntent();
+        libraryName = intent.getStringExtra("name");
+        libraryAddress = intent.getStringExtra("address");
+
+        if (libraryName.equals("") || libraryAddress.equals("")){
+            Toast.makeText(getApplicationContext(), "There was an error processing your request", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+
+        // Set text from intent into Library Name Title text view
+        TextView nameView = findViewById(R.id.library_name_title);
+        nameView.setText(libraryName);
+
+        // Set text from intent into Library Address Title text view
+        TextView addressView = findViewById(R.id.library_address);
+        addressView.setText(libraryAddress);
 
     }
 }

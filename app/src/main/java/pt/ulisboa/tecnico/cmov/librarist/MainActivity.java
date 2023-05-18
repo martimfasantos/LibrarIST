@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -15,10 +16,12 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,6 +33,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -45,7 +49,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // The entry point to the Fused Location Provider.
     private FusedLocationProviderClient fusedLocationProviderClient;
-
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean locationPermissionGranted;
     // A default location (Lisbon, Portugal) and default zoom to use when location permission is
@@ -79,39 +82,49 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Initializes the map
         initMap();
 
-        Button library_info_btn = (Button) findViewById(R.id.library_info_btn);
-        library_info_btn.setOnClickListener(new View.OnClickListener() {
+        // Search Button
+        ImageButton search_address_btn = findViewById(R.id.search_address_btn);
+        search_address_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, LibraryInfoActivity.class);
-                EditText editText = (EditText) findViewById(R.id.library_name_input);
-                String message = editText.getText().toString();
-                intent.putExtra(EXTRA_MESSAGE, message);
-                startActivity(intent);
-            }
-        });
 
-        Button go_to_location_btn = (Button) findViewById(R.id.go_to_location_btn);
-        go_to_location_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                EditText editText = (EditText) findViewById(R.id.location_input);
+                EditText editText = (EditText) findViewById(R.id.address_input);
                 String location = editText.getText().toString();
+
+                if (location.equals("")){
+                    Toast.makeText(MainActivity.this, "Please insert an address", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
                 Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
                 try {
-                    // Get location coordinates that best match the given name
+                    // Get location coordinates that best match the given name/address
                     List<Address> addressList = geocoder.getFromLocationName(location, 1);
+                    // Given address is valid
                     if (!addressList.isEmpty()){
                         Address address = addressList.get(0);
+                        // Go to that location
                         goToLocation(new LatLng(address.getLatitude(), address.getLongitude()));
 
                         Toast.makeText(MainActivity.this, "Centered in" + address.getLocality(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Please insert a valid address", Toast.LENGTH_SHORT).show();
                     }
+
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
 
+            }
+        });
+
+        // Books Button
+        CardView books_btn = findViewById(R.id.books_btn);
+        books_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, BookMenuActivity.class);
+                startActivity(intent);
             }
         });
     }
@@ -146,11 +159,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Get the current location of the device and set the position of the map.
         getDeviceLocation();
 
-        //PopUp para perguntar o titulo da library
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-
         // Create OnClick listener to allow creation of new markers by clicking an empty place in the map
-        createMapOnClick(alertDialogBuilder);
+        createMapOnClick(new AlertDialog.Builder(this));
 
         //Create OnClick listener to access the library's page when clicking a marker
         //createMarkerOnClick(alertDialogBuilder);
@@ -171,6 +181,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .title("Name of location"));
         // Animate the camera movement
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+    }
+
+    private String getAddressFromLocation(LatLng latLng) {
+
+        Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+        String fullAddress = "";
+
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                Address address = addresses.get(0);
+                fullAddress = address.getAddressLine(0); // Full address including street, city, etc.
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return fullAddress;
     }
 
     private void getLocationPermission() {
@@ -283,26 +311,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onSaveInstanceState(outState);
     }
 
-    // Start the service
-    public void startService(View view) {
-        startService(new Intent(this, MyService.class));
-    }
-
-    // Stop the service
-    public void stopService(View view) {
-        stopService(new Intent(this, MyService.class));
-    }
-
+    // TODO Extra work
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
-    }
-
-    public void startBookMenuActivity(View view) {
-        Intent intent = new Intent(MainActivity.this, BookMenuActivity.class);
-        startActivity(intent);
     }
 
     private void createMapOnClick (AlertDialog.Builder alertDialogBuilder){
@@ -317,89 +331,98 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             markerOptions.position(latLng);
 
             // Display AlertDialog to get the title for the marker
-            alertDialogBuilder.setTitle("New Library's Name:");
-            final EditText input = new EditText(this);
-            alertDialogBuilder.setView(input);
+            LayoutInflater inflater = getLayoutInflater();
+            View addLibraryView= inflater.inflate(R.layout.create_library, null);
+            alertDialogBuilder.setView(addLibraryView);
 
-            // Set up the dialog buttons
-            alertDialogBuilder
-                    .setPositiveButton("Create", (dialog, which) -> {
-                        String title = input.getText().toString();
-                        markerOptions.title(title);
+            // Create the Alert Dialog
+            AlertDialog alertDialog = alertDialogBuilder.create();
+
+            ImageButton cancelButton = addLibraryView.findViewById(R.id.cancel_create_library);
+            cancelButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // Handle Cancel (X) button click
+                    alertDialog.dismiss(); // Dismiss the dialog
+                }
+            });
+
+            Button createButton = addLibraryView.findViewById(R.id.create_library);
+            createButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    EditText editText = addLibraryView.findViewById(R.id.library_name_input);
+                    String titleLibrary = editText.getText().toString();
+
+                    if (titleLibrary.isEmpty()) {
+                        Toast.makeText(MainActivity.this, "Invalid Library Name. Try again!", Toast.LENGTH_SHORT).show();
+                        alertDialog.dismiss();
+                    } else {
+                        // Add the title/name to the marker
+                        markerOptions.title(titleLibrary);
+
+                        // Get Address from Location
+                        String addressLibrary = getAddressFromLocation(latLng);
+
+                        // Add address to the marker
+                        markerOptions.snippet(addressLibrary);
 
                         // Animating to the touched position
                         mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
 
                         // Placing a marker on the touched position
                         mMap.addMarker(markerOptions);
-                    })
-                    .setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+                        // Dismiss the dialog
+                        alertDialog.dismiss();
+
+                        // Create a custom marker popup with marker's information
+                        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+                            @Override
+                            public View getInfoWindow(Marker marker) {
+                                return null;
+                            }
+
+                            @Override
+                            public View getInfoContents(Marker marker) {
+                                // Inflate the custom info window layout
+                                View view = getLayoutInflater().inflate(R.layout.library_popup, null);
+
+                                // Get the title and address TextViews
+                                TextView libraryName = view.findViewById(R.id.library_name);
+                                TextView libraryAddress = view.findViewById(R.id.library_location);
+
+                                // Set the title and address text
+                                libraryName.setText(marker.getTitle());
+                                libraryAddress.setText(marker.getSnippet());
+
+                                return view;
+                            }
+                        });
+
+                        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+                            @Override
+                            public void onInfoWindowClick(Marker marker) {
+                                Intent intent = new Intent(MainActivity.this, LibraryInfoActivity.class);
+
+                                // Get markers information and pass them to the intent
+                                String libraryName = marker.getTitle();
+                                intent.putExtra("name", libraryName);
+
+                                String libraryAddress = marker.getSnippet();
+                                intent.putExtra("address", libraryAddress);
+
+                                startActivity(intent);
+
+                            }
+                        });
+
+                    }
+                }
+            });
 
             // Show the AlertDialog
-            AlertDialog alertDialog = alertDialogBuilder.create();
             alertDialog.show();
-
-            // Setting the title for the marker.
-            // This will be displayed on taping the marker
-            //markerOptions.title(  "@" + latLng.latitude + " : " + latLng.longitude);
-
-            // Clears the previously touched position
-            //mMap.clear();
         });
     }
-
-    /*
-    private void createMarkerOnClick(){
-
-        mMap.setOnMarkerClickListener(marker -> {
-            // Retrieve the library's information associated with the clicked marker
-            // You'll need to maintain a data structure (e.g., List or HashMap) to store the library details
-            Library library = libraryMap.get(marker.getId()); // Retrieve the Library object from the map using the marker ID
-
-            // Inflate the library information panel layout
-            View libraryInfoView = getLayoutInflater().inflate(R.layout.library_info_layout, null);
-
-            // Find and set the library information on the views within the layout
-            TextView libraryNameTextView = libraryInfoView.findViewById(R.id.library_name_textview);
-            libraryNameTextView.setText(library.getName());
-
-            // Set the library's location on the map
-            // Create a GoogleMap.OnMapClickListener to open the location on the map when clicked
-            TextView libraryLocationTextView = libraryInfoView.findViewById(R.id.library_location_textview);
-            libraryLocationTextView.setOnClickListener(v -> {
-                // Open the location on the map using library.getLocation()
-                // Implement the necessary logic to display the library's location on the map
-            });
-
-            // Set the library's photo
-            //ImageView libraryPhotoImageView = libraryInfoView.findViewById(R.id.library_photo_imageview);
-            //libraryPhotoImageView.setImageResource(library.getPhotoResId()); // Set the library photo using resource ID or any other mechanism
-
-            // Set click listeners for the navigation button, favorites button, and check-in/donate button
-            Button navigateButton = libraryInfoView.findViewById(R.id.navigate_button);
-            navigateButton.setOnClickListener(v -> {
-                // Implement logic to navigate the user to the library's location
-            });
-
-            Button favoritesButton = libraryInfoView.findViewById(R.id.favorites_button);
-            favoritesButton.setOnClickListener(v -> {
-                // Implement logic to add/remove the library from the user's favorites
-            });
-
-            Button checkInButton = libraryInfoView.findViewById(R.id.check_in_button);
-            checkInButton.setOnClickListener(v -> {
-                // Implement logic to handle book check-in/donation, including barcode scanning
-            });
-
-            // Create an AlertDialog with the library information panel layout
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-            alertDialogBuilder.setView(libraryInfoView);
-            AlertDialog alertDialog = alertDialogBuilder.create();
-            alertDialog.show();
-
-            return true;
-        });
-
-    }
-        */
 }
