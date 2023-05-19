@@ -19,4 +19,6 @@
     <string name="default_book">default Book</string>
     <string name="create_library">CREATE</string>
     <string name="see_more">See more</string>
+    <string name="book_notif_disabled">Notify when available</string>
+    <string name="book_notif_enabled">Don\'t notify</string>
 </resources>
