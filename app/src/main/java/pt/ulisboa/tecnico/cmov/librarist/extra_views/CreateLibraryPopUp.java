@@ -8,7 +8,6 @@ import android.location.Geocoder;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -22,6 +21,7 @@ import androidx.cardview.widget.CardView;
 import com.github.dhaval2404.imagepicker.ImagePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -46,10 +46,9 @@ public class CreateLibraryPopUp {
         mMap = map;
 
         // Creating a marker
-        MarkerOptions markerOptions = new MarkerOptions();
-
-        // Setting the position for the marker
-        markerOptions.position(latLng);
+        MarkerOptions markerOptions = new MarkerOptions()
+                .position(latLng)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_library));
 
         // Display AlertDialog to get the title for the marker
         LayoutInflater inflater = mainActivity.getLayoutInflater();
@@ -84,18 +83,23 @@ public class CreateLibraryPopUp {
 
             @Override
             public View getInfoContents(@NonNull Marker marker) {
-                // Inflate the custom info window layout
-                View view = MainActivity.getLayoutInflater().inflate(R.layout.library_popup, null);
 
-                // Get the title and address TextViews
-                TextView libraryName = view.findViewById(R.id.library_name);
-                TextView libraryAddress = view.findViewById(R.id.library_location);
+                if (marker.getTag() != null && marker.getTag().equals("customMarker")) {
+                    // Inflate the custom info window layout
+                    View view = MainActivity.getLayoutInflater().inflate(R.layout.library_popup, null);
 
-                // Set the title and address text
-                libraryName.setText(marker.getTitle());
-                libraryAddress.setText(marker.getSnippet());
+                    // Get the title and address TextViews
+                    TextView libraryName = view.findViewById(R.id.library_name);
+                    TextView libraryAddress = view.findViewById(R.id.library_location);
 
-                return view;
+                    // Set the title and address text
+                    libraryName.setText(marker.getTitle());
+                    libraryAddress.setText(marker.getSnippet());
+
+                    return view;
+                }
+
+                return null;
             }
         });
 
@@ -186,7 +190,9 @@ public class CreateLibraryPopUp {
                     mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
 
                     // Placing a marker on the touched position
-                    mMap.addMarker(markerOptions);
+                    Marker marker = mMap.addMarker(markerOptions);
+                    assert marker != null;
+                    marker.setTag("customMarker");
 
                     // Dismiss the dialog
                     alertDialog.dismiss();

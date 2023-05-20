@@ -143,8 +143,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Add a marker in desired location and move the camera smoothly
         mMap.addMarker(new MarkerOptions()
-                .position(coordinates)
-                .title("Name of location"));
+                .position(coordinates));
         // Animate the camera movement
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
