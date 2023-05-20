@@ -9,7 +9,7 @@
     <string name="add_remove_favorites">Add/Remove\n Favorites</string>
     <string name="check_in_book">Check in Book</string>
     <string name="check_out_book">Check out Book</string>
-    <string name="no_library_selected">No Library Selected</string>
+    <string name="library_name">Library Name</string>
     <string name="available_books">Available books</string>
     <string name="add_remove_from_favorites">Add/Remove\nfrom Favorites</string>
     <string name="find_in_map">Find in map!</string>
@@ -21,4 +21,6 @@
     <string name="see_more">See more</string>
     <string name="book_notif_disabled">Notify when available</string>
     <string name="book_notif_enabled">Don\'t notify</string>
+    <string name="notify_when_available">Notify when available</string>
+    <string name="camera">camera</string>
 </resources>

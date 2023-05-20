@@ -14,12 +14,11 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -43,14 +42,22 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateLibraryPopUp;
+
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+
+    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    private static final int PERMISSIONS_REQUEST_ACCESS_CAMERA_AND_FILES = 10;
+    private static final int GALLERY_REQUEST_CODE = 100;
+    private static final String KEY_CAMERA_POSITION = "camera_position";
+    private static final String KEY_LOCATION = "location";
+    public final static String EXTRA_MESSAGE = "pt.ulisboa.tecnico.cmov.librarist.MESSAGE";
 
     private GoogleMap mMap;
 
     // The entry point to the Fused Location Provider.
     private FusedLocationProviderClient fusedLocationProviderClient;
-    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
-    private boolean locationPermissionGranted;
+    private boolean locationPermissionGranted = false;
     // A default location (Lisbon, Portugal) and default zoom to use when location permission is
     // not granted.
     private final LatLng defaultLocation = new LatLng(38.736946, -9.142685);
@@ -60,10 +67,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // location retrieved by the Fused Location Provider.
     private Location lastKnownLocation;
 
-    // Keys for storing activity state.
-    private static final String KEY_CAMERA_POSITION = "camera_position";
-    private static final String KEY_LOCATION = "location";
-    public final static String EXTRA_MESSAGE = "pt.ulisboa.tecnico.cmov.librarist.MESSAGE";
+    private CreateLibraryPopUp currentLibraryPopUp;
+    private Uri currentLibraryPhotoURI;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,53 +88,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         initMap();
 
         // Search Button
-        ImageButton search_address_btn = findViewById(R.id.search_address_btn);
-        search_address_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                EditText editText = (EditText) findViewById(R.id.address_input);
-                String location = editText.getText().toString();
-
-                if (location.equals("")){
-                    Toast.makeText(MainActivity.this, "Please insert an address", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
-                try {
-                    // Get location coordinates that best match the given name/address
-                    List<Address> addressList = geocoder.getFromLocationName(location, 1);
-                    // Given address is valid
-                    if (!addressList.isEmpty()){
-                        Address address = addressList.get(0);
-                        // Go to that location
-                        goToLocation(new LatLng(address.getLatitude(), address.getLongitude()));
-
-                        Toast.makeText(MainActivity.this, "Centered in" + address.getLocality(), Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(MainActivity.this, "Please insert a valid address", Toast.LENGTH_SHORT).show();
-                    }
-
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-
-            }
-        });
+        setupSearchButton();
 
         // Books Button
-        CardView books_btn = findViewById(R.id.books_btn);
-        books_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, BookMenuActivity.class);
-                startActivity(intent);
-            }
-        });
+        setupBooksButton();
     }
 
-    private void initMap(){
+
+    /** -----------------------------------------------------------------------------
+     *                                 MAP FUNCTIONS
+     -------------------------------------------------------------------------------- */
+
+    private void initMap() {
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -160,11 +130,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         getDeviceLocation();
 
         // Create OnClick listener to allow creation of new markers by clicking an empty place in the map
-        createMapOnClick(new AlertDialog.Builder(this));
-
-        //Create OnClick listener to access the library's page when clicking a marker
-        //createMarkerOnClick(alertDialogBuilder);
-
+        setupOnClickMap(new AlertDialog.Builder(this));
     }
 
     private void goToLocation(LatLng coordinates) {
@@ -183,61 +149,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
 
-    private String getAddressFromLocation(LatLng latLng) {
-
-        Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
-        String fullAddress = "";
-
-        try {
-            List<Address> addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
-            if (addresses != null && !addresses.isEmpty()) {
-                Address address = addresses.get(0);
-                fullAddress = address.getAddressLine(0); // Full address including street, city, etc.
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return fullAddress;
-    }
-
-    private void getLocationPermission() {
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
-        ActivityCompat.requestPermissions(this,
-                new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        locationPermissionGranted = false;
-        if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {// If request is cancelled, the result arrays are empty.
-            if (grantResults.length > 0
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                locationPermissionGranted = true;
-            }
-        } else {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
-
-        // Update Location with the new permissions
-        updateLocationUI();
-        // Update current location of the device
-        getDeviceLocation();
-    }
-
     private void updateLocationUI() {
-        if (mMap == null) { return; }
+        if (mMap == null) {
+            return;
+        }
         try {
             // Check if Permission is granted
             if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                    android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+                    android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 locationPermissionGranted = true;
             }
 
@@ -252,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 lastKnownLocation = null;
                 getLocationPermission();
             }
-        } catch (SecurityException e)  {
+        } catch (SecurityException e) {
             Log.e("Exception: %s", e.getMessage());
         }
     }
@@ -265,45 +184,210 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             if (locationPermissionGranted) {
                 // TODO check if information is outdated with the getLastLocation()
-                Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
-                locationResult.addOnCompleteListener(this, new OnCompleteListener<Location>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Location> task) {
-                        if (task.isSuccessful()) {
-                            // Set the map's camera position to the current location of the device.
-                            lastKnownLocation = task.getResult();
-                            if (lastKnownLocation != null) {
-                                mMap.moveCamera(CameraUpdateFactory
-                                        .newLatLngZoom(new LatLng(lastKnownLocation.getLatitude(),
-                                                lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
-                            }
+                getCurrentLocation();
 
-                        // If for some reason Current location is Null, we use the defaults
-                        } else {
-                            Log.d(EXTRA_MESSAGE, "Current location is null. Using defaults.");
-                            Log.e(EXTRA_MESSAGE, "Exception: %s", task.getException());
-                            mMap.moveCamera(CameraUpdateFactory
-                                    .newLatLngZoom(defaultLocation, DEFAULT_ZOOM-5));
-                            mMap.getUiSettings().setMyLocationButtonEnabled(false);
-
-                            Toast.makeText(MainActivity.this, "Current location is null", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-
-            // If permission is not granted, move camera to the default Location
+                // If permission is not granted, move camera to the default Location
             } else {
                 mMap.moveCamera(CameraUpdateFactory
-                        .newLatLngZoom(defaultLocation, DEFAULT_ZOOM-5));
+                        .newLatLngZoom(defaultLocation, DEFAULT_ZOOM - 5));
             }
         } catch (SecurityException e) {
             Log.e("Exception: %s", e.getMessage(), e);
         }
     }
 
+    private void setupOnClickMap(AlertDialog.Builder alertDialogBuilder) {
+
+        // Setting a click event handler for the map
+        mMap.setOnMapClickListener(latLng -> {
+            currentLibraryPopUp = new CreateLibraryPopUp(this, mMap, alertDialogBuilder, latLng);
+                });
+    }
+
+
+    /** -----------------------------------------------------------------------------
+     *                                 BUTTONS FUNCTIONS
+     -------------------------------------------------------------------------------- */
+
+    private void setupSearchButton() {
+        // Search Button
+        ImageButton search_address_btn = findViewById(R.id.search_address_btn);
+        search_address_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                EditText editText = (EditText) findViewById(R.id.address_input);
+                String location = editText.getText().toString();
+
+                if (location.equals("")) {
+                    Toast.makeText(MainActivity.this, "Please insert an address", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+                try {
+                    // Get location coordinates that best match the given name/address
+                    List<Address> addressList = geocoder.getFromLocationName(location, 1);
+                    // Given address is valid
+                    if (!addressList.isEmpty()) {
+                        Address address = addressList.get(0);
+                        // Go to that location
+                        goToLocation(new LatLng(address.getLatitude(), address.getLongitude()));
+
+                        Toast.makeText(MainActivity.this, "Centered in" + address.getLocality(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Please insert a valid address", Toast.LENGTH_SHORT).show();
+                    }
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+        });
+    }
+
+    private void setupBooksButton() {
+        CardView books_btn = findViewById(R.id.books_btn);
+        books_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, BookMenuActivity.class);
+                startActivity(intent);
+            }
+        });
+    }
+
+
+    /** -----------------------------------------------------------------------------
+     *                                  PERMISSIONS
+     -------------------------------------------------------------------------------- */
+
+    private void getLocationPermission() {
+        /*
+         * Request location permission, so that we can get the location of the
+         * device. The result of the permission request is handled by a callback,
+         * onRequestPermissionsResult.
+         */
+        ActivityCompat.requestPermissions(MainActivity.this,
+                new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {// If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                locationPermissionGranted = true;
+                // Update Location with the new permissions
+                updateLocationUI();
+                // Update current location of the device
+                getDeviceLocation();
+            }
+//        } else if (requestCode == PERMISSIONS_REQUEST_ACCESS_CAMERA_AND_FILES) {
+//            if (grantResults.length > 0 && Arrays.stream(grantResults).allMatch(el -> el == PackageManager.PERMISSION_GRANTED)) {
+//                cameraFilesPermissionGranted = true;
+//            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+
+    /** -----------------------------------------------------------------------------
+     *                                  OTHER FUNCTIONS
+     -------------------------------------------------------------------------------- */
+
+    private void getCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
+        locationResult.addOnCompleteListener(this, new OnCompleteListener<Location>() {
+            @Override
+            public void onComplete(@NonNull Task<Location> task) {
+                if (task.isSuccessful()) {
+                    // Set the map's camera position to the current location of the device.
+                    lastKnownLocation = task.getResult();
+                    if (lastKnownLocation != null) {
+                        mMap.moveCamera(CameraUpdateFactory
+                                .newLatLngZoom(new LatLng(lastKnownLocation.getLatitude(),
+                                        lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+                    }
+
+                    // If for some reason Current location is Null, we use the defaults
+                } else {
+                    Log.d(EXTRA_MESSAGE, "Current location is null. Using defaults.");
+                    Log.e(EXTRA_MESSAGE, "Exception: %s", task.getException());
+                    mMap.moveCamera(CameraUpdateFactory
+                            .newLatLngZoom(defaultLocation, DEFAULT_ZOOM-5));
+                    mMap.getUiSettings().setMyLocationButtonEnabled(false);
+
+                    Toast.makeText(MainActivity.this, "Current location is null", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void createCustomMarkerPopUp(){
+        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+            @Override
+            public View getInfoWindow(@NonNull Marker marker) {
+                return null;
+            }
+
+            @Override
+            public View getInfoContents(@NonNull Marker marker) {
+                // Inflate the custom info window layout
+                View view = getLayoutInflater().inflate(R.layout.library_popup, null);
+
+                // Get the title and address TextViews
+                TextView libraryName = view.findViewById(R.id.library_name);
+                TextView libraryAddress = view.findViewById(R.id.library_location);
+
+                // Set the title and address text
+                libraryName.setText(marker.getTitle());
+                libraryAddress.setText(marker.getSnippet());
+
+                return view;
+            }
+        });
+
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(@NonNull Marker marker) {
+                Intent intent = new Intent(MainActivity.this, LibraryInfoActivity.class);
+
+                // Get markers information and pass them to the intent
+                String libraryName = marker.getTitle();
+                intent.putExtra("name", libraryName);
+
+                String libraryAddress = marker.getSnippet();
+                intent.putExtra("address", libraryAddress);
+
+                startActivity(intent);
+            }
+        });
+    }
+
+    // The only Activity that uses this is the *Image Picker* on the createLibraryPopUp class
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        currentLibraryPhotoURI = data.getData();
+
+        currentLibraryPopUp.changeUploadImageIcon(currentLibraryPhotoURI);
+        // currentLibraryPhoto.setImageURI(uri);
+
+    }
+
     // Save the current map (location and camera position)
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         if (mMap != null) {
             outState.putParcelable(KEY_CAMERA_POSITION, mMap.getCameraPosition());
             outState.putParcelable(KEY_LOCATION, lastKnownLocation);
@@ -317,112 +401,5 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
-    }
-
-    private void createMapOnClick (AlertDialog.Builder alertDialogBuilder){
-
-        // Setting a click event handler for the map
-        mMap.setOnMapClickListener(latLng -> {
-
-            // Creating a marker
-            MarkerOptions markerOptions = new MarkerOptions();
-
-            // Setting the position for the marker
-            markerOptions.position(latLng);
-
-            // Display AlertDialog to get the title for the marker
-            LayoutInflater inflater = getLayoutInflater();
-            View addLibraryView= inflater.inflate(R.layout.create_library, null);
-            alertDialogBuilder.setView(addLibraryView);
-
-            // Create the Alert Dialog
-            AlertDialog alertDialog = alertDialogBuilder.create();
-
-            ImageButton cancelButton = addLibraryView.findViewById(R.id.cancel_create_library);
-            cancelButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    // Handle Cancel (X) button click
-                    alertDialog.dismiss(); // Dismiss the dialog
-                }
-            });
-
-            Button createButton = addLibraryView.findViewById(R.id.create_library);
-            createButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    EditText editText = addLibraryView.findViewById(R.id.library_name_input);
-                    String titleLibrary = editText.getText().toString();
-
-                    if (titleLibrary.isEmpty()) {
-                        Toast.makeText(MainActivity.this, "Invalid Library Name. Try again!", Toast.LENGTH_SHORT).show();
-                        alertDialog.dismiss();
-                    } else {
-                        // Add the title/name to the marker
-                        markerOptions.title(titleLibrary);
-
-                        // Get Address from Location
-                        String addressLibrary = getAddressFromLocation(latLng);
-
-                        // Add address to the marker
-                        markerOptions.snippet(addressLibrary);
-
-                        // Animating to the touched position
-                        mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
-
-                        // Placing a marker on the touched position
-                        mMap.addMarker(markerOptions);
-
-                        // Dismiss the dialog
-                        alertDialog.dismiss();
-
-                        // Create a custom marker popup with marker's information
-                        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-                            @Override
-                            public View getInfoWindow(Marker marker) {
-                                return null;
-                            }
-
-                            @Override
-                            public View getInfoContents(Marker marker) {
-                                // Inflate the custom info window layout
-                                View view = getLayoutInflater().inflate(R.layout.library_popup, null);
-
-                                // Get the title and address TextViews
-                                TextView libraryName = view.findViewById(R.id.library_name);
-                                TextView libraryAddress = view.findViewById(R.id.library_location);
-
-                                // Set the title and address text
-                                libraryName.setText(marker.getTitle());
-                                libraryAddress.setText(marker.getSnippet());
-
-                                return view;
-                            }
-                        });
-
-                        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-                            @Override
-                            public void onInfoWindowClick(Marker marker) {
-                                Intent intent = new Intent(MainActivity.this, LibraryInfoActivity.class);
-
-                                // Get markers information and pass them to the intent
-                                String libraryName = marker.getTitle();
-                                intent.putExtra("name", libraryName);
-
-                                String libraryAddress = marker.getSnippet();
-                                intent.putExtra("address", libraryAddress);
-
-                                startActivity(intent);
-
-                            }
-                        });
-
-                    }
-                }
-            });
-
-            // Show the AlertDialog
-            alertDialog.show();
-        });
     }
 }

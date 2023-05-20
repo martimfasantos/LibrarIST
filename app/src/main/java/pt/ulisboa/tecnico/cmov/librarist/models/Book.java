@@ -5,13 +5,13 @@ public class Book {
     private final int id;
     private final String cover; // TODO see how this will be don
     private final String title;
-    private Boolean notifActive;
+    private Boolean activeNotif;
 
-    public Book(int id, String cover, String title, Boolean notifActive) {
+    public Book(int id, String cover, String title, Boolean activeNotif) {
         this.cover = cover;
         this.title = title;
         this.id = id;
-        this.notifActive = notifActive;
+        this.activeNotif = activeNotif;
     }
 
     public String getCover() {
@@ -26,11 +26,11 @@ public class Book {
         return id;
     }
 
-    public Boolean isNotifActive() {
-        return notifActive;
+    public Boolean isActiveNotif() {
+        return activeNotif;
     }
 
     public void toggleNotifications() {
-        this.notifActive = !this.notifActive;
+        this.activeNotif = !this.activeNotif;
     }
 }

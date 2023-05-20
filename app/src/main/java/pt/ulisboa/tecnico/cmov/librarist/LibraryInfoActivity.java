@@ -28,6 +28,41 @@ public class LibraryInfoActivity extends AppCompatActivity {
         // Parse intent and its information
         parseIntent();
 
+        // Setup View
+        setupViewWithLibraryInfo();
+    }
+
+    private void setupViewWithLibraryInfo(){
+        // Set text from intent into Library Name Title text view
+        TextView nameView = findViewById(R.id.library_name_title);
+        nameView.setText(libraryName);
+
+        // Set text from intent into Library Address Title text view
+        TextView addressView = findViewById(R.id.library_address);
+        addressView.setText(libraryAddress);
+
+        // Add/Remove Favorites Button
+        setupAddRemFavButton();
+
+        // List books Button
+        setupListBooksButton();
+
+        // Check-in book Button
+        setupCheckInButton();
+
+        // Check-out book Button
+        setupCheckOutButton();
+
+        // Back Button
+        setupBackButton();
+    }
+
+
+    /** -----------------------------------------------------------------------------
+     *                                  BUTTONS FUNCTIONS
+     -------------------------------------------------------------------------------- */
+
+    private void setupAddRemFavButton(){
         CardView add_remove_favorites_btn = findViewById(R.id.library_add_remove_favorites_btn);
         add_remove_favorites_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -55,7 +90,9 @@ public class LibraryInfoActivity extends AppCompatActivity {
 //                startActivity(intent);
             }
         });
+    }
 
+    private void setupListBooksButton(){
         CardView list_available_books_btn = findViewById(R.id.library_list_available_books_btn);
         list_available_books_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,7 +107,9 @@ public class LibraryInfoActivity extends AppCompatActivity {
 //                startActivity(intent);
             }
         });
+    }
 
+    private void setupCheckInButton(){
         CardView check_in_book_btn = findViewById(R.id.library_check_in_book_btn);
         check_in_book_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -85,7 +124,9 @@ public class LibraryInfoActivity extends AppCompatActivity {
 //                startActivity(intent);
             }
         });
+    }
 
+    private void setupCheckOutButton(){
         CardView check_out_book_btn = findViewById(R.id.library_check_out_book_btn);
         check_out_book_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -100,9 +141,11 @@ public class LibraryInfoActivity extends AppCompatActivity {
 //                startActivity(intent);
             }
         });
+    }
 
-        CardView return_to_main_btn = findViewById(R.id.return_to_main_btn);
-        return_to_main_btn.setOnClickListener(new View.OnClickListener() {
+    private void setupBackButton(){
+        ImageView back_btn = findViewById(R.id.back_btn);
+        back_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Toast.makeText(getApplicationContext(), "Returned to Main!", Toast.LENGTH_SHORT).show();
@@ -110,9 +153,11 @@ public class LibraryInfoActivity extends AppCompatActivity {
             }
         });
 
-
-
     }
+
+    /** -----------------------------------------------------------------------------
+     *                                  OTHER FUNCTIONS
+     -------------------------------------------------------------------------------- */
 
     private void parseIntent(){
 
@@ -125,14 +170,5 @@ public class LibraryInfoActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "There was an error processing your request", Toast.LENGTH_SHORT).show();
             finish();
         }
-
-        // Set text from intent into Library Name Title text view
-        TextView nameView = findViewById(R.id.library_name_title);
-        nameView.setText(libraryName);
-
-        // Set text from intent into Library Address Title text view
-        TextView addressView = findViewById(R.id.library_address);
-        addressView.setText(libraryAddress);
-
     }
 }
