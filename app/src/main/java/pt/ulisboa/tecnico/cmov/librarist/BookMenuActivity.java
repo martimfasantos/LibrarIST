@@ -88,19 +88,17 @@ public class BookMenuActivity extends AppCompatActivity {
     private void addBookItemsToView(List<Book> books) {
         LinearLayout parent = findViewById(R.id.div_books_list);
         LayoutInflater inflater = getLayoutInflater();
-        Book book;
 
-        for (int i = 0; i < books.size(); i++) {
-            book = books.get(i);
+        books.forEach(book -> {
             // Create new element for the book
             CardView child = (CardView) inflater.inflate(R.layout.book_menu_item, null);
             // Set text to the book title
             TextView cardText = (TextView) child.getChildAt(1);
-            cardText.setText(books.get(i).getTitle());
+            cardText.setText(book.getTitle());
             child.setTag(String.valueOf(book.getId()));
             setupBookCard(child);
 
             parent.addView(child);
-        }
+        });
     }
 }

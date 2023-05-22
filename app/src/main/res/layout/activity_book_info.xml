@@ -53,7 +53,9 @@
         android:layout_below="@id/book_info_cover_img"
         android:orientation="horizontal"
         android:layout_marginTop="20dp"
-        android:gravity="center_horizontal" >
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="10dp"
+        android:gravity="start" >
 
         <ImageButton
             android:id="@+id/book_info_notif_btn"
@@ -72,5 +74,29 @@
             android:textSize="20sp" />
 
     </LinearLayout>
+    
+    <ScrollView
+        android:id="@+id/available_libraries_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="15dp"
+        android:layout_below="@id/div_book_info_notif">
+
+        <LinearLayout
+            android:id="@+id/available_libraries_linear_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/book_available_in_following_libraries"
+                android:textSize="17sp"
+                android:layout_marginBottom="10sp"/>
+
+        </LinearLayout>
+
+    </ScrollView>
 
 </RelativeLayout>
