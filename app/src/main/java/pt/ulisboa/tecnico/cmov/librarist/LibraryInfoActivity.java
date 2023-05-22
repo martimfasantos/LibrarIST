@@ -1,6 +1,11 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import android.content.DialogInterface;
 import android.content.Intent;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.ActivityResultRegistryOwner;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
@@ -14,10 +19,18 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.journeyapps.barcodescanner.CaptureActivity;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
+
 public class LibraryInfoActivity extends AppCompatActivity {
 
     private String libraryName;
     private String libraryAddress;
+
+    private ActivityResultLauncher<ScanOptions> barCodeLauncher;
+    private String currentBarCodeResult = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +66,29 @@ public class LibraryInfoActivity extends AppCompatActivity {
         // Check-out book Button
         setupCheckOutButton();
 
+        // Setup Bar code Launcher
+        setupBarCodeLauncher();
+
         // Back Button
         setupBackButton();
+    }
+
+    private void setupBarCodeLauncher(){
+        //  Dialog after scan result
+        barCodeLauncher = registerForActivityResult(new ScanContract(), result -> {
+            if (result.getContents() != null){
+                currentBarCodeResult = result.getContents();
+                AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                        .setTitle("Scan Result")
+                        .setMessage(result.getContents());
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                }).show();
+            }
+        });
     }
 
 
@@ -114,14 +148,12 @@ public class LibraryInfoActivity extends AppCompatActivity {
         check_in_book_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "Booked checked in!", Toast.LENGTH_SHORT).show();
-
-                // TODO IMPLEMENT THIS
-//                Intent intent = new Intent(MainActivity.this, LibraryInfoActivity.class);
-//                EditText editText = (EditText) findViewById(R.id.library_name_input);
-//                String message = editText.getText().toString();
-//                intent.putExtra(EXTRA_MESSAGE, message);
-//                startActivity(intent);
+                scanCode("Check In a Book");
+                if (currentBarCodeResult != null){
+                    // TODO save the book with this bar code in the backend
+                    Toast.makeText(getApplicationContext(), "Booked checked in!", Toast.LENGTH_SHORT).show();
+                }
+                currentBarCodeResult = null;
             }
         });
     }
@@ -131,14 +163,12 @@ public class LibraryInfoActivity extends AppCompatActivity {
         check_out_book_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "Booked checked out!", Toast.LENGTH_SHORT).show();
-
-                // TODO IMPLEMENT THIS
-//                Intent intent = new Intent(MainActivity.this, LibraryInfoActivity.class);
-//                EditText editText = (EditText) findViewById(R.id.library_name_input);
-//                String message = editText.getText().toString();
-//                intent.putExtra(EXTRA_MESSAGE, message);
-//                startActivity(intent);
+                scanCode("Check Out a Book");
+                if (currentBarCodeResult != null){
+                    // TODO delete the book with this bar code in the backend
+                    Toast.makeText(getApplicationContext(), "Booked checked out!", Toast.LENGTH_SHORT).show();
+                }
+                currentBarCodeResult = null;
             }
         });
     }
@@ -156,7 +186,7 @@ public class LibraryInfoActivity extends AppCompatActivity {
     }
 
     /** -----------------------------------------------------------------------------
-     *                                  OTHER FUNCTIONS
+     *                                OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
 
     private void parseIntent(){
@@ -171,4 +201,18 @@ public class LibraryInfoActivity extends AppCompatActivity {
             finish();
         }
     }
+
+    private void scanCode(String action){
+        // Define bar code settings
+        ScanOptions options = new ScanOptions()
+                .setPrompt(action)
+                .setBeepEnabled(true)
+                .setOrientationLocked(true)
+                .setCaptureActivity(ScanBarCodeActivity.class);
+
+        // Launch the Bar Code scanner
+        barCodeLauncher.launch(options);
+    }
+
+
 }

@@ -6,15 +6,17 @@
     android:orientation="horizontal"
     android:layout_margin="5dp"
     app:cardBackgroundColor="@color/almost_white"
-    app:cardCornerRadius="6dp"
-    app:cardElevation="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
     app:cardUseCompatPadding="true">
 
     <ImageView
         android:src="@drawable/book"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_margin="5dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
         android:layout_gravity="center_vertical"
         android:contentDescription="@string/default_book" />
 

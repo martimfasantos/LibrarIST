@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -37,9 +38,53 @@ public class BookMenuActivity extends AppCompatActivity {
 
         // Set up onclick method for the search button
         setupSearchButton();
+
+        // Back Button
+        setupBackButton();
     }
 
 
+    /** -----------------------------------------------------------------------------
+     *                                  BUTTONS FUNCTIONS
+     -------------------------------------------------------------------------------- */
+
+    private void setupSearchButton() {
+        ImageButton searchBtn = findViewById(R.id.search_book_btn);
+        searchBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TextView textFilter = (TextView) findViewById(R.id.book_title_input);
+                String filter = (String) textFilter.getText();
+                // TODO call backend to get filtered books; call addBookItemsToView
+            }
+        });
+    }
+
+    private void setupBackButton(){
+        ImageView back_btn = findViewById(R.id.back_btn);
+        back_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
+
+    }
+
+
+    /** -----------------------------------------------------------------------------
+     *                                  OTHER FUNCTIONS
+     -------------------------------------------------------------------------------- */
+
+    private void setupBookCard(CardView cardView) {
+        cardView.setOnClickListener(v -> {
+            int bookId = Integer.parseInt(v.getTag().toString());
+
+            Intent intent = new Intent(BookMenuActivity.this, BookInfoActivity.class);
+            intent.putExtra(BOOK_ID_MESSAGE, bookId);
+            startActivity(intent);
+        });
+    }
     private void addBookItemsToView(List<Book> books) {
         LinearLayout parent = findViewById(R.id.div_books_list);
         LayoutInflater inflater = getLayoutInflater();
@@ -57,27 +102,5 @@ public class BookMenuActivity extends AppCompatActivity {
 
             parent.addView(child);
         }
-    }
-
-    private void setupSearchButton() {
-        ImageButton searchBtn = findViewById(R.id.search_book_btn);
-        searchBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                TextView textFilter = (TextView) findViewById(R.id.book_title_input);
-                String filter = (String) textFilter.getText();
-                // TODO call backend to get filtered books; call addBookItemsToView
-            }
-        });
-    }
-
-    private void setupBookCard(CardView cardView) {
-        cardView.setOnClickListener(v -> {
-            int bookId = Integer.parseInt(v.getTag().toString());
-
-            Intent intent = new Intent(BookMenuActivity.this, BookInfoActivity.class);
-            intent.putExtra(BOOK_ID_MESSAGE, bookId);
-            startActivity(intent);
-        });
     }
 }

@@ -8,7 +8,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import android.content.pm.PackageManager;
 import android.location.Address;
@@ -21,7 +20,6 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -32,9 +30,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 
@@ -47,8 +44,6 @@ import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateLibraryPopUp;
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
-    private static final int PERMISSIONS_REQUEST_ACCESS_CAMERA_AND_FILES = 10;
-    private static final int GALLERY_REQUEST_CODE = 100;
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
     public final static String EXTRA_MESSAGE = "pt.ulisboa.tecnico.cmov.librarist.MESSAGE";
@@ -58,14 +53,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // The entry point to the Fused Location Provider.
     private FusedLocationProviderClient fusedLocationProviderClient;
     private boolean locationPermissionGranted = false;
-    // A default location (Lisbon, Portugal) and default zoom to use when location permission is
-    // not granted.
+    // A default location (Lisbon, Portugal) and default zoom to use when location permission is not granted.
     private final LatLng defaultLocation = new LatLng(38.736946, -9.142685);
-    private static final int DEFAULT_ZOOM = 17;
+    private static final int DEFAULT_ZOOM = 18;
 
     // The geographical location where the device is currently located. That is, the last-known
     // location retrieved by the Fused Location Provider.
-    private Location lastKnownLocation;
+//    private Location lastKnownLocation;
+    private volatile Location currentLocation = null;
 
     private CreateLibraryPopUp currentLibraryPopUp;
     private Uri currentLibraryPhotoURI;
@@ -101,12 +96,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void initMap() {
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+        SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
-        assert mapFragment != null;
-        mapFragment.getMapAsync(this);
+        assert supportMapFragment != null;
+        supportMapFragment.getMapAsync(this);
 
-        Toast.makeText(getApplicationContext(), "Map loaded in current location!", Toast.LENGTH_SHORT).show();
+        // Toast.makeText(getApplicationContext(), "Map loaded in current location!", Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -153,12 +148,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             return;
         }
         try {
-            // Check if Permission is granted
-            if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                    android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                locationPermissionGranted = true;
-            }
-
             Log.d("Location Permission Granted", String.valueOf(locationPermissionGranted));
 
             if (locationPermissionGranted) {
@@ -167,7 +156,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             } else {
                 mMap.setMyLocationEnabled(false);
                 mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                lastKnownLocation = null;
                 getLocationPermission();
             }
         } catch (SecurityException e) {
@@ -182,11 +170,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
          */
         try {
             if (locationPermissionGranted) {
-                // TODO check if information is outdated with the getLastLocation()
                 getCurrentLocation();
-
-                // If permission is not granted, move camera to the default Location
             } else {
+                // If permission is not granted, move camera to the default Location
                 mMap.moveCamera(CameraUpdateFactory
                         .newLatLngZoom(defaultLocation, DEFAULT_ZOOM - 5));
             }
@@ -285,10 +271,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // Update current location of the device
                 getDeviceLocation();
             }
-//        } else if (requestCode == PERMISSIONS_REQUEST_ACCESS_CAMERA_AND_FILES) {
-//            if (grantResults.length > 0 && Arrays.stream(grantResults).allMatch(el -> el == PackageManager.PERMISSION_GRANTED)) {
-//                cameraFilesPermissionGranted = true;
-//            }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
@@ -304,70 +286,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
+
         Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
-        locationResult.addOnCompleteListener(this, new OnCompleteListener<Location>() {
+        locationResult.addOnSuccessListener(this, new OnSuccessListener<Location>(){
             @Override
-            public void onComplete(@NonNull Task<Location> task) {
-                if (task.isSuccessful()) {
-                    // Set the map's camera position to the current location of the device.
-                    lastKnownLocation = task.getResult();
-                    if (lastKnownLocation != null) {
-                        mMap.moveCamera(CameraUpdateFactory
-                                .newLatLngZoom(new LatLng(lastKnownLocation.getLatitude(),
-                                        lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
-                    }
+            public void onSuccess(Location location) {
 
-                    // If for some reason Current location is Null, we use the defaults
-                } else {
-                    Log.d(EXTRA_MESSAGE, "Current location is null. Using defaults.");
-                    Log.e(EXTRA_MESSAGE, "Exception: %s", task.getException());
+                if (location != null) {
+                    currentLocation = location;
+                    // Move to current location
                     mMap.moveCamera(CameraUpdateFactory
-                            .newLatLngZoom(defaultLocation, DEFAULT_ZOOM-5));
-                    mMap.getUiSettings().setMyLocationButtonEnabled(false);
-
-                    Toast.makeText(MainActivity.this, "Current location is null", Toast.LENGTH_SHORT).show();
+                            .newLatLngZoom(new LatLng(currentLocation.getLatitude(),
+                                    currentLocation.getLongitude()), DEFAULT_ZOOM));
+                } else {
+                    Toast.makeText(MainActivity.this, "Please turn on your Location...", Toast.LENGTH_SHORT).show();
                 }
-            }
-        });
-    }
-
-    private void createCustomMarkerPopUp(){
-        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-            @Override
-            public View getInfoWindow(@NonNull Marker marker) {
-                return null;
-            }
-
-            @Override
-            public View getInfoContents(@NonNull Marker marker) {
-                // Inflate the custom info window layout
-                View view = getLayoutInflater().inflate(R.layout.library_popup, null);
-
-                // Get the title and address TextViews
-                TextView libraryName = view.findViewById(R.id.library_name);
-                TextView libraryAddress = view.findViewById(R.id.library_location);
-
-                // Set the title and address text
-                libraryName.setText(marker.getTitle());
-                libraryAddress.setText(marker.getSnippet());
-
-                return view;
-            }
-        });
-
-        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-            @Override
-            public void onInfoWindowClick(@NonNull Marker marker) {
-                Intent intent = new Intent(MainActivity.this, LibraryInfoActivity.class);
-
-                // Get markers information and pass them to the intent
-                String libraryName = marker.getTitle();
-                intent.putExtra("name", libraryName);
-
-                String libraryAddress = marker.getSnippet();
-                intent.putExtra("address", libraryAddress);
-
-                startActivity(intent);
             }
         });
     }
@@ -389,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         if (mMap != null) {
             outState.putParcelable(KEY_CAMERA_POSITION, mMap.getCameraPosition());
-            outState.putParcelable(KEY_LOCATION, lastKnownLocation);
+            outState.putParcelable(KEY_LOCATION, currentLocation);
         }
         super.onSaveInstanceState(outState);
     }

@@ -36,6 +36,10 @@
         <activity
             android:name=".LibraryInfoActivity"
             android:exported="false" />
+        <activity android:name=".ScanBarCodeActivity"
+            android:screenOrientation="fullSensor"
+            android:stateNotNeeded="true"
+            android:theme="@style/zxing_CaptureTheme" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -47,11 +51,6 @@
         <service
             android:name=".MyService"
             android:enabled="true" />
-
-        <service
-            android:name="MyNavigationService"
-            android:foregroundServiceType="location">
-        </service>
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

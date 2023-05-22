@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
 import android.net.Uri;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -35,8 +36,8 @@ import pt.ulisboa.tecnico.cmov.librarist.R;
 
 public class CreateLibraryPopUp {
 
-    private Activity MainActivity;
-    private GoogleMap mMap;
+    private final Activity MainActivity;
+    private final GoogleMap mMap;
     private final View createLibraryView;
     private static Uri currentLibraryPhotoURI;
 
@@ -145,6 +146,7 @@ public class CreateLibraryPopUp {
             public void onClick(View v) {
                 // Image picker
                 ImagePicker.with(MainActivity)
+                        .cameraOnly()           // Only use the camera of the device
                         .crop()	    			//Crop image(Optional), Check Customization for more option
                         .compress(1024)			//Final image size will be less than 1 MB(Optional)
                         .maxResultSize(1080, 1080)	//Final image resolution will be less than 1080 x 1080(Optional)
@@ -182,6 +184,8 @@ public class CreateLibraryPopUp {
 
                     // Get Address from Location
                     String addressLibrary = getAddressFromLocation(latLng);
+
+                    Log.d("ADDRESS", addressLibrary);
 
                     // Add address to the marker
                     markerOptions.snippet(addressLibrary);

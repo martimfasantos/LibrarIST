@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -40,6 +41,9 @@ public class BookInfoActivity extends AppCompatActivity {
 
         // Notifications Button
         setupNotificationButton();
+
+        // Back Button
+        setupBackButton();
     }
 
 
@@ -54,6 +58,17 @@ public class BookInfoActivity extends AppCompatActivity {
             book.toggleNotifications();
             setNotificationView(book.isActiveNotif());
         });
+    }
+
+    private void setupBackButton(){
+        ImageView back_btn = findViewById(R.id.back_btn);
+        back_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
+
     }
 
 
