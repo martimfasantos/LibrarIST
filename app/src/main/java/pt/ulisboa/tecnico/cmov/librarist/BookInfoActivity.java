@@ -71,6 +71,7 @@ public class BookInfoActivity extends AppCompatActivity {
     private void setupViewWithAvailableLibraries() {
         // TODO get libraries from cache
 
+        /*
         List<Library> availableLibraries = List.of(
                 new Library(0, "Library 1", new LatLng(40, -20),
                         "I don't know", new ArrayList<>()),
@@ -81,7 +82,7 @@ public class BookInfoActivity extends AppCompatActivity {
 
         // TODO create card view for each library
         addLibrariesToView(availableLibraries);
-
+        */
     }
 
 

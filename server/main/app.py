@@ -1,10 +1,14 @@
 import json
+import base64
 from server import Server
 from flask import Flask
 from flask import request
 
 app = Flask(__name__)
 server = Server()
+
+bookId = 1
+libraryId = 1
 
 @app.route("/", methods=["GET"])
 def handle_call():
@@ -82,9 +86,10 @@ def return_book(userId=None):
 def create_library():
     request_data = request.json
     name = request_data["name"]
-    location = request_data["location"]
-    photo = request_data["photo"]
-    return server.add_new_library(name, location, photo)
+    address = request_data["address"]
+    location = (request_data["latitude"], request_data["longitude"])
+    photo = base64.b64decode(request_data["photo"])
+    return server.add_new_library(name, location, photo, address)
 
 
 # Get libraries with given book available

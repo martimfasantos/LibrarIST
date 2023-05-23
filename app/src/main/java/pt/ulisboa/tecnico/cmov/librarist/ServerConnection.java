@@ -36,31 +36,25 @@ import java.util.Map;
 
 
 public class ServerConnection {
-    private static final String endpoint = "http://cmov2-docentes-tp-1.vps.tecnico.ulisboa.pt:5000";
-    private static final String wsEndpoint = "ws://cmov2-docentes-tp-1.vps.tecnico.ulisboa.pt:5000/ws";
-    WebSocketClient webSocketClient = null;
+    private static final String endpoint = "http://192.92.147.54:5000";
+    //private static final String wsEndpoint = "ws://cmov2-docentes-tp-1.vps.tecnico.ulisboa.pt:5000/ws";
+    //WebSocketClient webSocketClient = null;
 
 
     // Method called when creating a new Library
-    private void createLibrary(String path, Library library) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(path).openConnection();
+    private void createLibrary(Library library) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + "/libraries").openConnection();
         connection.setRequestMethod("PUT");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
 
         // Create a JSON object
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("id", library.getId());
         jsonObject.addProperty("name", library.getName());
-
-        // Create a JSON object for the location
-        JsonObject locationObject = new JsonObject();
-        locationObject.addProperty("latitude", library.getLatitude());
-        locationObject.addProperty("longitude", library.getLongitude());
-        jsonObject.add("location", locationObject);
-
+        jsonObject.addProperty("latitude", library.getLatitude());
+        jsonObject.addProperty("longitude", library.getLongitude());
         jsonObject.addProperty("address", library.getAddress());
-        // TODO Add other parameters
+        jsonObject.addProperty("photo", Base64.getEncoder().encodeToString(library.getPhoto()));
 
         // Convert the JSON object to a string
         String jsonString = jsonObject.toString();
@@ -83,7 +77,7 @@ public class ServerConnection {
 
     // Method called when adding a book to a library
     public void addBook(String path, Book book, Library library) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(path).openConnection();
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + path).openConnection();
         connection.setRequestMethod("PUT");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
@@ -94,7 +88,6 @@ public class ServerConnection {
         jsonObject.addProperty("title", book.getTitle());
         jsonObject.addProperty("cover", Base64.getEncoder().encodeToString(book.getCover()));
         jsonObject.addProperty("activeNotif", book.isActiveNotif());
-        // TODO Add other Book attributes
 
         // Add the id of the library where the book is
         jsonObject.addProperty("libraryId", library.getId());
@@ -121,7 +114,7 @@ public class ServerConnection {
     public List<Library> getAllLibraries(String path) throws IOException {
         List<Library> libraries = new ArrayList<>();
 
-        HttpURLConnection connection = (HttpURLConnection) new URL(path).openConnection();
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + path).openConnection();
         connection.setRequestMethod("GET");
 
         switch (connection.getResponseCode()) {
@@ -131,7 +124,9 @@ public class ServerConnection {
                 JsonArray jsonArray = new JsonParser().parse(String.valueOf(jsonReader)).getAsJsonArray();
 
                 for (JsonElement jsonElement : jsonArray) {
+
                     JsonObject jsonObject = jsonElement.getAsJsonObject();
+
                     int id = jsonObject.get("id").getAsInt();
                     String name = jsonObject.get("name").getAsString();
                     JsonObject locationObject = jsonObject.get("location").getAsJsonObject();
@@ -141,6 +136,9 @@ public class ServerConnection {
                     String address = jsonObject.get("address").getAsString();
                     List<Integer> bookIds = new ArrayList<>();
 
+                    String base64Photo = jsonObject.get("photo").getAsString();
+                    byte[] photo = Base64.getDecoder().decode(base64Photo);
+
                     JsonArray bookIdsArray = jsonObject.get("bookIds").getAsJsonArray();
                     for (JsonElement bookIdElement : bookIdsArray) {
                         int bookId = bookIdElement.getAsInt();
@@ -148,7 +146,7 @@ public class ServerConnection {
                     }
 
                     // Create a Library object and add it to the list
-                    Library library = new Library(id, name, latLng, address, bookIds);
+                    Library library = new Library(id, name, latLng, address, bookIds, photo);
                     libraries.add(library);
                 }
                 break;
@@ -165,7 +163,7 @@ public class ServerConnection {
     public List<Book> getAllBooks(String path) throws IOException {
         List<Book> books = new ArrayList<>();
 
-        HttpURLConnection connection = (HttpURLConnection) new URL(path).openConnection();
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + path).openConnection();
         connection.setRequestMethod("GET");
 
         switch (connection.getResponseCode()) {
@@ -203,7 +201,7 @@ public class ServerConnection {
         String payload = "{\"title\": \"" + bookTitle + "\"}";
 
         // Create a connection to the backend API
-        HttpURLConnection connection = (HttpURLConnection) new URL(path).openConnection();
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + path).openConnection();
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);

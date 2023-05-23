@@ -18,9 +18,15 @@ class Server:
 
 
     # Add new library
-    def add_new_library(self, name, location, photo):
+    def add_new_library(self, name, location, photo, address):
         id = len(self.libraries)
-        self.libraries[id] = Library(id, name, location, photo)
+
+        photo_filename = 'library_{id}_photo.jpg'
+
+        with open(photo_filename, 'wb') as photo_file:
+            photo_file.write(photo)
+
+        self.libraries[id] = Library(id, name, location, photo_filename, address)
         return json.dumps({"status": 200})
     
     # Add library to users favorites
