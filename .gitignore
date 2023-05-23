@@ -10,3 +10,6 @@ server/models/__pycache__/
 # android studio caches
 .idea/
 .gradle/
+
+#Local Configuration file 
+local.properties

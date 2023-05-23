@@ -35,6 +35,14 @@ public class Library {
         return latLng;
     }
 
+    public double getLatitude () {
+        return latLng.latitude;
+    }
+
+    public double getLongitude() {
+        return latLng.longitude;
+    }
+
     public String getAddress() {
         return address;
     }
