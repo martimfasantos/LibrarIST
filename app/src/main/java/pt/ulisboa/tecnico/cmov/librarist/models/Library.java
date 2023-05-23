@@ -1,24 +1,26 @@
 package pt.ulisboa.tecnico.cmov.librarist.models;
 
-import java.net.Inet4Address;
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import pt.ulisboa.tecnico.cmov.librarist.caches.BookCache;
 
 public class Library {
 
     private int id;
-    private String name;
-    private String address;
+    private final String name;
+    private final LatLng latLng;
+    private final String address;
 
     private List<Integer> bookIds;
 
-    public Library(int id, String name, String address, List<Integer> bookIds){
+    public Library(int id, String name, LatLng latLng, String address, List<Integer> bookIds){
         this.id = id;
         this.name = name;
+        this.latLng = latLng;
         this.address = address;
-        this.bookIds = bookIds;
+        this.bookIds = new ArrayList<>(bookIds);
     }
 
     public int getId() {
@@ -27,6 +29,10 @@ public class Library {
 
     public String getName() {
         return name;
+    }
+
+    public LatLng getLatLng() {
+        return latLng;
     }
 
     public String getAddress() {

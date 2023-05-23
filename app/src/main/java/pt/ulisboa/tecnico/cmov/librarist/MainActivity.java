@@ -46,6 +46,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
+    private static final String LOCATION_LAT_MESSAGE = "currentLocationLatitude";
+    private static final String LOCATION_LON_MESSAGE = "currentLocationLongitude";
 
     private GoogleMap mMap;
 
@@ -237,6 +239,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this, BookMenuActivity.class);
+                putCurrentCoordinates(intent, new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()));
                 startActivity(intent);
             }
         });
@@ -302,6 +305,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
         });
+    }
+
+    public void putCurrentCoordinates(Intent intent, LatLng latLng){
+        intent.putExtra(LOCATION_LAT_MESSAGE, latLng.latitude);
+        intent.putExtra(LOCATION_LON_MESSAGE, latLng.longitude);
     }
 
     // The only Activity that uses this is the *Image Picker* on the createLibraryPopUp class

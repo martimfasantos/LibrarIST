@@ -24,4 +24,7 @@
     <string name="notify_when_available">Notify when available</string>
     <string name="camera">camera</string>
     <string name="book_title">Book title</string>
+    <string name="book_available_in_following_libraries">Available in the following libraries:</string>
+    <string name="default_library_name">Library default</string>
+    <string name="default_library_distance">0.0Km</string>
 </resources>
