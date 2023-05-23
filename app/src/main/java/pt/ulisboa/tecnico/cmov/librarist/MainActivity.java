@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
-    public final static String EXTRA_MESSAGE = "pt.ulisboa.tecnico.cmov.librarist.MESSAGE";
 
     private GoogleMap mMap;
 
@@ -185,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Setting a click event handler for the map
         mMap.setOnMapClickListener(latLng -> {
-            currentLibraryPopUp = new CreateLibraryPopUp(this, mMap, alertDialogBuilder, latLng);
+            currentLibraryPopUp = new CreateLibraryPopUp(this, mMap, currentLocation, alertDialogBuilder, latLng);
                 });
     }
 

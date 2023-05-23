@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
@@ -81,8 +82,8 @@ public class BookInfoActivity extends AppCompatActivity {
         int bookId = intent.getIntExtra(BOOK_ID_MESSAGE, 0);
 
         // TODO call backend to get book with bookId
-        Book book0 = new Book(0, "img", "The Playbook", false);
-        Book book1 = new Book(1, "img", "Little Women", true);
+        Book book0 = new Book(0,"The Playbook", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), false);
+        Book book1 = new Book(1, "Little Women", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), true);
         this.book = bookId == 0 ? book0 : book1;
     }
 

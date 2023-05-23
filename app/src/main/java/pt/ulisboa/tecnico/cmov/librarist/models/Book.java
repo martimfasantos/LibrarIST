@@ -1,29 +1,33 @@
 package pt.ulisboa.tecnico.cmov.librarist.models;
 
+import android.graphics.Bitmap;
+
 public class Book {
 
     private final int id;
-    private final String cover; // TODO see how this will be don
     private final String title;
+    private final byte[] cover; // TODO see how this will be done
+
+    // TODO private final String barCode;
     private Boolean activeNotif;
 
-    public Book(int id, String cover, String title, Boolean activeNotif) {
-        this.cover = cover;
+    public Book(int id, String title, byte[] cover, Boolean activeNotif) {
         this.title = title;
+        this.cover = cover;
         this.id = id;
         this.activeNotif = activeNotif;
     }
 
-    public String getCover() {
-        return cover;
+    public int getId() {
+        return id;
     }
 
     public String getTitle() {
         return title;
     }
 
-    public int getId() {
-        return id;
+    public byte[] getCover() {
+        return cover;
     }
 
     public Boolean isActiveNotif() {

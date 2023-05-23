@@ -115,13 +115,6 @@ public class LibraryInfoActivity extends AppCompatActivity {
                     favoriteButton.setTag("unselected");
                     Toast.makeText(getApplicationContext(), "Library removed from your favorites!", Toast.LENGTH_SHORT).show();
                 }
-
-                // TODO IMPLEMENT THIS
-//                Intent intent = new Intent(MainActivity.this, LibraryInfoActivity.class);
-//                EditText editText = (EditText) findViewById(R.id.library_name_input);
-//                String message = editText.getText().toString();
-//                intent.putExtra(EXTRA_MESSAGE, message);
-//                startActivity(intent);
             }
         });
     }

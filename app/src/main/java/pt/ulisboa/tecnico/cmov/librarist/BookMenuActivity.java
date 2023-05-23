@@ -3,6 +3,7 @@ package pt.ulisboa.tecnico.cmov.librarist;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,8 +33,8 @@ public class BookMenuActivity extends AppCompatActivity {
 
         // TODO call backend to get all books
         List<Book> bookList = List.of(
-                new Book(0,"img", "The Playbook", false),
-                new Book(1, "img", "Little Women", true));
+                new Book(0,"The Playbook", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), false),
+                new Book(1, "Little Women", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), true));
         addBookItemsToView(bookList);
 
         // Set up onclick method for the search button

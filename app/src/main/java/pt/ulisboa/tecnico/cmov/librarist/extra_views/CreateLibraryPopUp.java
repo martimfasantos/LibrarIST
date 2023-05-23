@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.Location;
 import android.net.Uri;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -38,13 +39,15 @@ public class CreateLibraryPopUp {
 
     private final Activity MainActivity;
     private final GoogleMap mMap;
+    private final Location currentLocation;
     private final View createLibraryView;
     private static Uri currentLibraryPhotoURI;
 
-    public CreateLibraryPopUp(Activity mainActivity, GoogleMap map, AlertDialog.Builder alertDialogBuilder, LatLng latLng){
+    public CreateLibraryPopUp(Activity mainActivity, GoogleMap map, Location currentLocation, AlertDialog.Builder alertDialogBuilder, LatLng latLng){
 
-        MainActivity = mainActivity;
-        mMap = map;
+        this.MainActivity = mainActivity;
+        this.mMap = map;
+        this.currentLocation = currentLocation;
 
         // Creating a marker
         MarkerOptions markerOptions = new MarkerOptions()
@@ -147,7 +150,6 @@ public class CreateLibraryPopUp {
                 // Image picker
                 ImagePicker.with(MainActivity)
                         .cameraOnly()           // Only use the camera of the device
-                        .crop()	    			//Crop image(Optional), Check Customization for more option
                         .compress(1024)			//Final image size will be less than 1 MB(Optional)
                         .maxResultSize(1080, 1080)	//Final image resolution will be less than 1080 x 1080(Optional)
                         .start();
@@ -185,8 +187,6 @@ public class CreateLibraryPopUp {
                     // Get Address from Location
                     String addressLibrary = getAddressFromLocation(latLng);
 
-                    Log.d("ADDRESS", addressLibrary);
-
                     // Add address to the marker
                     markerOptions.snippet(addressLibrary);
 
@@ -197,6 +197,20 @@ public class CreateLibraryPopUp {
                     Marker marker = mMap.addMarker(markerOptions);
                     assert marker != null;
                     marker.setTag("customMarker");
+
+                    // Save the library in cache if in the 10km radius
+                    float[] result = new float[10];
+                    Location.distanceBetween(currentLocation.getLatitude(), currentLocation.getLongitude(),
+                            latLng.latitude, latLng.longitude, result);
+                    // Convert result from meters to km
+                    float distance = result[0] / 1000;
+
+                    Log.d("DISTANCE", String.valueOf(distance));
+                    if (distance < 10.0){
+                        Log.d("DISTANCE", "IN");
+                    } else {
+                        Log.d("DISTANCE", "OUT");
+                    }
 
                     // Dismiss the dialog
                     alertDialog.dismiss();
