@@ -36,10 +36,12 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateLibraryPopUp;
+import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -62,6 +64,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // location retrieved by the Fused Location Provider.
 //    private Location lastKnownLocation;
     private volatile Location currentLocation = null;
+
+    public static List<Library> currentDisplayedLibraries = new ArrayList<>();
 
     private CreateLibraryPopUp currentLibraryPopUp;
     private Uri currentLibraryPhotoURI;
@@ -186,7 +190,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Setting a click event handler for the map
         mMap.setOnMapClickListener(latLng -> {
-            currentLibraryPopUp = new CreateLibraryPopUp(this, mMap, currentLocation, alertDialogBuilder, latLng);
+            currentLibraryPopUp = new CreateLibraryPopUp(this, mMap, alertDialogBuilder, latLng);
                 });
     }
 
@@ -322,6 +326,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         currentLibraryPopUp.changeUploadImageIcon(currentLibraryPhotoURI);
         // currentLibraryPhoto.setImageURI(uri);
 
+    }
+
+    public void addToCurrentLibraryDisplayed(Library library){
+        currentDisplayedLibraries.add(library);
     }
 
     // Save the current map (location and camera position)

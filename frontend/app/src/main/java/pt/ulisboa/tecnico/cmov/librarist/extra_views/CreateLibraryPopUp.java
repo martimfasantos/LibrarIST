@@ -1,8 +1,13 @@
 package pt.ulisboa.tecnico.cmov.librarist.extra_views;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentDisplayedLibraries;
+
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -28,26 +33,31 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import pt.ulisboa.tecnico.cmov.librarist.LibraryInfoActivity;
 import pt.ulisboa.tecnico.cmov.librarist.R;
+import pt.ulisboa.tecnico.cmov.librarist.ServerConnection;
+import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
 public class CreateLibraryPopUp {
 
     private final Activity MainActivity;
     private final GoogleMap mMap;
-    private final Location currentLocation;
     private final View createLibraryView;
-    private static Uri currentLibraryPhotoURI;
+    private Uri currentLibraryPhotoURI;
 
-    public CreateLibraryPopUp(Activity mainActivity, GoogleMap map, Location currentLocation, AlertDialog.Builder alertDialogBuilder, LatLng latLng){
+    private ServerConnection serverConnection = new ServerConnection();
+
+    public CreateLibraryPopUp(Activity mainActivity, GoogleMap map, AlertDialog.Builder alertDialogBuilder, LatLng latLng){
 
         this.MainActivity = mainActivity;
         this.mMap = map;
-        this.currentLocation = currentLocation;
 
         // Creating a marker
         MarkerOptions markerOptions = new MarkerOptions()
@@ -88,7 +98,7 @@ public class CreateLibraryPopUp {
             @Override
             public View getInfoContents(@NonNull Marker marker) {
 
-                if (marker.getTag() != null && marker.getTag().equals("customMarker")) {
+                if (marker.getTag() != null) {
                     // Inflate the custom info window layout
                     View view = MainActivity.getLayoutInflater().inflate(R.layout.library_popup, null);
 
@@ -96,7 +106,6 @@ public class CreateLibraryPopUp {
                     TextView libraryName = view.findViewById(R.id.library_name);
                     TextView libraryAddress = view.findViewById(R.id.library_location);
 
-                    // Set the title and address text
                     libraryName.setText(marker.getTitle());
                     libraryAddress.setText(marker.getSnippet());
 
@@ -113,11 +122,9 @@ public class CreateLibraryPopUp {
                 Intent intent = new Intent(MainActivity, LibraryInfoActivity.class);
 
                 // Get markers information and pass them to the intent
-                String libraryName = marker.getTitle();
-                intent.putExtra("name", libraryName);
+                String libraryID = (String) marker.getTag();
 
-                String libraryAddress = marker.getSnippet();
-                intent.putExtra("address", libraryAddress);
+                intent.putExtra("id", libraryID);
 
                 MainActivity.startActivity(intent);
             }
@@ -127,6 +134,7 @@ public class CreateLibraryPopUp {
     private String getAddressFromLocation(LatLng latLng) {
 
         Geocoder geocoder = new Geocoder(MainActivity, Locale.getDefault());
+
         String fullAddress = "";
 
         try {
@@ -174,21 +182,39 @@ public class CreateLibraryPopUp {
             @Override
             public void onClick(View v) {
                 EditText editText = createLibraryView.findViewById(R.id.library_name_input);
-                String titleLibrary = editText.getText().toString();
+                String libraryName = editText.getText().toString();
 
-                if (titleLibrary.isEmpty()) {
+                if (libraryName.isEmpty()) {
                     Toast.makeText(MainActivity, "Please insert a valid Library Name...", Toast.LENGTH_SHORT).show();
                 } else if (currentLibraryPhotoURI == null){
                     Toast.makeText(MainActivity, "Please upload a Library Photo...", Toast.LENGTH_SHORT).show();
                 } else {
-                    // Add the title/name to the marker
-                    markerOptions.title(titleLibrary);
 
                     // Get Address from Location
-                    String addressLibrary = getAddressFromLocation(latLng);
+                    String libraryAddress = getAddressFromLocation(latLng);
 
-                    // Add address to the marker
-                    markerOptions.snippet(addressLibrary);
+                    // Create library on the backend
+                    Thread thread = new Thread(() -> {
+                        try {
+                            serverConnection.createLibrary(libraryName, new LatLng(latLng.latitude, latLng.longitude), libraryAddress, convertUriToBytes(currentLibraryPhotoURI));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+
+                    // Start the thread
+                    thread.start();
+
+                    try {
+                        // Wait for the thread to complete
+                        thread.join();
+                        Log.d("LIBRARY", "WAITED");
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    markerOptions.title(libraryName);
+                    markerOptions.snippet(libraryAddress);
 
                     // Animating to the touched position
                     mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
@@ -196,21 +222,17 @@ public class CreateLibraryPopUp {
                     // Placing a marker on the touched position
                     Marker marker = mMap.addMarker(markerOptions);
                     assert marker != null;
-                    marker.setTag("customMarker");
 
-                    // Save the library in cache if in the 10km radius
-                    float[] result = new float[10];
-                    Location.distanceBetween(currentLocation.getLatitude(), currentLocation.getLongitude(),
-                            latLng.latitude, latLng.longitude, result);
-                    // Convert result from meters to km
-                    float distance = result[0] / 1000;
-
-                    Log.d("DISTANCE", String.valueOf(distance));
-                    if (distance < 10.0){
-                        Log.d("DISTANCE", "IN");
-                    } else {
-                        Log.d("DISTANCE", "OUT");
+                    for (Library library : currentDisplayedLibraries){
+                        if (library.getName().equals(libraryName)
+                                & library.getAddress().equals(libraryAddress)) {
+                            marker.setTag(String.valueOf(library.getId()));
+                        }
                     }
+
+                    Log.d("LIBRARY NAME", libraryName);
+                    Log.d("LIBRARY ADDRESS", libraryAddress);
+                    Log.d("LIBRARY ID", String.valueOf(marker.getTag()));
 
                     // Dismiss the dialog
                     alertDialog.dismiss();
@@ -221,7 +243,7 @@ public class CreateLibraryPopUp {
 
     public void changeUploadImageIcon(Uri photoURI) {
 
-        currentLibraryPhotoURI = photoURI;
+        this.currentLibraryPhotoURI = photoURI;
 
         if (currentLibraryPhotoURI != null) {
             // Get the image view from your XML layout
@@ -249,6 +271,19 @@ public class CreateLibraryPopUp {
             uploadView.setLayoutParams(layoutParams);
         } else {
             Toast.makeText(MainActivity, "There was an error processing your photo!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private byte[] convertUriToBytes(Uri photoURI){
+        try {
+            InputStream inputStream = MainActivity.getContentResolver().openInputStream(photoURI);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            // Handle error occurred while converting image to base64
+            throw new RuntimeException(e);
         }
     }
 }

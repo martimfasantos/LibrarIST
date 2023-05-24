@@ -1,8 +1,11 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentDisplayedLibraries;
+
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
+import android.app.Activity;
 import android.util.JsonReader;
 import android.util.Log;
 import android.widget.Switch;
@@ -19,7 +22,9 @@ import org.java_websocket.handshake.ServerHandshake;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringReader;
@@ -36,41 +41,45 @@ import java.util.Map;
 
 
 public class ServerConnection {
-    private static final String endpoint = "http://192.92.147.54:5000";
-    //private static final String wsEndpoint = "ws://cmov2-docentes-tp-1.vps.tecnico.ulisboa.pt:5000/ws";
+    public static final String endpoint = "http://192.92.147.54:5000";
+    //public static final String wsEndpoint = "ws://cmov2-docentes-tp-1.vps.tecnico.ulisboa.pt:5000/ws";
     //WebSocketClient webSocketClient = null;
 
-
     // Method called when creating a new Library
-    private void createLibrary(Library library) throws IOException {
+    public void createLibrary(String name, LatLng latLng, String address, byte[] photo) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + "/libraries").openConnection();
-        connection.setRequestMethod("PUT");
+        connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
 
         // Create a JSON object
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("name", library.getName());
-        jsonObject.addProperty("latitude", library.getLatitude());
-        jsonObject.addProperty("longitude", library.getLongitude());
-        jsonObject.addProperty("address", library.getAddress());
-        jsonObject.addProperty("photo", Base64.getEncoder().encodeToString(library.getPhoto()));
+        jsonObject.addProperty("name", name);
+        jsonObject.addProperty("latitude", latLng.latitude);
+        jsonObject.addProperty("longitude", latLng.longitude);
+        jsonObject.addProperty("address", address);
+        jsonObject.addProperty("photo", Base64.getEncoder().encodeToString(photo));
 
-        // Convert the JSON object to a string
         String jsonString = jsonObject.toString();
 
-        DataOutputStream outputStream = (DataOutputStream) connection.getOutputStream();
+        DataOutputStream outputStream = new DataOutputStream((OutputStream) connection.getOutputStream());
         outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
         outputStream.close();
 
-        switch (connection.getResponseCode()) {
-            case 200: {
-            }
-            break;
+        if (connection.getResponseCode() == 200) {
             // TODO CREATE VERIFICATIONS IN BACKEND AND SEND THEM (FOR EXAMPLE DUPLICATE LIBRARIES)
-            default: {
-                throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
-            }
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Received values
+            assert responseJson != null;
+            int id = responseJson.get("id").getAsInt();
+
+            currentDisplayedLibraries.add(new Library(id, name, latLng, address, new ArrayList<>(), photo));
+            Log.d("LIBRARY", "ADDED LIBRARY TO FRONTEND");
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
     }
 
@@ -99,14 +108,10 @@ public class ServerConnection {
         outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
         outputStream.close();
 
-        switch (connection.getResponseCode()) {
-            case 200: {
-            }
-            break;
-            // TODO CREATE VERIFICATIONS IN BACKEND AND SEND THEM
-            default: {
-                throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
-            }
+        if (connection.getResponseCode() == 200) {
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
     }
 
@@ -117,43 +122,39 @@ public class ServerConnection {
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + path).openConnection();
         connection.setRequestMethod("GET");
 
-        switch (connection.getResponseCode()) {
-            case 200: {
-                JsonReader jsonReader = new JsonReader(new InputStreamReader(connection.getInputStream()));
-                jsonReader.setLenient(true);
-                JsonArray jsonArray = new JsonParser().parse(String.valueOf(jsonReader)).getAsJsonArray();
+        if (connection.getResponseCode() == 200) {
+            JsonReader jsonReader = new JsonReader(new InputStreamReader(connection.getInputStream()));
+            jsonReader.setLenient(true);
+            JsonArray jsonArray = new JsonParser().parse(String.valueOf(jsonReader)).getAsJsonArray();
 
-                for (JsonElement jsonElement : jsonArray) {
+            for (JsonElement jsonElement : jsonArray) {
 
-                    JsonObject jsonObject = jsonElement.getAsJsonObject();
+                JsonObject jsonObject = jsonElement.getAsJsonObject();
 
-                    int id = jsonObject.get("id").getAsInt();
-                    String name = jsonObject.get("name").getAsString();
-                    JsonObject locationObject = jsonObject.get("location").getAsJsonObject();
-                    double latitude = locationObject.get("latitude").getAsDouble();
-                    double longitude = locationObject.get("longitude").getAsDouble();
-                    LatLng latLng = new LatLng(latitude, longitude);
-                    String address = jsonObject.get("address").getAsString();
-                    List<Integer> bookIds = new ArrayList<>();
+                int id = jsonObject.get("id").getAsInt();
+                String name = jsonObject.get("name").getAsString();
+                JsonObject locationObject = jsonObject.get("location").getAsJsonObject();
+                double latitude = locationObject.get("latitude").getAsDouble();
+                double longitude = locationObject.get("longitude").getAsDouble();
+                LatLng latLng = new LatLng(latitude, longitude);
+                String address = jsonObject.get("address").getAsString();
+                List<Integer> bookIds = new ArrayList<>();
 
-                    String base64Photo = jsonObject.get("photo").getAsString();
-                    byte[] photo = Base64.getDecoder().decode(base64Photo);
+                String base64Photo = jsonObject.get("photo").getAsString();
+                byte[] photo = Base64.getDecoder().decode(base64Photo);
 
-                    JsonArray bookIdsArray = jsonObject.get("bookIds").getAsJsonArray();
-                    for (JsonElement bookIdElement : bookIdsArray) {
-                        int bookId = bookIdElement.getAsInt();
-                        bookIds.add(bookId);
-                    }
-
-                    // Create a Library object and add it to the list
-                    Library library = new Library(id, name, latLng, address, bookIds, photo);
-                    libraries.add(library);
+                JsonArray bookIdsArray = jsonObject.get("bookIds").getAsJsonArray();
+                for (JsonElement bookIdElement : bookIdsArray) {
+                    int bookId = bookIdElement.getAsInt();
+                    bookIds.add(bookId);
                 }
-                break;
+
+                // Create a Library object and add it to the list
+                Library library = new Library(id, name, latLng, address, bookIds, photo);
+                libraries.add(library);
             }
-            default: {
-                throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
-            }
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
 
         return libraries;
@@ -166,29 +167,25 @@ public class ServerConnection {
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + path).openConnection();
         connection.setRequestMethod("GET");
 
-        switch (connection.getResponseCode()) {
-            case 200: {
-                JsonReader jsonReader = new JsonReader(new InputStreamReader(connection.getInputStream()));
-                jsonReader.setLenient(true);
-                JsonArray jsonArray = new JsonParser().parse(String.valueOf(jsonReader)).getAsJsonArray();
+        if (connection.getResponseCode() == 200) {
+            JsonReader jsonReader = new JsonReader(new InputStreamReader(connection.getInputStream()));
+            jsonReader.setLenient(true);
+            JsonArray jsonArray = new JsonParser().parse(String.valueOf(jsonReader)).getAsJsonArray();
 
-                for (JsonElement jsonElement : jsonArray) {
-                    JsonObject jsonObject = jsonElement.getAsJsonObject();
-                    int id = jsonObject.get("id").getAsInt();
-                    String title = jsonObject.get("title").getAsString();
-                    String base64Cover = jsonObject.get("cover").getAsString();
-                    byte[] cover = Base64.getDecoder().decode(base64Cover);
-                    boolean activeNotif = jsonObject.get("activeNotif").getAsBoolean();
+            for (JsonElement jsonElement : jsonArray) {
+                JsonObject jsonObject = jsonElement.getAsJsonObject();
+                int id = jsonObject.get("id").getAsInt();
+                String title = jsonObject.get("title").getAsString();
+                String base64Cover = jsonObject.get("cover").getAsString();
+                byte[] cover = Base64.getDecoder().decode(base64Cover);
+                boolean activeNotif = jsonObject.get("activeNotif").getAsBoolean();
 
-                    // Create a Book object and add it to the list
-                    Book book = new Book(id, title, cover, activeNotif);
-                    books.add(book);
-                }
-                break;
+                // Create a Book object and add it to the list
+                Book book = new Book(id, title, cover, activeNotif);
+                books.add(book);
             }
-            default: {
-                throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
-            }
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
 
         return books;
@@ -213,41 +210,34 @@ public class ServerConnection {
         outputStream.close();
 
 
-        switch (connection.getResponseCode()) {
+        if (connection.getResponseCode() == 200) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            reader.close();
 
-            case 200:
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-                reader.close();
+            // Parse the response JSON to a Book object
 
-                // Parse the response JSON to a Book object
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(response.toString(), JsonObject.class);
 
-                Gson gson = new Gson();
-                JsonObject jsonObject = gson.fromJson(response.toString(), JsonObject.class);
+            int id = jsonObject.get("id").getAsInt();
+            String title = jsonObject.get("title").getAsString();
+            String base64Cover = jsonObject.get("cover").getAsString();
+            byte[] cover = Base64.getDecoder().decode(base64Cover);
+            boolean activeNotif = jsonObject.get("activeNotif").getAsBoolean();
 
-                int id = jsonObject.get("id").getAsInt();
-                String title = jsonObject.get("title").getAsString();
-                String base64Cover = jsonObject.get("cover").getAsString();
-                byte[] cover = Base64.getDecoder().decode(base64Cover);
-                boolean activeNotif = jsonObject.get("activeNotif").getAsBoolean();
-
-                // Create a Book object
-                Book book = new Book(id, title, cover, activeNotif);
-
-                return book;
-
-            default:
-                throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
-
+            // Return a Book object
+            return new Book(id, title, cover, activeNotif);
         }
+        throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
     }
 
     /*
-    private void startWebSocket() {
+    public void startWebSocket() {
         if (webSocketClient != null) {
             webSocketClient.close();
         }
@@ -260,7 +250,7 @@ public class ServerConnection {
         }
     }
 
-    private class WSClient extends WebSocketClient {
+    public class WSClient extends WebSocketClient {
         public WSClient(URI serverUri, Map<String, String> httpHeaders) {
             super(serverUri, httpHeaders);
         }
@@ -301,4 +291,24 @@ public class ServerConnection {
         }
     }
    */
+
+    private JsonObject getJsonObjectFromResponse(InputStream inputStream) {
+
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder jsonString = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonString.append(line);
+            }
+            reader.close();
+
+            Gson gson = new Gson();
+            return gson.fromJson(jsonString.toString(), JsonObject.class);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

@@ -7,8 +7,8 @@ from flask import request
 app = Flask(__name__)
 server = Server()
 
-bookId = 1
-libraryId = 1
+app.debug = True
+
 
 @app.route("/", methods=["GET"])
 def handle_call():
@@ -80,11 +80,14 @@ def return_book(userId=None):
 # Create library
 # body:
 #   - name: string
+#   - address: string
+#   - location: (int, int)
 #   - location: string
 #   - photo: image
 @app.route("/libraries", methods=['POST'])
 def create_library():
     request_data = request.json
+    print(request_data)
     name = request_data["name"]
     address = request_data["address"]
     location = (request_data["latitude"], request_data["longitude"])

@@ -54,6 +54,7 @@
             android:text="@string/location_not_found" />
 
         <ImageView
+            android:id="@+id/library_photo"
             android:layout_width="195dp"
             android:layout_height="195dp"
             android:src="@drawable/library_photo_default"

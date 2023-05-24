@@ -1,5 +1,7 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentDisplayedLibraries;
+
 import android.content.DialogInterface;
 import android.content.Intent;
 
@@ -9,6 +11,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -23,10 +27,15 @@ import com.journeyapps.barcodescanner.CaptureActivity;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
+import pt.ulisboa.tecnico.cmov.librarist.models.Library;
+
 public class LibraryInfoActivity extends AppCompatActivity {
 
+    private int libraryID;
     private String libraryName;
     private String libraryAddress;
+
+    private byte[] libraryPhoto;
 
     private ActivityResultLauncher<ScanOptions> barCodeLauncher;
     private String currentBarCodeResult = null;
@@ -53,6 +62,10 @@ public class LibraryInfoActivity extends AppCompatActivity {
         // Set text from intent into Library Address Title text view
         TextView addressView = findViewById(R.id.library_address);
         addressView.setText(libraryAddress);
+
+        // Change image to library's photo
+        ImageView imageView = findViewById(R.id.library_photo);
+        imageView.setImageDrawable(new BitmapDrawable(getResources(), BitmapFactory.decodeByteArray(libraryPhoto, 0, libraryPhoto.length)));
 
         // Add/Remove Favorites Button
         setupAddRemFavButton();
@@ -186,9 +199,15 @@ public class LibraryInfoActivity extends AppCompatActivity {
 
         // Get the message from the intent
         Intent intent = getIntent();
-        libraryName = intent.getStringExtra("name");
-        libraryAddress = intent.getStringExtra("address");
+        libraryID = Integer.parseInt(intent.getStringExtra("id"));
 
+        for (Library lib : currentDisplayedLibraries){
+            if (libraryID == lib.getId()){
+                libraryName = lib.getName();
+                libraryAddress = lib.getAddress();
+                libraryPhoto = lib.getPhoto();
+            }
+        }
         if (libraryName.equals("") || libraryAddress.equals("")){
             Toast.makeText(getApplicationContext(), "There was an error processing your request", Toast.LENGTH_SHORT).show();
             finish();

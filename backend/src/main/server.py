@@ -1,6 +1,7 @@
 import json
 import sys
 import os.path
+from flask import jsonify
 
 models_path = os.path.abspath(os.path.join(os.path.dirname(__file__),'../models'))
 sys.path.append(models_path)
@@ -12,6 +13,8 @@ from user import User
 class Server:
 
     def __init__(self):
+        self.id_library_counter = 0
+        self.id_books_counter = 0
         self.books = {}
         self.libraries = {}
         self.users = {}
@@ -19,20 +22,27 @@ class Server:
 
     # Add new library
     def add_new_library(self, name, location, photo, address):
-        id = len(self.libraries)
+        id = self.id_library_counter
+        self.id_library_counter += 1
 
         photo_filename = 'library_{id}_photo.jpg'
+
+        print(name)
+        print(location)
+        print(address)
 
         with open(photo_filename, 'wb') as photo_file:
             photo_file.write(photo)
 
         self.libraries[id] = Library(id, name, location, photo_filename, address)
-        return json.dumps({"status": 200})
+        print("ID")
+        print(id)
+        return jsonify({"id": id}), 200
     
     # Add library to users favorites
     def add_favorite_lib(self, lib_id, user_id):
         self.users[user_id].add_library(lib_id)
-        return json.dumps({"status": 200})
+        return jsonify({"status": 200})
 
     # Remove library from users favorites
     def remove_favorite_lib(self, lib_id, user_id):
