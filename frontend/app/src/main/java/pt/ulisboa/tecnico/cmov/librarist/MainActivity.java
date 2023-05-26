@@ -37,9 +37,12 @@ import com.google.android.libraries.places.api.Places;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import pt.ulisboa.tecnico.cmov.librarist.caches.BookCache;
+import pt.ulisboa.tecnico.cmov.librarist.caches.LibraryCache;
 import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateLibraryPopUp;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
@@ -65,10 +68,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //    private Location lastKnownLocation;
     private volatile Location currentLocation = null;
 
-    public static List<Library> currentDisplayedLibraries = new ArrayList<>();
+    public static HashMap<Integer, Library> currentDisplayedLibraries = new HashMap<>();
 
-    private CreateLibraryPopUp currentLibraryPopUp;
-    private Uri currentLibraryPhotoURI;
+    public static LibraryCache libraryCache = new LibraryCache();
+    public static BookCache booksCache = new BookCache();
+
+    private CreateLibraryPopUp currentCreateLibraryPopUp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         getDeviceLocation();
 
         // Create OnClick listener to allow creation of new markers by clicking an empty place in the map
-        setupOnClickMap(new AlertDialog.Builder(this));
+        setupOnClickMap();
     }
 
     private void goToLocation(LatLng coordinates) {
@@ -186,11 +191,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private void setupOnClickMap(AlertDialog.Builder alertDialogBuilder) {
+    private void setupOnClickMap() {
 
         // Setting a click event handler for the map
         mMap.setOnMapClickListener(latLng -> {
-            currentLibraryPopUp = new CreateLibraryPopUp(this, mMap, alertDialogBuilder, latLng);
+            currentCreateLibraryPopUp = new CreateLibraryPopUp(this, mMap, latLng);
                 });
     }
 
@@ -321,15 +326,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        currentLibraryPhotoURI = data.getData();
+        Uri currentLibraryPhotoURI = data.getData();
 
-        currentLibraryPopUp.changeUploadImageIcon(currentLibraryPhotoURI);
+        currentCreateLibraryPopUp.changeUploadImageIcon(currentLibraryPhotoURI);
         // currentLibraryPhoto.setImageURI(uri);
 
-    }
-
-    public void addToCurrentLibraryDisplayed(Library library){
-        currentDisplayedLibraries.add(library);
     }
 
     // Save the current map (location and camera position)

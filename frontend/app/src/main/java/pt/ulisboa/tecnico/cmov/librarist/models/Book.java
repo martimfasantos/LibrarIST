@@ -8,13 +8,14 @@ public class Book {
     private final String title;
     private final byte[] cover; // TODO see how this will be done
 
-    // TODO private final String barCode;
+    private final String barcode;
     private Boolean activeNotif;
 
-    public Book(int id, String title, byte[] cover, Boolean activeNotif) {
+    public Book(int id, String title, byte[] cover, String barcode, Boolean activeNotif) {
+        this.id = id;
         this.title = title;
         this.cover = cover;
-        this.id = id;
+        this.barcode = barcode;
         this.activeNotif = activeNotif;
     }
 
@@ -28,6 +29,10 @@ public class Book {
 
     public byte[] getCover() {
         return cover;
+    }
+
+    public String getBarcode() {
+        return barcode;
     }
 
     public Boolean isActiveNotif() {

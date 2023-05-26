@@ -27,4 +27,5 @@ clean:
 	rm -rf ./models/__pycache__/
 	rm -rf ./main/__pycache__/
 	rm -rf __pycache__/
-
+	rm -rf images/books/*
+	rm -rf images/libraries/*

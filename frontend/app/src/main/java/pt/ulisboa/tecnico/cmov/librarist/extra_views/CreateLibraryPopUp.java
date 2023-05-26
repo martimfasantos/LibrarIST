@@ -1,16 +1,16 @@
 package pt.ulisboa.tecnico.cmov.librarist.extra_views;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentDisplayedLibraries;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Address;
 import android.location.Geocoder;
-import android.location.Location;
 import android.net.Uri;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -38,7 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
+import java.util.Map;
 
 import pt.ulisboa.tecnico.cmov.librarist.LibraryInfoActivity;
 import pt.ulisboa.tecnico.cmov.librarist.R;
@@ -52,9 +52,9 @@ public class CreateLibraryPopUp {
     private final View createLibraryView;
     private Uri currentLibraryPhotoURI;
 
-    private ServerConnection serverConnection = new ServerConnection();
+    private final ServerConnection serverConnection = new ServerConnection();
 
-    public CreateLibraryPopUp(Activity mainActivity, GoogleMap map, AlertDialog.Builder alertDialogBuilder, LatLng latLng){
+    public CreateLibraryPopUp(Activity mainActivity, GoogleMap map, LatLng latLng){
 
         this.MainActivity = mainActivity;
         this.mMap = map;
@@ -67,6 +67,8 @@ public class CreateLibraryPopUp {
         // Display AlertDialog to get the title for the marker
         LayoutInflater inflater = mainActivity.getLayoutInflater();
         createLibraryView = inflater.inflate(R.layout.create_library, null);
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mainActivity);
         alertDialogBuilder.setView(createLibraryView);
 
         // Create the Alert Dialog
@@ -193,6 +195,11 @@ public class CreateLibraryPopUp {
                     // Get Address from Location
                     String libraryAddress = getAddressFromLocation(latLng);
 
+                    if (libraryAddress.isEmpty()){
+                        Toast.makeText(MainActivity, "An error occurred, please try again!", Toast.LENGTH_SHORT).show();
+                        alertDialog.dismiss();
+                    }
+
                     // Create library on the backend
                     Thread thread = new Thread(() -> {
                         try {
@@ -223,7 +230,7 @@ public class CreateLibraryPopUp {
                     Marker marker = mMap.addMarker(markerOptions);
                     assert marker != null;
 
-                    for (Library library : currentDisplayedLibraries){
+                    for (Library library : libraryCache.getLibraries()){
                         if (library.getName().equals(libraryName)
                                 & library.getAddress().equals(libraryAddress)) {
                             marker.setTag(String.valueOf(library.getId()));

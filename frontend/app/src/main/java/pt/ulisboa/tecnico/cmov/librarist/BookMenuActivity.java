@@ -41,8 +41,8 @@ public class BookMenuActivity extends AppCompatActivity {
 
         // TODO call backend to get all books
         List<Book> bookList = List.of(
-                new Book(0,"The Playbook", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), false),
-                new Book(1, "Little Women", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), true));
+                new Book(0,"The Playbook", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "12342", false),
+                new Book(1, "Little Women", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "1233", true));
         addBookItemsToView(bookList);
 
         // Set up onclick method for the search button

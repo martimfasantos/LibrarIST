@@ -93,7 +93,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/book_available_in_following_libraries"
-                android:textSize="17sp"
+                android:textSize="14sp"
                 android:layout_marginBottom="10dp"/>
 
         </LinearLayout>

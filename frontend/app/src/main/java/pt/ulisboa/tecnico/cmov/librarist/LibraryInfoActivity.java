@@ -1,32 +1,33 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentDisplayedLibraries;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.content.DialogInterface;
 import android.content.Intent;
 
 import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.ActivityResultRegistryOwner;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.journeyapps.barcodescanner.CaptureActivity;
+import com.github.dhaval2404.imagepicker.ImagePicker;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateBookPopUp;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
 public class LibraryInfoActivity extends AppCompatActivity {
@@ -37,8 +38,12 @@ public class LibraryInfoActivity extends AppCompatActivity {
 
     private byte[] libraryPhoto;
 
-    private ActivityResultLauncher<ScanOptions> barCodeLauncher;
-    private String currentBarCodeResult = null;
+    private ActivityResultLauncher<ScanOptions> barCodeLauncherCheckIn;
+    private ActivityResultLauncher<ScanOptions> barCodeLauncherCheckOut;
+
+    private CreateBookPopUp currentCreateBookPopUp;
+
+    private ServerConnection serverConnection = new ServerConnection();
 
 
     @Override
@@ -67,11 +72,14 @@ public class LibraryInfoActivity extends AppCompatActivity {
         ImageView imageView = findViewById(R.id.library_photo);
         imageView.setImageDrawable(new BitmapDrawable(getResources(), BitmapFactory.decodeByteArray(libraryPhoto, 0, libraryPhoto.length)));
 
+        // Back Button
+        setupBackButton();
+
         // Add/Remove Favorites Button
         setupAddRemFavButton();
 
-        // List books Button
-        setupListBooksButton();
+        // Setup Bar code Launcher
+        setupBarCodeLaunchers();
 
         // Check-in book Button
         setupCheckInButton();
@@ -79,29 +87,58 @@ public class LibraryInfoActivity extends AppCompatActivity {
         // Check-out book Button
         setupCheckOutButton();
 
-        // Setup Bar code Launcher
-        setupBarCodeLauncher();
+        // List available books
+        // listAvailableBooks();
 
-        // Back Button
-        setupBackButton();
     }
 
-    private void setupBarCodeLauncher(){
-        //  Dialog after scan result
-        barCodeLauncher = registerForActivityResult(new ScanContract(), result -> {
+    private void setupBarCodeLaunchers(){
+        //  Dialog after scan result for check in
+        barCodeLauncherCheckIn = registerForActivityResult(new ScanContract(), result -> {
             if (result.getContents() != null){
-                currentBarCodeResult = result.getContents();
                 AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                        .setTitle("Scan Result")
+                        .setTitle("Scanned Code")
                         .setMessage(result.getContents());
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onClick(DialogInterface dialog, int which){
+                        try {
+                            checkInBook(result.getContents());
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
                         dialog.dismiss();
                     }
                 }).show();
             }
         });
+
+        //  Dialog after scan result for check in
+        barCodeLauncherCheckOut = registerForActivityResult(new ScanContract(), result -> {
+            if (result.getContents() != null){
+                AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                        .setTitle("Scanned Code")
+                        .setMessage(result.getContents());
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        checkOutBook(result.getContents());
+                        dialog.dismiss();
+                    }
+                }).show();
+            }
+        });
+    }
+
+    // The only Activity that uses this is the *Image Picker* on the createBookPopUp class
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == RESULT_OK && requestCode == ImagePicker.REQUEST_CODE) {
+            Uri currentBookCoverURI = data.getData();
+            currentCreateBookPopUp.changeUploadImageIcon(currentBookCoverURI);
+        }
     }
 
 
@@ -132,34 +169,12 @@ public class LibraryInfoActivity extends AppCompatActivity {
         });
     }
 
-    private void setupListBooksButton(){
-        CardView list_available_books_btn = findViewById(R.id.library_list_available_books_btn);
-        list_available_books_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "Available books list!", Toast.LENGTH_SHORT).show();
-
-                // TODO IMPLEMENT THIS
-//                Intent intent = new Intent(MainActivity.this, LibraryInfoActivity.class);
-//                EditText editText = (EditText) findViewById(R.id.library_name_input);
-//                String message = editText.getText().toString();
-//                intent.putExtra(EXTRA_MESSAGE, message);
-//                startActivity(intent);
-            }
-        });
-    }
-
     private void setupCheckInButton(){
         CardView check_in_book_btn = findViewById(R.id.library_check_in_book_btn);
         check_in_book_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 scanCode("Check In a Book");
-                if (currentBarCodeResult != null){
-                    // TODO save the book with this bar code in the backend
-                    Toast.makeText(getApplicationContext(), "Booked checked in!", Toast.LENGTH_SHORT).show();
-                }
-                currentBarCodeResult = null;
             }
         });
     }
@@ -170,11 +185,6 @@ public class LibraryInfoActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 scanCode("Check Out a Book");
-                if (currentBarCodeResult != null){
-                    // TODO delete the book with this bar code in the backend
-                    Toast.makeText(getApplicationContext(), "Booked checked out!", Toast.LENGTH_SHORT).show();
-                }
-                currentBarCodeResult = null;
             }
         });
     }
@@ -201,14 +211,12 @@ public class LibraryInfoActivity extends AppCompatActivity {
         Intent intent = getIntent();
         libraryID = Integer.parseInt(intent.getStringExtra("id"));
 
-        for (Library lib : currentDisplayedLibraries){
-            if (libraryID == lib.getId()){
-                libraryName = lib.getName();
-                libraryAddress = lib.getAddress();
-                libraryPhoto = lib.getPhoto();
-            }
-        }
-        if (libraryName.equals("") || libraryAddress.equals("")){
+        Library lib = libraryCache.getLibrary(libraryID);
+        libraryName = lib.getName();
+        libraryAddress = lib.getAddress();
+        libraryPhoto = lib.getPhoto();
+
+        if (libraryName.isEmpty() || libraryAddress.isEmpty()){
             Toast.makeText(getApplicationContext(), "There was an error processing your request", Toast.LENGTH_SHORT).show();
             finish();
         }
@@ -223,8 +231,90 @@ public class LibraryInfoActivity extends AppCompatActivity {
                 .setCaptureActivity(ScanBarCodeActivity.class);
 
         // Launch the Bar Code scanner
-        barCodeLauncher.launch(options);
+        if (action.equals("Check In a Book")){
+            barCodeLauncherCheckIn.launch(options);
+        } else {
+            barCodeLauncherCheckOut.launch(options);
+        }
     }
 
+    private void checkInBook(String barcode) throws IOException, InterruptedException {
+        Log.d("CHECKIN", "BARCODE NOT NULL");
+
+        // Get book if exists in the backend
+        AtomicInteger bookId = new AtomicInteger(-1);
+        Thread thread = new Thread(() -> {
+            try {
+                bookId.set(serverConnection.getBook(barcode));
+                Log.d("CHECKIN", "BOOK ID " + bookId.get());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Start the thread
+        thread.start();
+        // Wait for thread to join
+        thread.join();
+
+        Log.d("BOOKID", String.valueOf(bookId.get()));
+
+        // New book in the system
+        if (bookId.get() == -1) {
+            currentCreateBookPopUp = new CreateBookPopUp(LibraryInfoActivity.this, barcode, libraryID);
+        } else {
+            new Thread(() -> {
+                try {
+                    serverConnection.checkInBook(barcode, libraryID);
+                    Log.d("CHECKIN", "BOOK ID " + bookId.get());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+            Toast.makeText(getApplicationContext(), "Book checked in!", Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    private void checkOutBook(String barcode){
+        Log.d("CHECKOUT", "BARCODE NOT NULL");
+        // Create library on the backend
+        new Thread(() -> {
+            try {
+                Log.d("CHECKOUT", "CHECKOUT THREAD");
+                serverConnection.checkOutBook(barcode, libraryID);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+        Toast.makeText(getApplicationContext(), "Booked checked in!", Toast.LENGTH_SHORT).show();
+    }
+
+//    private void listAvailableBooks() {
+//
+//        Library lib = currentDisplayedLibraries.get(libraryID);
+//        assert lib != null;
+//        List<Integer> booksIds = lib.getBookIds();
+//
+//        // TODO get all books for this library, having the ids
+//
+//        List<Books> books =
+//
+//        LinearLayout parent = findViewById(R.id.available_books_linear_layout);
+//        LayoutInflater inflater = getLayoutInflater();
+//
+//        books.forEach(book -> {
+//            CardView child = (CardView) inflater.inflate(R.layout.library_book_available, null);
+//
+//            LinearLayout layout = (LinearLayout) child.getChildAt(0);
+//            LinearLayout bookDiv = (LinearLayout) layout.getChildAt(0);
+//
+//            // Book Title
+//            TextView bookTitle = (TextView) bookDiv.getChildAt(0);
+//            bookTitle.setText(book.getTitle());
+//
+//            parent.addView(child);
+//        });
+//    }
 
 }

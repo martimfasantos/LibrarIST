@@ -13,7 +13,6 @@
     <string name="available_books">Available books</string>
     <string name="add_remove_from_favorites">Add/Remove\nfrom Favorites</string>
     <string name="find_in_map">Find in map!</string>
-    <string name="location_not_found">Location not found</string>
     <string name="go_to_location">Go to Location</string>
     <string name="back">BACK</string>
     <string name="default_book">default Book</string>
@@ -27,4 +26,6 @@
     <string name="book_available_in_following_libraries">Available in the following libraries:</string>
     <string name="default_library_name">Library default</string>
     <string name="default_library_distance">0.0Km</string>
+    <string name="books_currently_available">Books currently available:</string>
+    <string name="library_address">Library Address</string>
 </resources>

@@ -8,7 +8,7 @@ import java.util.List;
 
 public class Library {
 
-    private int id;
+    private final int id;
     private final String name;
     private final LatLng latLng;
     private final String address;
@@ -22,7 +22,7 @@ public class Library {
         this.name = name;
         this.latLng = latLng;
         this.address = address;
-        this.bookIds = new ArrayList<>(bookIds);
+        this.bookIds = bookIds;
         this.photo = photo;
     }
 
@@ -55,4 +55,16 @@ public class Library {
     }
 
     public byte[] getPhoto() { return photo; }
+
+    public void addBook(int bookId){
+        if (!bookIds.contains(bookId)){
+            bookIds.add(bookId);
+        }
+    }
+
+    public void removeBook(int bookId){
+        if (bookIds.contains(bookId)){
+            bookIds.remove(bookId);
+        }
+    }
 }

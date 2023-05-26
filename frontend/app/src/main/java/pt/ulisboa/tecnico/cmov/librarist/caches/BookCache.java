@@ -29,11 +29,22 @@ public class BookCache {
         return null;
     }
 
-    private void addBooks(Library library){
-//        for book in libraries:
-//            add book to list if book is not already there
-//        TODO
-//        byte[] decodedString = Base64.decode(encodedImage, Base64.DEFAULT);
-//        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+    public void addBook(Book book){
+        if (!books.contains(book)){
+            books.add(book);
+        }
     }
+
+    public void addBooks(List<Book> booksToAdd){
+        for (Book book : booksToAdd){
+            addBook(book);
+        }
+    }
+
+    public void removeBook(int bookId){
+        if (books.contains(bookId)){
+            books.remove(bookId);
+        }
+    }
+
 }

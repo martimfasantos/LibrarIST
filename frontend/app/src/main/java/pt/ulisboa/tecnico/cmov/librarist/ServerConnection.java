@@ -1,6 +1,7 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentDisplayedLibraries;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
@@ -32,6 +33,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -45,7 +47,7 @@ public class ServerConnection {
     //public static final String wsEndpoint = "ws://cmov2-docentes-tp-1.vps.tecnico.ulisboa.pt:5000/ws";
     //WebSocketClient webSocketClient = null;
 
-    // Method called when creating a new Library
+    // Method called when creating a new Library -- WORKING!
     public void createLibrary(String name, LatLng latLng, String address, byte[] photo) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + "/libraries").openConnection();
         connection.setRequestMethod("POST");
@@ -73,9 +75,10 @@ public class ServerConnection {
 
             // Received values
             assert responseJson != null;
-            int id = responseJson.get("id").getAsInt();
+            int libraryId = responseJson.get("libId").getAsInt();
 
-            currentDisplayedLibraries.add(new Library(id, name, latLng, address, new ArrayList<>(), photo));
+            Library newLibrary = new Library(libraryId, name, latLng, address, new ArrayList<>(), photo);
+            libraryCache.addLibrary(libraryId, newLibrary);
             Log.d("LIBRARY", "ADDED LIBRARY TO FRONTEND");
 
         } else {
@@ -99,7 +102,7 @@ public class ServerConnection {
         jsonObject.addProperty("activeNotif", book.isActiveNotif());
 
         // Add the id of the library where the book is
-        jsonObject.addProperty("libraryId", library.getId());
+        jsonObject.addProperty("libId", library.getId());
 
         // Convert the JSON object to a string
         String jsonString = jsonObject.toString();
@@ -160,12 +163,188 @@ public class ServerConnection {
         return libraries;
     }
 
+    public int getBook(String barcode) throws IOException {
+        String url = endpoint + "/books/get?barcode=" + barcode;
 
-    public List<Book> getAllBooks(String path) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonParser jsonParser = new JsonParser();
+            JsonObject responseJson = jsonParser.parse(new InputStreamReader(connection.getInputStream()))
+                    .getAsJsonObject();
+
+            int bookId = responseJson.get("bookId").getAsInt();
+            return bookId;
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+
+    }
+
+    // Method called when checking in a new book -- WORKING!
+    public void checkInBook(String barcode, int libraryID) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + "/" + libraryID + "/books/checkin").openConnection();
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
+
+        // Create a JSON object
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("barcode", barcode);
+        jsonObject.addProperty("libId", libraryID);
+
+        String jsonString = jsonObject.toString();
+
+        Log.d("CHECKIN", "CRIEI JSON");
+
+        DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
+        outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
+        outputStream.close();
+
+        Log.d("CHECKIN", "ENVIEI");
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Received values
+            assert responseJson != null;
+            int bookId = responseJson.get("bookId").getAsInt();
+            String title = responseJson.get("title").getAsString();
+            String _barcode = responseJson.get("barcode").getAsString();
+            // just to confirm that the barcodes are the same
+            if (!_barcode.equals(barcode)){
+                Log.d("CHECK IN", "DIFFERENT BARCODES");
+            }
+            byte[] cover = Base64.getDecoder().decode(responseJson.get("cover").getAsString());
+            boolean activNotif = responseJson.get("activNotif").getAsBoolean();
+
+            Log.d("CHECKIN", "RECEBI");
+            Log.d("CHECKIN", String.valueOf(bookId));
+
+            Book newBook = new Book(bookId, title, cover, barcode, activNotif);
+            libraryCache.getLibrary(libraryID).addBook(bookId);
+            booksCache.addBook(newBook);
+            Log.d("CHECKIN", "ADDED BOOK TO CACHE");
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+
+
+    // Method called when checking in a new book -- WORKING!
+    public void checkInNewBook(String title, byte[] cover, String barcode, int libraryID) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + "/" + libraryID + "/books/checkin/newbook").openConnection();
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
+
+        // Create a JSON object
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("title", title);
+        if (cover != null){
+            jsonObject.addProperty("cover", Base64.getEncoder().encodeToString(cover));
+        } else {
+            jsonObject.addProperty("cover", "");
+        }
+        jsonObject.addProperty("barcode", barcode);
+        jsonObject.addProperty("libId", libraryID);
+
+        String jsonString = jsonObject.toString();
+
+        Log.d("CHECKIN", "CRIEI JSON");
+
+        DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
+        outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
+        outputStream.close();
+
+        Log.d("CHECKIN", "ENVIEI");
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Received values
+            assert responseJson != null;
+            int bookId = responseJson.get("bookId").getAsInt();
+
+            Log.d("CHECKIN", "RECEBI");
+            Log.d("CHECKIN", String.valueOf(bookId));
+
+            Book newBook = new Book(bookId, title, cover, barcode, false);
+            libraryCache.getLibrary(libraryID).addBook(bookId);
+            booksCache.addBook(newBook);
+            Log.d("BOOK", "ADDED BOOK TO CACHE");
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    // Method called when checking out a book -- WORKING!
+    public void checkOutBook(String barcode, int libraryID) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + "/" + libraryID + "/books/checkout").openConnection();
+        connection.setRequestMethod("DELETE");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
+
+        // Create a JSON object
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("barcode", barcode);
+        jsonObject.addProperty("libId", libraryID);
+
+        String jsonString = jsonObject.toString();
+
+        Log.d("CHECKOUT", "CRIEI JSON");
+
+        DataOutputStream outputStream = new DataOutputStream((OutputStream) connection.getOutputStream());
+        outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
+        outputStream.close();
+
+        Log.d("CHECKOUT", "ENVIEI");
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Received values
+            assert responseJson != null;
+            int bookId = responseJson.get("bookId").getAsInt();
+
+            Log.d("CHECKIN", "RECEBI");
+            Log.d("CHECKIN", String.valueOf(bookId));
+            Log.d("CHECKOUT", "RECEBI");
+
+            booksCache.removeBook(bookId);
+            libraryCache.getLibrary(libraryID).removeBook(bookId);
+            Log.d("BOOK", "REMOVED BOOK FROM CACHE");
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+
+    public List<Book> listBooksFromLibrary(int libraryID) throws IOException {
         List<Book> books = new ArrayList<>();
 
-        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + path).openConnection();
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + "/libraries/" + libraryID + "/books").openConnection();
         connection.setRequestMethod("GET");
+
+        // Create a JSON object
+        JsonObject query = new JsonObject();
+        query.addProperty("id", libraryID);
+
+        String jsonString = query.toString();
+
+        DataOutputStream outputStream = new DataOutputStream((OutputStream) connection.getOutputStream());
+        outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
+        outputStream.close();
 
         if (connection.getResponseCode() == 200) {
             JsonReader jsonReader = new JsonReader(new InputStreamReader(connection.getInputStream()));
@@ -173,17 +352,21 @@ public class ServerConnection {
             JsonArray jsonArray = new JsonParser().parse(String.valueOf(jsonReader)).getAsJsonArray();
 
             for (JsonElement jsonElement : jsonArray) {
-                JsonObject jsonObject = jsonElement.getAsJsonObject();
-                int id = jsonObject.get("id").getAsInt();
-                String title = jsonObject.get("title").getAsString();
-                String base64Cover = jsonObject.get("cover").getAsString();
+                JsonObject item = jsonElement.getAsJsonObject();
+                int id = item.get("id").getAsInt();
+                String title = item.get("title").getAsString();
+                String base64Cover = item.get("cover").getAsString();
                 byte[] cover = Base64.getDecoder().decode(base64Cover);
-                boolean activeNotif = jsonObject.get("activeNotif").getAsBoolean();
+                String barcode = item.get("barcode").getAsString();
+                boolean activeNotif = item.get("activeNotif").getAsBoolean();
 
                 // Create a Book object and add it to the list
-                Book book = new Book(id, title, cover, activeNotif);
+                Book book = new Book(id, title, cover, barcode, activeNotif);
                 books.add(book);
             }
+
+            booksCache.addBooks(books);
+
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
@@ -192,49 +375,50 @@ public class ServerConnection {
     }
 
 
-    public Book getBookByTitle(String bookTitle, String path) throws IOException {
-
-        // Create a JSON payload with the book title
-        String payload = "{\"title\": \"" + bookTitle + "\"}";
-
-        // Create a connection to the backend API
-        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + path).openConnection();
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.setDoOutput(true);
-
-        // Send the JSON payload to the backend
-        OutputStream outputStream = connection.getOutputStream();
-        outputStream.write(payload.getBytes());
-        outputStream.flush();
-        outputStream.close();
-
-
-        if (connection.getResponseCode() == 200) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
-            }
-            reader.close();
-
-            // Parse the response JSON to a Book object
-
-            Gson gson = new Gson();
-            JsonObject jsonObject = gson.fromJson(response.toString(), JsonObject.class);
-
-            int id = jsonObject.get("id").getAsInt();
-            String title = jsonObject.get("title").getAsString();
-            String base64Cover = jsonObject.get("cover").getAsString();
-            byte[] cover = Base64.getDecoder().decode(base64Cover);
-            boolean activeNotif = jsonObject.get("activeNotif").getAsBoolean();
-
-            // Return a Book object
-            return new Book(id, title, cover, activeNotif);
-        }
-        throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
-    }
+//    public Book getBookByTitle(String bookTitle, String path) throws IOException {
+//
+//        // Create a JSON payload with the book title
+//        String payload = "{\"title\": \"" + bookTitle + "\"}";
+//
+//        // Create a connection to the backend API
+//        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + path).openConnection();
+//        connection.setRequestMethod("POST");
+//        connection.setRequestProperty("Content-Type", "application/json");
+//        connection.setDoOutput(true);
+//
+//        // Send the JSON payload to the backend
+//        OutputStream outputStream = connection.getOutputStream();
+//        outputStream.write(payload.getBytes());
+//        outputStream.flush();
+//        outputStream.close();
+//
+//
+//        if (connection.getResponseCode() == 200) {
+//            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+//            StringBuilder response = new StringBuilder();
+//            String line;
+//            while ((line = reader.readLine()) != null) {
+//                response.append(line);
+//            }
+//            reader.close();
+//
+//            // Parse the response JSON to a Book object
+//
+//            Gson gson = new Gson();
+//            JsonObject jsonObject = gson.fromJson(response.toString(), JsonObject.class);
+//
+//            int id = jsonObject.get("id").getAsInt();
+//            String title = jsonObject.get("title").getAsString();
+//            String base64Cover = jsonObject.get("cover").getAsString();
+//            byte[] cover = Base64.getDecoder().decode(base64Cover);
+//            boolean activeNotif = jsonObject.get("activeNotif").getAsBoolean();
+//            String barcode = item.get("barcode").getAsString();
+//
+//            // Return a Book object
+//            return new Book(id, title, cover, activeNotif);
+//        }
+//        throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+//    }
 
     /*
     public void startWebSocket() {

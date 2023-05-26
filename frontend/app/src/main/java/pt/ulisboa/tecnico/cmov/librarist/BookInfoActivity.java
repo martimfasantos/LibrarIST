@@ -124,8 +124,8 @@ public class BookInfoActivity extends AppCompatActivity {
         currentCoordinates = new LatLng(latitude, longitude);
 
         // TODO call backend to get book with bookId
-        Book book0 = new Book(0,"The Playbook", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), false);
-        Book book1 = new Book(1, "Little Women", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), true);
+        Book book0 = new Book(0,"The Playbook", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "1234", false);
+        Book book1 = new Book(1, "Little Women", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "1233", true);
         this.book = bookId == 0 ? book0 : book1;
     }
 
@@ -177,7 +177,7 @@ public class BookInfoActivity extends AppCompatActivity {
             child.setTag(String.valueOf(library.getId()));
             // TODO call library info intent
 
-            // TODO sort Libaries by distance
+            // sort Libraries by distance
             int insertionIndex = 1;
             for (int i = 1; i < parent.getChildCount(); i++) {
                 CardView card = (CardView) parent.getChildAt(i);

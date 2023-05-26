@@ -1,3 +1,6 @@
+from typing import Any
+
+
 class Library:
 
     def __init__(self, id, name, location, photo, address):
