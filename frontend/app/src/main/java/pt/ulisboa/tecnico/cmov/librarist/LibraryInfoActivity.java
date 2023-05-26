@@ -302,7 +302,7 @@ public class LibraryInfoActivity extends AppCompatActivity {
                 throw new RuntimeException(e);
             }
         }).start();
-        Toast.makeText(getApplicationContext(), "Booked checked in!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "Booked checked out!", Toast.LENGTH_SHORT).show();
     }
 
     public void listAvailableBooks() {
