@@ -1,5 +1,6 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.content.DialogInterface;
@@ -15,8 +16,10 @@ import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,14 +28,17 @@ import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateBookPopUp;
+import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
 public class LibraryInfoActivity extends AppCompatActivity {
 
-    private int libraryID;
+    private int libraryId;
     private String libraryName;
     private String libraryAddress;
 
@@ -43,7 +49,7 @@ public class LibraryInfoActivity extends AppCompatActivity {
 
     private CreateBookPopUp currentCreateBookPopUp;
 
-    private ServerConnection serverConnection = new ServerConnection();
+    private final ServerConnection serverConnection = new ServerConnection();
 
 
     @Override
@@ -88,7 +94,7 @@ public class LibraryInfoActivity extends AppCompatActivity {
         setupCheckOutButton();
 
         // List available books
-        // listAvailableBooks();
+        listAvailableBooks();
 
     }
 
@@ -209,9 +215,9 @@ public class LibraryInfoActivity extends AppCompatActivity {
 
         // Get the message from the intent
         Intent intent = getIntent();
-        libraryID = Integer.parseInt(intent.getStringExtra("id"));
+        libraryId = Integer.parseInt(intent.getStringExtra("id"));
 
-        Library lib = libraryCache.getLibrary(libraryID);
+        Library lib = libraryCache.getLibrary(libraryId);
         libraryName = lib.getName();
         libraryAddress = lib.getAddress();
         libraryPhoto = lib.getPhoto();
@@ -238,7 +244,7 @@ public class LibraryInfoActivity extends AppCompatActivity {
         }
     }
 
-    private void checkInBook(String barcode) throws IOException, InterruptedException {
+    private void checkInBook(String barcode) throws InterruptedException {
         Log.d("CHECKIN", "BARCODE NOT NULL");
 
         // Get book if exists in the backend
@@ -261,17 +267,26 @@ public class LibraryInfoActivity extends AppCompatActivity {
 
         // New book in the system
         if (bookId.get() == -1) {
-            currentCreateBookPopUp = new CreateBookPopUp(LibraryInfoActivity.this, barcode, libraryID);
+            currentCreateBookPopUp = new CreateBookPopUp(LibraryInfoActivity.this, barcode, libraryId);
         } else {
-            new Thread(() -> {
+            Thread _thread = new Thread(() -> {
                 try {
-                    serverConnection.checkInBook(barcode, libraryID);
+                    serverConnection.checkInBook(barcode, libraryId);
                     Log.d("CHECKIN", "BOOK ID " + bookId.get());
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-            }).start();
+            });
+
+            // Start the thread
+            _thread.start();
+            // Wait for thread to join
+            _thread.join();
+
             Toast.makeText(getApplicationContext(), "Book checked in!", Toast.LENGTH_SHORT).show();
+
+            // Update available books
+            listAvailableBooks();
         }
 
     }
@@ -282,7 +297,7 @@ public class LibraryInfoActivity extends AppCompatActivity {
         new Thread(() -> {
             try {
                 Log.d("CHECKOUT", "CHECKOUT THREAD");
-                serverConnection.checkOutBook(barcode, libraryID);
+                serverConnection.checkOutBook(barcode, libraryId);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -290,31 +305,33 @@ public class LibraryInfoActivity extends AppCompatActivity {
         Toast.makeText(getApplicationContext(), "Booked checked in!", Toast.LENGTH_SHORT).show();
     }
 
-//    private void listAvailableBooks() {
-//
-//        Library lib = currentDisplayedLibraries.get(libraryID);
-//        assert lib != null;
-//        List<Integer> booksIds = lib.getBookIds();
-//
-//        // TODO get all books for this library, having the ids
-//
-//        List<Books> books =
-//
-//        LinearLayout parent = findViewById(R.id.available_books_linear_layout);
-//        LayoutInflater inflater = getLayoutInflater();
-//
-//        books.forEach(book -> {
-//            CardView child = (CardView) inflater.inflate(R.layout.library_book_available, null);
-//
-//            LinearLayout layout = (LinearLayout) child.getChildAt(0);
-//            LinearLayout bookDiv = (LinearLayout) layout.getChildAt(0);
-//
-//            // Book Title
-//            TextView bookTitle = (TextView) bookDiv.getChildAt(0);
-//            bookTitle.setText(book.getTitle());
-//
-//            parent.addView(child);
-//        });
-//    }
+    public void listAvailableBooks() {
+
+        Library lib = libraryCache.getLibrary(libraryId);
+        assert lib != null;
+        List<Integer> bookIds = lib.getBookIds();
+
+        List<Book> books = new ArrayList<>();
+        for (int id : bookIds) {
+            books.add(booksCache.getBook(id));
+        }
+
+        LinearLayout parent = findViewById(R.id.available_books_linear_layout);
+        parent.removeAllViews();
+        LayoutInflater inflater = getLayoutInflater();
+
+        books.forEach(book -> {
+            CardView child = (CardView) inflater.inflate(R.layout.library_book_available, null);
+
+            LinearLayout layout = (LinearLayout) child.getChildAt(0);
+            LinearLayout bookDiv = (LinearLayout) layout.getChildAt(0);
+
+            // Book Title
+            TextView bookTitle = (TextView) bookDiv.getChildAt(0);
+            bookTitle.setText(book.getTitle());
+
+            parent.addView(child);
+        });
+    }
 
 }

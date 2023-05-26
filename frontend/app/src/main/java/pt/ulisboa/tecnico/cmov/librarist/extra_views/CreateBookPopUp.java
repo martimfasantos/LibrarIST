@@ -1,45 +1,36 @@
 package pt.ulisboa.tecnico.cmov.librarist.extra_views;
 
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentDisplayedLibraries;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.location.Address;
-import android.location.Geocoder;
 import android.net.Uri;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 
 import com.github.dhaval2404.imagepicker.ImagePicker;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
-import pt.ulisboa.tecnico.cmov.librarist.LibraryInfoActivity;
 import pt.ulisboa.tecnico.cmov.librarist.R;
 import pt.ulisboa.tecnico.cmov.librarist.ServerConnection;
+import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
 public class CreateBookPopUp {
@@ -80,7 +71,6 @@ public class CreateBookPopUp {
 
         // Show the AlertDialog
         alertDialog.show();
-
     }
 
     private void setupCameraButton() {
@@ -109,7 +99,7 @@ public class CreateBookPopUp {
         });
     }
 
-    private void setupCreateButton(AlertDialog alertDialog){
+    private void setupCreateButton(AlertDialog alertDialog) {
         Button createButton = createBookView.findViewById(R.id.create_library);
         createButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -124,18 +114,30 @@ public class CreateBookPopUp {
                 } else {
 
                     // Create library on the backend
-                    new Thread(() -> {
+                    Thread thread = new Thread(() -> {
                         try {
                             serverConnection.checkInNewBook(bookTitle, convertUriToBytes(currentBookCoverURI), bookBarcode, libraryId);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
-                    }).start();
+                    });
+
+                    // Start the thread
+                    thread.start();
+                    // Wait for thread to join
+                    try {
+                        thread.join();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     // Dismiss the dialog
                     alertDialog.dismiss();
 
                     Toast.makeText(LibraryInfoActivity.getApplicationContext(), "New Book checked in!", Toast.LENGTH_SHORT).show();
+
+                    // Update available books
+                    listAvailableBooks();
                 }
             }
         });
@@ -185,5 +187,34 @@ public class CreateBookPopUp {
             // Handle error occurred while converting image to base64
             throw new RuntimeException(e);
         }
+    }
+
+    public void listAvailableBooks() {
+
+        Library lib = libraryCache.getLibrary(libraryId);
+        assert lib != null;
+        List<Integer> bookIds = lib.getBookIds();
+
+        List<Book> books = new ArrayList<>();
+        for (int id : bookIds) {
+            books.add(booksCache.getBook(id));
+        }
+
+        LinearLayout parent = LibraryInfoActivity.findViewById(R.id.available_books_linear_layout);
+        parent.removeAllViews();
+        LayoutInflater inflater = LibraryInfoActivity.getLayoutInflater();
+
+        books.forEach(book -> {
+            CardView child = (CardView) inflater.inflate(R.layout.library_book_available, null);
+
+            LinearLayout layout = (LinearLayout) child.getChildAt(0);
+            LinearLayout bookDiv = (LinearLayout) layout.getChildAt(0);
+
+            // Book Title
+            TextView bookTitle = (TextView) bookDiv.getChildAt(0);
+            bookTitle.setText(book.getTitle());
+
+            parent.addView(child);
+        });
     }
 }

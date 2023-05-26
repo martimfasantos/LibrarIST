@@ -193,11 +193,20 @@
         </androidx.cardview.widget.CardView>
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/list_books_prompt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/library_check_in_out"
+        android:layout_margin="5dp"
+        android:text="@string/books_currently_available"
+        android:textSize="14sp" />
+
     <ScrollView
         android:id="@+id/available_libraries_scroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/library_check_in_out"
+        android:layout_below="@id/list_books_prompt"
         android:layout_marginStart="5dp"
         android:layout_marginTop="5dp"
         android:layout_marginEnd="5dp"
@@ -208,13 +217,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:text="@string/books_currently_available"
-                android:textSize="14sp" />
 
         </LinearLayout>
 
