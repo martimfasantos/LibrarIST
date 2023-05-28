@@ -47,14 +47,13 @@ def add_favorite_library_to_user(userId=None):
 def remove_favorite_library_from_user(userId=None, libId=None):
     return server.remove_favorite_lib(libId, userId)
 
-
 # User checkin book
 # path:
 #   - userId: int - user checking in the book
 # body:
 #   - bookId: int - book being checkin
 #   - libId: int - library from which the book will be checked in
-@app.route("/<lib_id>/books/checkin", methods=['POST'])
+@app.route("/<int:lib_id>/books/checkin", methods=['POST'])
 def check_in_book(lib_id):
     request_data = request.json
     barcode = request_data["barcode"]
@@ -68,7 +67,7 @@ def check_in_book(lib_id):
 # body:
 #   - bookId: int - book being checkin
 #   - libId: int - library from which the book will be checked in
-@app.route("/<lib_id>/books/checkin/newbook", methods=['POST'])
+@app.route("/<int:lib_id>/books/checkin/newbook", methods=['POST'])
 def check_in_new_book(lib_id):
     request_data = request.json
     title = request_data["title"]
@@ -84,12 +83,42 @@ def check_in_new_book(lib_id):
 # body:
 #   - bookId: int - book being checkin
 #   - libId: int - library from which the book will be checked in
-@app.route("/<lib_id>/books/checkout", methods=['DELETE'])
+@app.route("/library/<int:lib_id>/books/checkout", methods=['DELETE'])
 def check_out_book(lib_id):
     request_data = request.json
     barcode = request_data["barcode"]
-    lib_id = request_data["libId"]
     return server.check_out_book(barcode, lib_id)
+
+
+# Find a book with a given barcode
+# body:
+#   - barcode: string
+@app.route("/books/find", methods=['GET'])
+def find_book():
+    return server.find_book(request.args.get("barcode"))
+
+
+# Find a book with a given barcode in a given library
+# body:
+#   - barcode: string
+@app.route("/library/<int:lib_id>/books/find", methods=['GET'])
+def find_book_from_library(lib_id):
+    return server.get_book_from_library(request.args.get("barcode"), lib_id)
+
+
+# Get a book with a given id
+# body:
+#   - book_id: int
+@app.route("/books/get", methods=['GET'])
+def get_book():
+    return server.get_book(request.args.get("bookId"))
+
+
+# Get all the books
+# body: none
+@app.route("/books", methods=['GET'])
+def get_all_books():
+    return server.get_all_books()
 
 
 # Create library
@@ -112,7 +141,7 @@ def create_library():
 # Get books for a given library
 # query:
 #   - libraryId: int
-@app.route("/libraries/<libId>/books", methods=['GET'])
+@app.route("/libraries/<int:lib_id>/books", methods=['GET'])
 def list_all_books_from_library(library_id=None):
     request_data = request.json
     library_id = request_data("libraryId")
@@ -122,19 +151,9 @@ def list_all_books_from_library(library_id=None):
 # Get libraries with given book available
 # query:
 #   - bookId: int
-@app.route("/libraries/books/filter", methods=['GET'])
-def get_libraries_with_book():
-    book_id = request.args.get("bookId")
-    return server.filter_libraries_with_book(book_id)
-
-
-
-# Get a book
-# body:
-#   - barcode: string
-@app.route("/books/get", methods=['GET'])
-def get_book():
-    return server.get_book(request.args.get("barcode"))
+@app.route("/books/<int:book_id>/libraries", methods=['GET'])
+def get_libraries_with_book(book_id):
+    return server.get_libraries_with_book(book_id)
 
 
 # Add user to book notifications

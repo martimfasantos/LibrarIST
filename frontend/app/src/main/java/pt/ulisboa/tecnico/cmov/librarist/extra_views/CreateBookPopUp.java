@@ -5,6 +5,7 @@ import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -28,6 +29,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import pt.ulisboa.tecnico.cmov.librarist.BookInfoActivity;
+import pt.ulisboa.tecnico.cmov.librarist.BookMenuActivity;
 import pt.ulisboa.tecnico.cmov.librarist.R;
 import pt.ulisboa.tecnico.cmov.librarist.ServerConnection;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
@@ -38,8 +41,8 @@ public class CreateBookPopUp {
     private final Activity LibraryInfoActivity;
     private final View createBookView;
     private Uri currentBookCoverURI;
-    private final String bookBarcode;
 
+    private final String bookBarcode;
     private final int libraryId;
 
     private final ServerConnection serverConnection = new ServerConnection();
@@ -72,6 +75,11 @@ public class CreateBookPopUp {
         // Show the AlertDialog
         alertDialog.show();
     }
+
+
+    /** -----------------------------------------------------------------------------
+     *                                 BUTTONS FUNCTIONS
+     -------------------------------------------------------------------------------- */
 
     private void setupCameraButton() {
         CardView cameraButton = createBookView.findViewById(R.id.camera_btn);
@@ -143,6 +151,58 @@ public class CreateBookPopUp {
         });
     }
 
+    // Used when creating each element of the list of all available books
+    private void setupBookCardButton(CardView cardView) {
+        cardView.setOnClickListener(v -> {
+            int bookId = (int) v.getTag();
+
+            Intent intent = new Intent(LibraryInfoActivity, BookInfoActivity.class);
+            intent.putExtra("bookId", bookId);
+            LibraryInfoActivity.startActivity(intent);
+        });
+    }
+
+
+    /** -----------------------------------------------------------------------------
+     *                                  OTHER FUNCTIONS
+     -------------------------------------------------------------------------------- */
+
+    public void listAvailableBooks() {
+        // Get library's books that where loaded to cache when the library was loaded
+        Library lib = libraryCache.getLibrary(libraryId);
+        List<Integer> bookIds = lib.getBookIds();
+        List<Book> books = new ArrayList<>();
+        for (int id : bookIds) {
+            books.add(booksCache.getBook(id));
+        }
+        // Add books to the view
+        addBookItemsToView(books);
+    }
+
+    private void addBookItemsToView(List<Book> books) {
+        LinearLayout parent = LibraryInfoActivity.findViewById(R.id.available_books_linear_layout);
+        parent.removeAllViews();
+        LayoutInflater inflater = LibraryInfoActivity.getLayoutInflater();
+
+        books.forEach(book -> {
+            // Create new element for the book
+            CardView child = (CardView) inflater.inflate(R.layout.book_menu_item, null);
+
+            LinearLayout bookDiv = (LinearLayout) child.getChildAt(0);
+
+            // Set text to the book title
+            TextView cardText = (TextView) bookDiv.getChildAt(1);
+            cardText.setText(book.getTitle());
+            // Set tag to save the id
+            child.setTag(book.getId());
+
+            // Clickable Card
+            setupBookCardButton(child);
+
+            parent.addView(child);
+        });
+    }
+
     public void changeUploadImageIcon(Uri photoURI) {
 
         this.currentBookCoverURI = photoURI;
@@ -187,34 +247,5 @@ public class CreateBookPopUp {
             // Handle error occurred while converting image to base64
             throw new RuntimeException(e);
         }
-    }
-
-    public void listAvailableBooks() {
-
-        Library lib = libraryCache.getLibrary(libraryId);
-        assert lib != null;
-        List<Integer> bookIds = lib.getBookIds();
-
-        List<Book> books = new ArrayList<>();
-        for (int id : bookIds) {
-            books.add(booksCache.getBook(id));
-        }
-
-        LinearLayout parent = LibraryInfoActivity.findViewById(R.id.available_books_linear_layout);
-        parent.removeAllViews();
-        LayoutInflater inflater = LibraryInfoActivity.getLayoutInflater();
-
-        books.forEach(book -> {
-            CardView child = (CardView) inflater.inflate(R.layout.library_book_available, null);
-
-            LinearLayout layout = (LinearLayout) child.getChildAt(0);
-            LinearLayout bookDiv = (LinearLayout) layout.getChildAt(0);
-
-            // Book Title
-            TextView bookTitle = (TextView) bookDiv.getChildAt(0);
-            bookTitle.setText(book.getTitle());
-
-            parent.addView(child);
-        });
     }
 }

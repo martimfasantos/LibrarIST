@@ -6,7 +6,7 @@ public class Book {
 
     private final int id;
     private final String title;
-    private final byte[] cover; // TODO see how this will be done
+    private final byte[] cover;
 
     private final String barcode;
     private Boolean activeNotif;

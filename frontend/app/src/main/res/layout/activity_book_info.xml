@@ -43,6 +43,7 @@
         android:layout_height="170dp"
         android:layout_marginTop="15dp"
         android:layout_gravity="center"
+        android:scaleType="centerCrop"
         android:src="@drawable/book_cover"
         android:layout_centerHorizontal="true"/>
 
@@ -75,26 +76,31 @@
             android:textSize="20sp" />
 
     </LinearLayout>
-    
+
+    <TextView
+        android:id="@+id/list_libraries_prompt"
+        android:layout_below="@+id/div_book_info_notif"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/book_available_in_following_libraries"
+        android:textSize="15sp"
+        android:layout_marginStart="12dp"/>
+
     <ScrollView
         android:id="@+id/available_libraries_scroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="15dp"
-        android:layout_below="@id/div_book_info_notif">
+        android:layout_below="@id/list_libraries_prompt"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginBottom="5dp">
 
         <LinearLayout
             android:id="@+id/available_libraries_linear_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/book_available_in_following_libraries"
-                android:textSize="14sp"
-                android:layout_marginBottom="10dp"/>
 
         </LinearLayout>
 

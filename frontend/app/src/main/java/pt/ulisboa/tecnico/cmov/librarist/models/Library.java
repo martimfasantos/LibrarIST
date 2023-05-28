@@ -17,13 +17,13 @@ public class Library {
 
     private List<Integer> bookIds;
 
-    public Library(int id, String name, LatLng latLng, String address, List<Integer> bookIds, byte[] photo){
+    public Library(int id, String name, LatLng latLng, String address, byte[] photo, List<Integer> bookIds){
         this.id = id;
         this.name = name;
         this.latLng = latLng;
         this.address = address;
-        this.bookIds = bookIds;
         this.photo = photo;
+        this.bookIds = bookIds;
     }
 
     public int getId() {
@@ -36,14 +36,6 @@ public class Library {
 
     public LatLng getLatLng() {
         return latLng;
-    }
-
-    public double getLatitude () {
-        return latLng.latitude;
-    }
-
-    public double getLongitude() {
-        return latLng.longitude;
     }
 
     public String getAddress() {

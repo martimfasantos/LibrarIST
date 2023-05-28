@@ -128,7 +128,11 @@ public class LibraryInfoActivity extends AppCompatActivity {
                 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        checkOutBook(result.getContents());
+                        try {
+                            checkOutBook(result.getContents(), libraryId);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                         dialog.dismiss();
                     }
                 }).show();
@@ -207,6 +211,19 @@ public class LibraryInfoActivity extends AppCompatActivity {
 
     }
 
+    // Used when creating each element of the list of the available books
+    private void setupBookCardButton(CardView cardView) {
+        cardView.setOnClickListener(v -> {
+            int bookId = Integer.parseInt(v.getTag().toString());
+
+            Intent intent = new Intent(LibraryInfoActivity.this, BookInfoActivity.class);
+            intent.putExtra("bookId", bookId);
+            // putCurrentCoordinates(intent, currentCoordinates);
+            startActivity(intent);
+        });
+    }
+
+
     /** -----------------------------------------------------------------------------
      *                                OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
@@ -215,7 +232,7 @@ public class LibraryInfoActivity extends AppCompatActivity {
 
         // Get the message from the intent
         Intent intent = getIntent();
-        libraryId = Integer.parseInt(intent.getStringExtra("id"));
+        libraryId = intent.getIntExtra("libId", -1);
 
         Library lib = libraryCache.getLibrary(libraryId);
         libraryName = lib.getName();
@@ -251,7 +268,7 @@ public class LibraryInfoActivity extends AppCompatActivity {
         AtomicInteger bookId = new AtomicInteger(-1);
         Thread thread = new Thread(() -> {
             try {
-                bookId.set(serverConnection.getBook(barcode));
+                bookId.set(serverConnection.findBook(barcode));
                 Log.d("CHECKIN", "BOOK ID " + bookId.get());
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -291,47 +308,87 @@ public class LibraryInfoActivity extends AppCompatActivity {
 
     }
 
-    private void checkOutBook(String barcode){
+    private void checkOutBook(String barcode, int libraryId) throws InterruptedException {
         Log.d("CHECKOUT", "BARCODE NOT NULL");
-        // Create library on the backend
-        new Thread(() -> {
+
+        // Get book if exists in the backend
+        AtomicInteger bookId = new AtomicInteger(-1);
+        Thread thread = new Thread(() -> {
             try {
-                Log.d("CHECKOUT", "CHECKOUT THREAD");
-                serverConnection.checkOutBook(barcode, libraryId);
+                bookId.set(serverConnection.findBookInLibrary(barcode, libraryId));
+                Log.d("CHECKOUT", "BOOK ID " + bookId.get());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }).start();
-        Toast.makeText(getApplicationContext(), "Booked checked out!", Toast.LENGTH_SHORT).show();
+        });
+
+        // Start the thread
+        thread.start();
+        // Wait for thread to join
+        thread.join();
+
+        Log.d("BOOKID", String.valueOf(bookId.get()));
+
+        // New book in the system
+        if (bookId.get() == -1) {
+            Toast.makeText(getApplicationContext(), "Book is not from this library!", Toast.LENGTH_SHORT).show();
+        } else {
+            // Create library on the backend
+            Thread _thread = new Thread(() -> {
+                try {
+                    serverConnection.checkOutBook(barcode, libraryId);
+                    Log.d("CHECKOUT", "BOOK ID " + bookId.get());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            // Start the thread
+            _thread.start();
+            // Wait for thread to join
+            _thread.join();
+
+            Toast.makeText(getApplicationContext(), "Book checked out!", Toast.LENGTH_SHORT).show();
+
+            // Update available books
+            listAvailableBooks();
+        }
     }
 
+
     public void listAvailableBooks() {
-
+        // Get library's books that where loaded to cache when the library was loaded
         Library lib = libraryCache.getLibrary(libraryId);
-        assert lib != null;
         List<Integer> bookIds = lib.getBookIds();
-
         List<Book> books = new ArrayList<>();
         for (int id : bookIds) {
             books.add(booksCache.getBook(id));
         }
+        // Add books to the view
+        addBookItemsToView(books);
+    }
 
+    private void addBookItemsToView(List<Book> books) {
         LinearLayout parent = findViewById(R.id.available_books_linear_layout);
         parent.removeAllViews();
         LayoutInflater inflater = getLayoutInflater();
 
         books.forEach(book -> {
-            CardView child = (CardView) inflater.inflate(R.layout.library_book_available, null);
+            // Create new element for the book
+            CardView child = (CardView) inflater.inflate(R.layout.book_menu_item, null);
 
-            LinearLayout layout = (LinearLayout) child.getChildAt(0);
-            LinearLayout bookDiv = (LinearLayout) layout.getChildAt(0);
+            LinearLayout bookDiv = (LinearLayout) child.getChildAt(0);
 
-            // Book Title
-            TextView bookTitle = (TextView) bookDiv.getChildAt(0);
-            bookTitle.setText(book.getTitle());
+            // Set text to the book title
+            TextView cardText = (TextView) bookDiv.getChildAt(1);
+            cardText.setText(book.getTitle());
+            // Set tag to save the id
+            child.setTag(book.getId());
+
+            // Clickable Card
+            setupBookCardButton(child);
 
             parent.addView(child);
         });
     }
-
 }

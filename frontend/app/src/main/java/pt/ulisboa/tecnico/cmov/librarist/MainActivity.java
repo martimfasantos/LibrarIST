@@ -2,8 +2,6 @@ package pt.ulisboa.tecnico.cmov.librarist;
 
 import android.content.Intent;
 
-import android.app.AlertDialog;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -36,23 +34,18 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
 import pt.ulisboa.tecnico.cmov.librarist.caches.BookCache;
 import pt.ulisboa.tecnico.cmov.librarist.caches.LibraryCache;
 import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateLibraryPopUp;
-import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
-    private static final String LOCATION_LAT_MESSAGE = "currentLocationLatitude";
-    private static final String LOCATION_LON_MESSAGE = "currentLocationLongitude";
 
     private GoogleMap mMap;
 
@@ -66,9 +59,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // The geographical location where the device is currently located. That is, the last-known
     // location retrieved by the Fused Location Provider.
 //    private Location lastKnownLocation;
-    private volatile Location currentLocation = null;
 
-    public static HashMap<Integer, Library> currentDisplayedLibraries = new HashMap<>();
+    public static Location currentLocation = null;
 
     public static LibraryCache libraryCache = new LibraryCache();
     public static BookCache booksCache = new BookCache();
@@ -180,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
          */
         try {
             if (locationPermissionGranted) {
-                getCurrentLocation();
+                updateCurrentLocation();
             } else {
                 // If permission is not granted, move camera to the default Location
                 mMap.moveCamera(CameraUpdateFactory
@@ -248,7 +240,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this, BookMenuActivity.class);
-                putCurrentCoordinates(intent, new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()));
                 startActivity(intent);
             }
         });
@@ -292,33 +283,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      *                                  OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
 
-    private void getCurrentLocation() {
+    private void updateCurrentLocation() {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
 
+        // TODO location is null in the first time the user opens the app (CRASH), TO FIX
         Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
         locationResult.addOnSuccessListener(this, new OnSuccessListener<Location>(){
             @Override
             public void onSuccess(Location location) {
-
                 if (location != null) {
                     currentLocation = location;
                     // Move to current location
                     mMap.moveCamera(CameraUpdateFactory
                             .newLatLngZoom(new LatLng(currentLocation.getLatitude(),
                                     currentLocation.getLongitude()), DEFAULT_ZOOM));
-                } else {
-                    Toast.makeText(MainActivity.this, "Please turn on your Location...", Toast.LENGTH_SHORT).show();
+//                TODO } else {
+//                    Toast.makeText(MainActivity.this, "Please turn on your Location...", Toast.LENGTH_SHORT).show();
                 }
             }
         });
-    }
-
-    public void putCurrentCoordinates(Intent intent, LatLng latLng){
-        intent.putExtra(LOCATION_LAT_MESSAGE, latLng.latitude);
-        intent.putExtra(LOCATION_LON_MESSAGE, latLng.longitude);
     }
 
     // The only Activity that uses this is the *Image Picker* on the createLibraryPopUp class

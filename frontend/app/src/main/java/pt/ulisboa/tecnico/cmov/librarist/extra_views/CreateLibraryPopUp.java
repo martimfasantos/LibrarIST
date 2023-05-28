@@ -1,7 +1,6 @@
 package pt.ulisboa.tecnico.cmov.librarist.extra_views;
 
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentDisplayedLibraries;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.app.Activity;
@@ -124,11 +123,11 @@ public class CreateLibraryPopUp {
                 Intent intent = new Intent(MainActivity, LibraryInfoActivity.class);
 
                 // Get markers information and pass them to the intent
-                String libraryID = (String) marker.getTag();
-
-                intent.putExtra("id", libraryID);
-
-                MainActivity.startActivity(intent);
+                if (marker.getTag() != null){
+                    int libId = (int) marker.getTag();
+                    intent.putExtra("libId", libId);
+                    MainActivity.startActivity(intent);
+                }
             }
         });
     }
@@ -233,7 +232,7 @@ public class CreateLibraryPopUp {
                     for (Library library : libraryCache.getLibraries()){
                         if (library.getName().equals(libraryName)
                                 & library.getAddress().equals(libraryAddress)) {
-                            marker.setTag(String.valueOf(library.getId()));
+                            marker.setTag(library.getId());
                         }
                     }
 

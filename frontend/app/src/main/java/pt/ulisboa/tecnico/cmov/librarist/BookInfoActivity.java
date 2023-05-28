@@ -1,5 +1,8 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentLocation;
+
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.location.Location;
@@ -15,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -23,21 +27,19 @@ import com.google.android.gms.maps.model.LatLng;
 
 import org.w3c.dom.Text;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
 public class BookInfoActivity extends AppCompatActivity {
 
-    private static final String BOOK_ID_MESSAGE = "bookId";
-    private static final String LOCATION_LAT_MESSAGE = "currentLocationLatitude";
-    private static final String LOCATION_LON_MESSAGE = "currentLocationLongitude";
-
     private Book book;
 
-    private LatLng currentCoordinates;
+    private final ServerConnection serverConnection = new ServerConnection();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +55,7 @@ public class BookInfoActivity extends AppCompatActivity {
 
         // Available libraries
         setupViewWithAvailableLibraries();
+
     }
 
     private void setupViewWithBookInfo() {
@@ -62,10 +65,14 @@ public class BookInfoActivity extends AppCompatActivity {
         bookTitle.setText(this.book.getTitle());
         setNotificationView(this.book.isActiveNotif());
 
-        // Notifications Button
-        setupNotificationButton();
         // Back Button
         setupBackButton();
+
+        // Notifications Button
+        setupNotificationButton();
+
+        // List libraries where the book is available
+        listAvailableLibraries();
     }
 
     private void setupViewWithAvailableLibraries() {
@@ -110,6 +117,17 @@ public class BookInfoActivity extends AppCompatActivity {
 
     }
 
+    // Used when creating each element of the list of the libraries
+    private void setupLibraryCardButton(CardView cardView) {
+        cardView.setOnClickListener(v -> {
+            int libId = Integer.parseInt(v.getTag().toString());
+
+            Intent intent = new Intent(BookInfoActivity.this, LibraryInfoActivity.class);
+            intent.putExtra("libId", libId);
+            startActivity(intent);
+        });
+    }
+
 
     /** -----------------------------------------------------------------------------
      *                                  OTHER FUNCTIONS
@@ -117,22 +135,9 @@ public class BookInfoActivity extends AppCompatActivity {
 
     private void parseIntent(){
         Intent intent = getIntent();
-        int bookId = intent.getIntExtra(BOOK_ID_MESSAGE, 0);
-        double latitude = intent.getDoubleExtra(LOCATION_LAT_MESSAGE, -1);
-        double longitude = intent.getDoubleExtra(LOCATION_LON_MESSAGE, -1);
-
-        currentCoordinates = new LatLng(latitude, longitude);
-
-        // TODO call backend to get book with bookId
-        Book book0 = new Book(0,"The Playbook", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "1234", false);
-        Book book1 = new Book(1, "Little Women", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "1233", true);
-        this.book = bookId == 0 ? book0 : book1;
+        this.book = booksCache.getBook(intent.getIntExtra("bookId", -1));
     }
 
-    public void putCurrentCoordinates(Intent intent, LatLng latLng){
-        intent.putExtra(LOCATION_LAT_MESSAGE, latLng.latitude);
-        intent.putExtra(LOCATION_LON_MESSAGE, latLng.longitude);
-    }
 
     private void setNotificationView(Boolean active) {
         ImageButton notif_btn = findViewById(R.id.book_info_notif_btn);
@@ -149,9 +154,55 @@ public class BookInfoActivity extends AppCompatActivity {
         notif_btn.setTag(this.book);
     }
 
+    private void listAvailableLibraries() {
+
+        List<Library> libraries;
+        // TODO if there is internet
+        if (true){
+            // Get all books from the server
+            libraries = new ArrayList<>(getAvailableLibraries());
+        } else {
+            // If there is NO internet available
+            // TODO search in cache
+            libraries = new ArrayList<>();
+        }
+
+        // Add books to the view
+        addLibraryItemsToView(libraries);
+    }
+
+    private List<Library> getAvailableLibraries() {
+        Log.d("GET AVAILABLE LIBRARIES", "GET LIBRARIES");
+
+        // Get all books ever registered in the system
+        final List<Library> libraries = new ArrayList<>();
+        Thread thread = new Thread(() -> {
+            try {
+                libraries.addAll(serverConnection.getLibrariesWithBook(this.book));
+                Log.d("GET AVAILABLE LIBRARIES", libraries.toString());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Start the thread
+        thread.start();
+        // Wait for thread to join
+        try{
+            thread.join();
+        } catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Toast.makeText(getApplicationContext(), "Got all books!", Toast.LENGTH_SHORT).show();
+
+        return libraries;
+    }
+
     @SuppressLint("DefaultLocale")
-    private void addLibrariesToView(List<Library> libraries) {
+    private void addLibraryItemsToView(List<Library> libraries) {
         LinearLayout parent = findViewById(R.id.available_libraries_linear_layout);
+        parent.removeAllViews();
         LayoutInflater inflater = getLayoutInflater();
 
         libraries.forEach(library -> {
@@ -166,7 +217,7 @@ public class BookInfoActivity extends AppCompatActivity {
 
             // Get distance from current location
             float[] result = new float[10];
-            Location.distanceBetween(currentCoordinates.latitude, currentCoordinates.longitude,
+            Location.distanceBetween(currentLocation.getLatitude(), currentLocation.getLongitude(),
                     library.getLatLng().latitude, library.getLatLng().longitude, result);
             // Convert result from meters to km
             float distance = result[0] / 1000;
@@ -174,14 +225,16 @@ public class BookInfoActivity extends AppCompatActivity {
             TextView libDist = (TextView) libDiv.getChildAt(1);
             libDist.setText(String.format("%.2fkm", distance));
 
-            child.setTag(String.valueOf(library.getId()));
-            // TODO call library info intent
+            child.setTag(library.getId());
+
+            // Clickable Card
+            setupLibraryCardButton(child);
 
             // sort Libraries by distance
-            int insertionIndex = 1;
-            for (int i = 1; i < parent.getChildCount(); i++) {
+            int insertionIndex = 0;
+            for (int i = 0; i < parent.getChildCount(); i++) {
                 CardView card = (CardView) parent.getChildAt(i);
-                TextView view = parent.findViewById(R.id.book_available_library_distance);
+                TextView view = card.findViewById(R.id.book_available_library_distance);
                 String text = view.getText().toString();
                 double dist = Double.parseDouble(text.substring(0, text.length() - 2));
                 if (distance > dist){

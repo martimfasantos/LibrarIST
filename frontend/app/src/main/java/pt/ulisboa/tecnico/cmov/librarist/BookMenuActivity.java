@@ -1,9 +1,9 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
+
 import android.content.Intent;
-import android.location.Location;
 import android.os.Bundle;
-import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,19 +16,16 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
-import com.google.android.gms.maps.model.LatLng;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 
 public class BookMenuActivity extends AppCompatActivity {
 
-    private static final String BOOK_ID_MESSAGE = "bookId";
-    private static final String LOCATION_LAT_MESSAGE = "currentLocationLatitude";
-    private static final String LOCATION_LON_MESSAGE = "currentLocationLongitude";
-
-    private LatLng currentCoordinates;
+    private final ServerConnection serverConnection = new ServerConnection();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,14 +33,14 @@ public class BookMenuActivity extends AppCompatActivity {
         setContentView(R.layout.activity_menu_books);
         Log.d("BookMenuActivity", "loaded layout");
 
-        // Parse Intent
-        parseIntent();
+        // List all books
+        listAllBooks();
 
         // TODO call backend to get all books
-        List<Book> bookList = List.of(
-                new Book(0,"The Playbook", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "12342", false),
-                new Book(1, "Little Women", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "1233", true));
-        addBookItemsToView(bookList);
+//        List<Book> bookList = List.of(
+//                new Book(0,"The Playbook", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "12342", false),
+//                new Book(1, "Little Women", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "1233", true));
+//        addBookItemsToView(bookList);
 
         // Set up onclick method for the search button
         setupSearchButton();
@@ -80,50 +77,88 @@ public class BookMenuActivity extends AppCompatActivity {
 
     }
 
+    // Used when creating each element of the list of the libraries
+    private void setupBookCardButton(CardView cardView) {
+        cardView.setOnClickListener(v -> {
+            int bookId = (int) v.getTag();
+
+            Intent intent = new Intent(BookMenuActivity.this, BookInfoActivity.class);
+            intent.putExtra("bookId", bookId);
+            startActivity(intent);
+        });
+    }
+
 
     /** -----------------------------------------------------------------------------
      *                                  OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
 
-    private void parseIntent(){
+    private void listAllBooks() {
 
-        // Get the message from the intent
-        Intent intent = getIntent();
-        double latitude = intent.getDoubleExtra(LOCATION_LAT_MESSAGE, -1);
-        double longitude = intent.getDoubleExtra(LOCATION_LON_MESSAGE, -1);
+        List<Book> allBooks;
+        // TODO if there is internet
+        if (true){
+            // Get all books from the server
+            allBooks = new ArrayList<>(getAllBooks());
+        } else {
+            // If there is NO internet available
+            allBooks = new ArrayList<>(booksCache.getBooks());
+        }
 
-        currentCoordinates = new LatLng(latitude, longitude);
+        // Add books to the view
+        addBookItemsToView(allBooks);
     }
 
-    public void putCurrentCoordinates(Intent intent, LatLng latLng){
-        intent.putExtra(LOCATION_LAT_MESSAGE, latLng.latitude);
-        intent.putExtra(LOCATION_LON_MESSAGE, latLng.longitude);
-    }
+    private List<Book> getAllBooks() {
+        Log.d("GET ALL BOOKS", "GET ALL BOOKS");
 
-    private void setupBookCard(CardView cardView) {
-        cardView.setOnClickListener(v -> {
-            int bookId = Integer.parseInt(v.getTag().toString());
-
-            Intent intent = new Intent(BookMenuActivity.this, BookInfoActivity.class);
-            intent.putExtra(BOOK_ID_MESSAGE, bookId);
-            putCurrentCoordinates(intent, currentCoordinates);
-            startActivity(intent);
+        // Get all books ever registered in the system
+        final List<Book> allBooks = new ArrayList<>();
+        Thread thread = new Thread(() -> {
+            try {
+                allBooks.addAll(serverConnection.getAllBooks());
+                Log.d("GET ALL BOOKS", allBooks.toString());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         });
+
+        // Start the thread
+        thread.start();
+        // Wait for thread to join
+        try{
+            thread.join();
+        } catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Toast.makeText(getApplicationContext(), "Got all books!", Toast.LENGTH_SHORT).show();
+
+        return allBooks;
     }
+
     private void addBookItemsToView(List<Book> books) {
         LinearLayout parent = findViewById(R.id.div_books_list);
+        parent.removeAllViews();
         LayoutInflater inflater = getLayoutInflater();
 
         books.forEach(book -> {
             // Create new element for the book
             CardView child = (CardView) inflater.inflate(R.layout.book_menu_item, null);
+
+            LinearLayout bookDiv = (LinearLayout) child.getChildAt(0);
+
             // Set text to the book title
-            TextView cardText = (TextView) child.getChildAt(1);
+            TextView cardText = (TextView) bookDiv.getChildAt(1);
             cardText.setText(book.getTitle());
-            child.setTag(String.valueOf(book.getId()));
-            setupBookCard(child);
+            // Set tag to save the id
+            child.setTag(book.getId());
+
+            // Clickable Card
+            setupBookCardButton(child);
 
             parent.addView(child);
         });
+        Log.d("LIST ALL BOOKS", "ADDED TO VIEW");
     }
 }
