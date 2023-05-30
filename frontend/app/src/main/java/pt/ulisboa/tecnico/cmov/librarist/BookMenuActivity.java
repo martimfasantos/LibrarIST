@@ -20,6 +20,7 @@ import androidx.cardview.widget.CardView;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 
@@ -35,12 +36,6 @@ public class BookMenuActivity extends AppCompatActivity {
 
         // List all books
         listAllBooks();
-
-        // TODO call backend to get all books
-//        List<Book> bookList = List.of(
-//                new Book(0,"The Playbook", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "12342", false),
-//                new Book(1, "Little Women", Base64.decode(String.valueOf(R.drawable.book_cover), Base64.DEFAULT), "1233", true));
-//        addBookItemsToView(bookList);
 
         // Set up onclick method for the search button
         setupSearchButton();
@@ -61,7 +56,8 @@ public class BookMenuActivity extends AppCompatActivity {
             public void onClick(View v) {
                 TextView textFilter = (TextView) findViewById(R.id.book_title_input);
                 String filter = (String) textFilter.getText();
-                // TODO call backend to get filtered books; call addBookItemsToView
+                List<Book> filteredBooks = filterBooksByTitle(filter);
+                addBookItemsToView(filteredBooks);
             }
         });
     }
@@ -160,5 +156,20 @@ public class BookMenuActivity extends AppCompatActivity {
             parent.addView(child);
         });
         Log.d("LIST ALL BOOKS", "ADDED TO VIEW");
+    }
+
+    private List<Book> filterBooksByTitle(String titleFilter) {
+        List<Book> filteredBooks;
+        // TODO if there is internet
+        if (true){
+            // Get books from the server
+            filteredBooks = new ArrayList<>(getAllBooks());
+        } else {
+            // If there is NO internet available
+            filteredBooks = booksCache.getBooks().stream()
+                    .filter(book -> book.getTitle().contains(titleFilter))
+                    .collect(Collectors.toList());
+        }
+        return filteredBooks;
     }
 }
