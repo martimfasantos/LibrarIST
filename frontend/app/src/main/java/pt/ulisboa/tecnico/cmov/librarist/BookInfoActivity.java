@@ -2,9 +2,12 @@ package pt.ulisboa.tecnico.cmov.librarist;
 
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentLocation;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Base64;
@@ -31,7 +34,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
+import pt.ulisboa.tecnico.cmov.librarist.caches.LibraryCache;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
@@ -52,10 +57,6 @@ public class BookInfoActivity extends AppCompatActivity {
 
         // Setup View
         setupViewWithBookInfo();
-
-        // Available libraries
-        setupViewWithAvailableLibraries();
-
     }
 
     private void setupViewWithBookInfo() {
@@ -77,23 +78,6 @@ public class BookInfoActivity extends AppCompatActivity {
 
         // List libraries where the book is available
         listAvailableLibraries();
-    }
-
-    private void setupViewWithAvailableLibraries() {
-        // TODO get libraries from cache
-
-        /*
-        List<Library> availableLibraries = List.of(
-                new Library(0, "Library 1", new LatLng(40, -20),
-                        "I don't know", new ArrayList<>()),
-                new Library(2, "Library 3", new LatLng(42, -21),
-                        "I don't know2", new ArrayList<>()),
-                new Library(1, "Library 2", new LatLng(38.736946, -9.142685),
-                        "Lisboa, Portugal", new ArrayList<>()));
-
-        // TODO create card view for each library
-        addLibrariesToView(availableLibraries);
-        */
     }
 
 
@@ -166,9 +150,8 @@ public class BookInfoActivity extends AppCompatActivity {
             // Get all books from the server
             libraries = new ArrayList<>(getAvailableLibraries());
         } else {
-            // If there is NO internet available
-            // TODO search in cache
-            libraries = new ArrayList<>();
+            // If there is NO internet available get from cache
+            libraries = filterLibrariesWithBookAvailable();
         }
 
         // Add books to the view
@@ -249,6 +232,12 @@ public class BookInfoActivity extends AppCompatActivity {
             }
             parent.addView(child, insertionIndex);
         });
+    }
+
+    private List<Library> filterLibrariesWithBookAvailable() {
+        return libraryCache.getLibraries().stream()
+                .filter(lib -> lib.getBookIds().contains(book.getId()))
+                .collect(Collectors.toList());
     }
 
 }
