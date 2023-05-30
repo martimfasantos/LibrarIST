@@ -59,10 +59,14 @@ public class BookInfoActivity extends AppCompatActivity {
     }
 
     private void setupViewWithBookInfo() {
-        // TODO set image
         TextView bookTitle = findViewById(R.id.book_info_title);
-
         bookTitle.setText(this.book.getTitle());
+
+        ImageView bookCover = findViewById(R.id.book_info_cover_img);
+        Bitmap bmp = BitmapFactory.decodeByteArray(book.getCover(), 0, book.getCover().length);
+        bookCover.setImageBitmap(Bitmap.createScaledBitmap(bmp, bookCover.getWidth(),
+                bookCover.getHeight(), false));
+
         setNotificationView(this.book.isActiveNotif());
 
         // Back Button
