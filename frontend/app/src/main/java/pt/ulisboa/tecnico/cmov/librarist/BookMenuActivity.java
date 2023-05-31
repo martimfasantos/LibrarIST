@@ -55,7 +55,7 @@ public class BookMenuActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 TextView textFilter = (TextView) findViewById(R.id.book_title_input);
-                String filter = (String) textFilter.getText();
+                String filter = (String) textFilter.getText().toString();
                 List<Book> filteredBooks = filterBooksByTitle(filter);
                 addBookItemsToView(filteredBooks);
             }
@@ -160,7 +160,7 @@ public class BookMenuActivity extends AppCompatActivity {
     private List<Book> filterBooksByTitle(String titleFilter) {
         List<Book> filteredBooks;
         // TODO if there is internet
-        if (true){
+        if (false){
             // Get books from the server
             filteredBooks = new ArrayList<>(getAllBooks());
         } else {

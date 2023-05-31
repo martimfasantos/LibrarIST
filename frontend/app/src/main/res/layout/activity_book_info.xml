@@ -66,7 +66,6 @@
             android:layout_width="55dp"
             android:layout_height="55dp"
             android:scaleType="fitCenter"
-            android:layout_marginStart="35dp"
             app:srcCompat="@drawable/bell_unfilled" />
 
         <TextView

@@ -65,8 +65,8 @@ public class BookInfoActivity extends AppCompatActivity {
 
         ImageView bookCover = findViewById(R.id.book_info_cover_img);
         Bitmap bmp = BitmapFactory.decodeByteArray(book.getCover(), 0, book.getCover().length);
-        bookCover.setImageBitmap(Bitmap.createScaledBitmap(bmp, bookCover.getWidth(),
-                bookCover.getHeight(), false));
+        bookCover.setImageBitmap(Bitmap.createScaledBitmap(bmp, 170,
+                170, false));
 
         setNotificationView(this.book.isActiveNotif());
 
@@ -123,7 +123,36 @@ public class BookInfoActivity extends AppCompatActivity {
 
     private void parseIntent(){
         Intent intent = getIntent();
-        this.book = booksCache.getBook(intent.getIntExtra("bookId", -1));
+        int bookId = intent.getIntExtra("bookId", -1);
+
+        // TODO check internet
+        if (true) {
+            getBookInfo(bookId);
+        } else {
+            this.book = booksCache.getBook(bookId);
+        }
+    }
+
+    private void getBookInfo(int bookId) {
+        Log.d("GET BOOK", "GET BOOK");
+
+        // Get book information from the server
+        Thread thread = new Thread(() -> {
+            try {
+                this.book = serverConnection.getBook(bookId);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Start the thread
+        thread.start();
+        // Wait for thread to join
+        try{
+            thread.join();
+        } catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
     }
 
 

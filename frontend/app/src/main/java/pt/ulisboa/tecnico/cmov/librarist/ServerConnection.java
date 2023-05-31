@@ -47,7 +47,7 @@ import java.util.Map;
 
 
 public class ServerConnection {
-    public static final String endpoint = "http://192.92.147.54:5000";
+    public static final String endpoint = "http://172.19.122.27:5000";
     //public static final String wsEndpoint = "ws://cmov2-docentes-tp-1.vps.tecnico.ulisboa.pt:5000/ws";
     //WebSocketClient webSocketClient = null;
 
@@ -80,7 +80,6 @@ public class ServerConnection {
             JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
 
             // Received values
-            assert responseJson != null;
             int libraryId = responseJson.get("libId").getAsInt();
 
             Library newLibrary = new Library(libraryId, name, latLng, address, photo, new ArrayList<>());
@@ -100,9 +99,7 @@ public class ServerConnection {
         connection.setRequestProperty("Content-Type", "application/json");
 
         if (connection.getResponseCode() == 200) {
-            JsonParser jsonParser = new JsonParser();
-            JsonArray responseJsonArray = jsonParser.parse(new InputStreamReader(connection.getInputStream()))
-                    .getAsJsonArray();
+            JsonArray responseJsonArray = getJsonArrayFromResponse(connection.getInputStream());
 
             List<Library> libraries = new ArrayList<>();
             for (JsonElement element : responseJsonArray){
@@ -142,9 +139,7 @@ public class ServerConnection {
         connection.setRequestProperty("Content-Type", "application/json");
 
         if (connection.getResponseCode() == 200) {
-            JsonParser jsonParser = new JsonParser();
-            JsonObject responseJson = jsonParser.parse(new InputStreamReader(connection.getInputStream()))
-                    .getAsJsonObject();
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
 
             // Parse libraries
             JsonArray librariesJsonArray = responseJson.getAsJsonArray("libraries");
@@ -219,9 +214,7 @@ public class ServerConnection {
         connection.setRequestProperty("Content-Type", "application/json");
 
         if (connection.getResponseCode() == 200) {
-            JsonParser jsonParser = new JsonParser();
-            JsonArray responseJsonArray = jsonParser.parse(new InputStreamReader(connection.getInputStream()))
-                    .getAsJsonArray();
+            JsonArray responseJsonArray = getJsonArrayFromResponse(connection.getInputStream());
 
             List<Book> allBooks = new ArrayList<>();
             for (JsonElement element : responseJsonArray){
@@ -272,11 +265,10 @@ public class ServerConnection {
         connection.setRequestProperty("Content-Type", "application/json");
 
         if (connection.getResponseCode() == 200) {
-            JsonParser jsonParser = new JsonParser();
-            JsonObject responseJson = jsonParser.parse(new InputStreamReader(connection.getInputStream()))
-                    .getAsJsonObject();
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
 
             // Get book properties
+            assert responseJson != null;
             int _bookId = responseJson.get("bookId").getAsInt();
             if(_bookId != bookId){
                 Log.d("GET BOOK", "DIFFERENT BOOK IDS");
@@ -286,7 +278,10 @@ public class ServerConnection {
             String barcode = responseJson.get("barcode").getAsString();
             boolean activNotif = responseJson.get("activNotif").getAsBoolean();
 
-            return new Book(bookId, title,cover, barcode, activNotif);
+            Book bookResponse = new Book(bookId, title,cover, barcode, activNotif);
+            booksCache.addBook(bookResponse);
+
+            return bookResponse;
 
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
@@ -376,7 +371,9 @@ public class ServerConnection {
         Log.d("CHECKIN", "ENVIEI");
 
         if (connection.getResponseCode() == 200) {
-            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+            JsonParser jsonParser = new JsonParser();
+            JsonObject responseJson =  jsonParser.parse(new InputStreamReader(connection.getInputStream()))
+                    .getAsJsonObject();;
 
             // Received values
             assert responseJson != null;
@@ -503,9 +500,7 @@ public class ServerConnection {
         outputStream.close();
 
         if (connection.getResponseCode() == 200) {
-            JsonReader jsonReader = new JsonReader(new InputStreamReader(connection.getInputStream()));
-            jsonReader.setLenient(true);
-            JsonArray jsonArray = new JsonParser().parse(String.valueOf(jsonReader)).getAsJsonArray();
+            JsonArray jsonArray = getJsonArrayFromResponse(connection.getInputStream());
 
             for (JsonElement jsonElement : jsonArray) {
                 JsonObject item = jsonElement.getAsJsonObject();
@@ -649,6 +644,26 @@ public class ServerConnection {
 
             Gson gson = new Gson();
             return gson.fromJson(jsonString.toString(), JsonObject.class);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private JsonArray getJsonArrayFromResponse(InputStream inputStream) {
+
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder jsonString = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonString.append(line);
+            }
+            reader.close();
+
+            Gson gson = new Gson();
+            return gson.fromJson(jsonString.toString(), JsonArray.class);
 
         } catch (IOException e) {
             e.printStackTrace();
