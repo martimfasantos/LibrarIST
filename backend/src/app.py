@@ -19,7 +19,7 @@ def handle_call():
 # body:
 #   - username: string
 #   - passwords: string
-@app.route("/users", methods=['POST'])
+@app.route("/users/create", methods=['POST'])
 def create_user():
     request_data = request.json
     username = request_data["username"]
@@ -30,22 +30,19 @@ def create_user():
 # Add library to user's favorites
 # path:
 #   - userId: int - user to which add the library
-# body:
 #   - libId: int - library to add
-@app.route("/users/<userId>/libraries", methods=['POST'])
-def add_favorite_library_to_user(userId=None):
-    request_data = request.json
-    lib_id = request_data["libId"]
-    return server.add_favorite_lib(lib_id, userId)
+@app.route("/libraries/<int:lib_id>/add_fav", methods=['POST'])
+def add_favorite_library_to_user(lib_id):
+    return server.add_favorite_lib(lib_id, int(request.args.get("userId")))
 
 
 # Remove library from user's favorites
 # path:
 #   - userId: int - user from which to remove library
 #   - libId: int - library to remove
-@app.route("/users/<userId>/libraries/<libId>", methods=['DELETE'])
-def remove_favorite_library_from_user(userId=None, libId=None):
-    return server.remove_favorite_lib(libId, userId)
+@app.route("/libraries/<int:lib_id>/remove_fav", methods=['POST'])
+def remove_favorite_library_from_user(lib_id):
+    return server.remove_favorite_lib(lib_id, int(request.args.get("userId")))
 
 # User checkin book
 # path:
@@ -53,7 +50,7 @@ def remove_favorite_library_from_user(userId=None, libId=None):
 # body:
 #   - bookId: int - book being checkin
 #   - libId: int - library from which the book will be checked in
-@app.route("/<int:lib_id>/books/checkin", methods=['POST'])
+@app.route("/libraries/<int:lib_id>/books/checkin", methods=['POST'])
 def check_in_book(lib_id):
     request_data = request.json
     barcode = request_data["barcode"]
@@ -67,7 +64,7 @@ def check_in_book(lib_id):
 # body:
 #   - bookId: int - book being checkin
 #   - libId: int - library from which the book will be checked in
-@app.route("/<int:lib_id>/books/checkin/newbook", methods=['POST'])
+@app.route("/libraries/<int:lib_id>/books/checkin/newbook", methods=['POST'])
 def check_in_new_book(lib_id):
     request_data = request.json
     title = request_data["title"]
@@ -83,7 +80,7 @@ def check_in_new_book(lib_id):
 # body:
 #   - bookId: int - book being checkin
 #   - libId: int - library from which the book will be checked in
-@app.route("/library/<int:lib_id>/books/checkout", methods=['DELETE'])
+@app.route("/libraries/<int:lib_id>/books/checkout", methods=['DELETE'])
 def check_out_book(lib_id):
     request_data = request.json
     barcode = request_data["barcode"]
@@ -101,7 +98,7 @@ def find_book():
 # Find a book with a given barcode in a given library
 # body:
 #   - barcode: string
-@app.route("/library/<int:lib_id>/books/find", methods=['GET'])
+@app.route("/libraries/<int:lib_id>/books/find", methods=['GET'])
 def find_book_from_library(lib_id):
     return server.get_book_from_library(request.args.get("barcode"), lib_id)
 
@@ -111,14 +108,14 @@ def find_book_from_library(lib_id):
 #   - book_id: int
 @app.route("/books/get", methods=['GET'])
 def get_book():
-    return server.get_book(request.args.get("bookId"))
+    return server.get_book(request.args.get("bookId"), request.args.get("userId"))
 
 
 # Get all the books
 # body: none
 @app.route("/books", methods=['GET'])
 def get_all_books():
-    return server.get_all_books()
+    return server.get_all_books(request.args.get("userId"))
 
 
 # Create library
@@ -128,14 +125,14 @@ def get_all_books():
 #   - location: (int, int)
 #   - location: string
 #   - photo: image
-@app.route("/libraries", methods=['POST'])
+@app.route("/libraries/create", methods=['POST'])
 def create_library():
     request_data = request.json
     name = request_data["name"]
     address = request_data["address"]
     location = (request_data["latitude"], request_data["longitude"])
     photo = base64.b64decode(request_data["photo"])
-    return server.add_new_library(name, location, photo, address)
+    return server.create_new_library(name, location, photo, address)
 
 
 # Get books for a given library
