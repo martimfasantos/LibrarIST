@@ -2,8 +2,8 @@
 
 PYTHON := python3
 MODELS := $(wildcard models/*.py)
-SERVER := main/server.py
-APP := main/app.py
+SERVER := server.py
+APP := app.py
 
 SUCCESS_COLOR := $(shell tput setaf 2)
 ERROR_COLOR := $(shell tput setaf 1)
@@ -25,7 +25,6 @@ start:
 
 clean:
 	rm -rf ./models/__pycache__/
-	rm -rf ./main/__pycache__/
 	rm -rf __pycache__/
 	rm -rf images/books/*
 	rm -rf images/libraries/*
