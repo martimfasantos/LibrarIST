@@ -50,9 +50,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service
-            android:name=".MyService"
-            android:enabled="true" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

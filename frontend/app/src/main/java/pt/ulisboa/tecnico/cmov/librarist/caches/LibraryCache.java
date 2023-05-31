@@ -9,12 +9,13 @@ import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
 public class LibraryCache {
 
-    // List of libraries
+    // Map of the libraries
     private HashMap<Integer, Library> libraries = new HashMap<>();
 
+    public LibraryCache(){}
 
-    public void addLibrary(int libId, Library library){
-        libraries.put(libId, library);
+    public void addLibrary(Library library){
+        libraries.put(library.getId(), library);
 
         // TODO add all the books that this library has and add them to the BookCache
     }
@@ -24,11 +25,7 @@ public class LibraryCache {
     }
 
     public List<Library> getLibraries(){
-        List<Library> allLibraries = new ArrayList<>();
-        for (Library library : libraries.values()){
-            allLibraries.add(library);
-        }
-        return allLibraries;
+        return new ArrayList<>(this.libraries.values());
     }
 
     public List<Book> getBooksFromLibrary(int libraryID, BookCache bookCache){

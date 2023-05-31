@@ -52,10 +52,6 @@ public class BookInfoActivity extends AppCompatActivity {
 
         // Setup View
         setupViewWithBookInfo();
-
-        // Available libraries
-        setupViewWithAvailableLibraries();
-
     }
 
     private void setupViewWithBookInfo() {
@@ -73,23 +69,6 @@ public class BookInfoActivity extends AppCompatActivity {
 
         // List libraries where the book is available
         listAvailableLibraries();
-    }
-
-    private void setupViewWithAvailableLibraries() {
-        // TODO get libraries from cache
-
-        /*
-        List<Library> availableLibraries = List.of(
-                new Library(0, "Library 1", new LatLng(40, -20),
-                        "I don't know", new ArrayList<>()),
-                new Library(2, "Library 3", new LatLng(42, -21),
-                        "I don't know2", new ArrayList<>()),
-                new Library(1, "Library 2", new LatLng(38.736946, -9.142685),
-                        "Lisboa, Portugal", new ArrayList<>()));
-
-        // TODO create card view for each library
-        addLibrariesToView(availableLibraries);
-        */
     }
 
 

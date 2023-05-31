@@ -70,10 +70,6 @@ public class LibraryInfoActivity extends AppCompatActivity {
         TextView nameView = findViewById(R.id.library_name_title);
         nameView.setText(libraryName);
 
-        // Set text from intent into Library Address Title text view
-        TextView addressView = findViewById(R.id.library_address);
-        addressView.setText(libraryAddress);
-
         // Change image to library's photo
         ImageView imageView = findViewById(R.id.library_photo);
         imageView.setImageDrawable(new BitmapDrawable(getResources(), BitmapFactory.decodeByteArray(libraryPhoto, 0, libraryPhoto.length)));
@@ -166,11 +162,21 @@ public class LibraryInfoActivity extends AppCompatActivity {
                 boolean selected = favoriteButton.getTag().equals("selected");
 
                 if (!selected){
+                    try {
+                        addLibraryToFavorites();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                     favoriteButton.setImageResource(R.drawable.library_favorite_selected);
                     favoriteButton.setTag("selected");
                     Toast.makeText(getApplicationContext(), "Library added to your favorites!", Toast.LENGTH_SHORT).show();
 
                 } else { // if it was already selected
+                    try {
+                        removeLibraryFromFavorites();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                     favoriteButton.setImageResource(R.drawable.library_favorite_unselected);
                     favoriteButton.setTag("unselected");
                     Toast.makeText(getApplicationContext(), "Library removed from your favorites!", Toast.LENGTH_SHORT).show();
@@ -353,6 +359,46 @@ public class LibraryInfoActivity extends AppCompatActivity {
             // Update available books
             listAvailableBooks();
         }
+    }
+
+    private void addLibraryToFavorites() throws InterruptedException {
+
+        // Add library to favorites in the backend
+        Thread _thread = new Thread(() -> {
+            try {
+                serverConnection.addLibraryToFavorites(libraryId);
+                Log.d("ADD TO FAVORITES", "LIBRARY " + libraryId);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Start the thread
+        _thread.start();
+        // Wait for thread to join
+        _thread.join();
+
+        Toast.makeText(getApplicationContext(), "Library added to favorites!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void removeLibraryFromFavorites() throws InterruptedException {
+
+        // Add library to favorites in the backend
+        Thread _thread = new Thread(() -> {
+            try {
+                serverConnection.removeLibraryFromFavorites(libraryId);
+                Log.d("REMOVE FROM FAVORITES", "LIBRARY " + libraryId);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Start the thread
+        _thread.start();
+        // Wait for thread to join
+        _thread.join();
+
+        Toast.makeText(getApplicationContext(), "Library removed to favorites!", Toast.LENGTH_SHORT).show();
     }
 
 

@@ -7,7 +7,7 @@
 
     <RelativeLayout
         android:id="@+id/top_bar"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
         <ImageView
@@ -22,42 +22,72 @@
 
         <TextView
             android:id="@+id/library_name_title"
-            android:layout_width="match_parent"
+            android:layout_width="295dp"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:layout_marginBottom="2dp"
-            android:gravity="center_horizontal"
+            android:layout_toEndOf="@+id/back_btn"
+            android:layout_marginStart="5dp"
+            android:gravity="center"
             android:text="@string/library_name"
             android:textAlignment="center"
             android:textSize="40sp"
             android:textStyle="bold" />
 
+        <!-- ADD/REMOVE FROM FAVORITES -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/library_add_remove_favorites_btn"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_marginTop="7dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="10dp"
+            app:cardUseCompatPadding="true"
+            android:layout_toEndOf="@+id/library_name_title"
+            >
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="vertical" >
+
+                <ImageView
+                    android:id="@+id/favorite_library"
+                    android:tag="unselected"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/library_favorite_unselected" />
+
+                <!--                <TextView-->
+                <!--                    android:layout_width="wrap_content"-->
+                <!--                    android:layout_height="wrap_content"-->
+                <!--                    android:layout_marginTop="5dp"-->
+                <!--                    android:text="Favorite"-->
+                <!--                    android:textSize="14sp"-->
+                <!--                    android:textAlignment="center"-->
+                <!--                    android:textColor="@color/black" />-->
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
     </RelativeLayout>
 
     <LinearLayout
-        android:id="@+id/library_info"
+        android:id="@+id/library_image_and_buttons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/top_bar"
         android:orientation="vertical"
-        android:layout_marginTop="8dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp"
+        android:layout_marginStart="15dp"
+        android:layout_marginEnd="15dp"
         android:layout_centerHorizontal="true">
-
-        <TextView
-            android:id="@+id/library_address"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:textSize="16sp"
-            android:text="@string/library_address" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="5dp"
+            android:layout_marginTop="5dp"
             android:orientation="horizontal">
 
             <ImageView
@@ -68,138 +98,95 @@
                 android:scaleType="centerCrop"
                 android:layout_gravity="center_horizontal" />
 
-            <!-- ADD/REMOVE FROM FAVORITES -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/library_add_remove_favorites_btn"
-                android:layout_width="140dp"
-                android:layout_height="140dp"
-                android:layout_gravity="center"
-                android:layout_marginStart="30dp"
-                app:cardBackgroundColor="@color/almost_white"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="8dp"
-                app:cardUseCompatPadding="true"
-                >
+            <LinearLayout
+                android:id="@+id/library_check_in_out"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginStart="40dp">
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical|center_horizontal"
-                    android:gravity="center"
-                    android:orientation="vertical" >
+                <!-- CHECK IN BOOK -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/library_check_in_book_btn"
+                    android:layout_width="130dp"
+                    android:layout_height="90dp"
+                    android:layout_gravity="center"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="15dp"
+                    app:cardElevation="2dp"
+                    app:cardUseCompatPadding="true"
+                    >
 
-                    <ImageView
-                        android:id="@+id/favorite_library"
-                        android:tag="unselected"
-                        android:layout_width="35dp"
-                        android:layout_height="35dp"
-                        android:src="@drawable/library_favorite_unselected" />
-
-                    <TextView
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
-                        android:text="@string/add_remove_from_favorites"
-                        android:textSize="14sp"
-                        android:textAlignment="center"
-                        android:textColor="@color/black" />
+                        android:layout_gravity="center_vertical|center_horizontal"
+                        android:gravity="center"
+                        android:orientation="vertical" >
 
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+                        <ImageView
+                            android:layout_width="60dp"
+                            android:layout_height="45dp"
+                            android:src="@drawable/library_book_barcode" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/check_in_book"
+                            android:textSize="14sp"
+                            android:textAlignment="center"
+                            android:textColor="@color/black" />
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- CHECK OUT BOOK -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/library_check_out_book_btn"
+                    android:layout_width="130dp"
+                    android:layout_height="90dp"
+                    android:layout_gravity="center"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="15dp"
+                    app:cardElevation="2dp"
+                    app:cardUseCompatPadding="true"
+                    >
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical|center_horizontal"
+                        android:gravity="center"
+                        android:orientation="vertical" >
+
+                        <ImageView
+                            android:layout_width="60dp"
+                            android:layout_height="45dp"
+                            android:src="@drawable/library_book_barcode" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/check_out_book"
+                            android:textSize="14sp"
+                            android:textAlignment="center"
+                            android:textColor="@color/black" />
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
         </LinearLayout>
 
-    </LinearLayout>
-    
-    <LinearLayout
-        android:id="@+id/library_check_in_out"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_below="@+id/library_info"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_marginTop="10dp"
-        android:layout_marginStart="10dp">
-
-        <!-- CHECK IN BOOK -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/library_check_in_book_btn"
-            android:layout_width="180dp"
-            android:layout_height="105dp"
-            android:layout_gravity="center"
-            app:cardBackgroundColor="@color/almost_white"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="3dp"
-            app:cardUseCompatPadding="true"
-            >
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|center_horizontal"
-                android:gravity="center"
-                android:orientation="vertical" >
-
-                <ImageView
-                    android:layout_width="65dp"
-                    android:layout_height="45dp"
-                    android:src="@drawable/library_book_barcode" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text="@string/check_in_book"
-                    android:textSize="14sp"
-                    android:textAlignment="center"
-                    android:textColor="@color/black" />
-
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- CHECK OUT BOOK -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/library_check_out_book_btn"
-            android:layout_width="180dp"
-            android:layout_height="105dp"
-            android:layout_gravity="center"
-            android:layout_marginStart="10dp"
-            app:cardBackgroundColor="@color/almost_white"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="3dp"
-            app:cardUseCompatPadding="true"
-            >
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|center_horizontal"
-                android:gravity="center"
-                android:orientation="vertical" >
-
-                <ImageView
-                    android:layout_width="65dp"
-                    android:layout_height="45dp"
-                    android:src="@drawable/library_book_barcode" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text="@string/check_out_book"
-                    android:textSize="14sp"
-                    android:textAlignment="center"
-                    android:textColor="@color/black" />
-
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
     </LinearLayout>
 
     <TextView
         android:id="@+id/list_books_prompt"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/library_check_in_out"
+        android:layout_below="@id/library_image_and_buttons"
         android:layout_marginStart="12dp"
         android:layout_marginTop="10dp"
         android:text="@string/books_currently_available"

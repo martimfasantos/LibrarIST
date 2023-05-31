@@ -47,6 +47,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
 
+    public static final int MAX_DIST_KM_CACHE = 10;
+
+    // User ID
+    public final static int userId = 0;
     private GoogleMap mMap;
 
     // The entry point to the Fused Location Provider.
