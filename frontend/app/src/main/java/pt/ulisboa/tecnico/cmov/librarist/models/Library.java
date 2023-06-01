@@ -17,6 +17,8 @@ public class Library {
 
     private List<Integer> bookIds;
 
+    private final boolean isFavorite = false; // TODO get this from backend
+
     public Library(int id, String name, LatLng latLng, String address, byte[] photo, List<Integer> bookIds){
         this.id = id;
         this.name = name;
@@ -44,6 +46,10 @@ public class Library {
 
     public List<Integer> getBookIds() {
         return bookIds;
+    }
+
+    public boolean isFavorite() {
+        return isFavorite;
     }
 
     public byte[] getPhoto() { return photo; }

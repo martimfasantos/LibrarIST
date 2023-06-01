@@ -22,12 +22,12 @@
 
         <TextView
             android:id="@+id/library_name_title"
-            android:layout_width="295dp"
+            android:layout_width="290dp"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
+            android:layout_marginStart="5dp"
             android:layout_marginBottom="2dp"
             android:layout_toEndOf="@+id/back_btn"
-            android:layout_marginStart="5dp"
             android:gravity="center"
             android:text="@string/library_name"
             android:textAlignment="center"
@@ -40,6 +40,7 @@
             android:layout_width="55dp"
             android:layout_height="55dp"
             android:layout_marginTop="7dp"
+            android:layout_marginEnd="2dp"
             app:cardBackgroundColor="@color/white"
             app:cardCornerRadius="10dp"
             app:cardUseCompatPadding="true"
@@ -56,21 +57,32 @@
                 <ImageView
                     android:id="@+id/favorite_library"
                     android:tag="unselected"
+                    android:layout_gravity="center"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
                     android:src="@drawable/library_favorite_unselected" />
 
-                <!--                <TextView-->
-                <!--                    android:layout_width="wrap_content"-->
-                <!--                    android:layout_height="wrap_content"-->
-                <!--                    android:layout_marginTop="5dp"-->
-                <!--                    android:text="Favorite"-->
-                <!--                    android:textSize="14sp"-->
-                <!--                    android:textAlignment="center"-->
-                <!--                    android:textColor="@color/black" />-->
-
             </LinearLayout>
         </androidx.cardview.widget.CardView>
+    </RelativeLayout>
+
+    <!--        MAP         -->
+    <RelativeLayout
+        android:id="@+id/library_map"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:layout_below="@+id/top_bar"
+        android:layout_marginTop="2dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginBottom="5dp"
+        android:layout_gravity="center" >
+
+        <fragment
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:name="com.google.android.gms.maps.SupportMapFragment" />
 
     </RelativeLayout>
 
@@ -78,7 +90,7 @@
         android:id="@+id/library_image_and_buttons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/top_bar"
+        android:layout_below="@id/library_map"
         android:orientation="vertical"
         android:layout_marginStart="15dp"
         android:layout_marginEnd="15dp"

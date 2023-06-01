@@ -55,10 +55,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // The entry point to the Fused Location Provider.
     private FusedLocationProviderClient fusedLocationProviderClient;
-    private boolean locationPermissionGranted = false;
+    public static boolean locationPermissionGranted = false;
     // A default location (Lisbon, Portugal) and default zoom to use when location permission is not granted.
     private final LatLng defaultLocation = new LatLng(38.736946, -9.142685);
-    private static final int DEFAULT_ZOOM = 18;
+    public static final int DEFAULT_ZOOM = 18;
 
     // The geographical location where the device is currently located. That is, the last-known
     // location retrieved by the Fused Location Provider.
@@ -113,8 +113,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
+     * This is where we can add markers or lines, add listeners or move the camera.
      *
      * If Google Play services is not installed on the device, the user will be prompted to install
      * it inside the SupportMapFragment. This method will only be triggered once the user has

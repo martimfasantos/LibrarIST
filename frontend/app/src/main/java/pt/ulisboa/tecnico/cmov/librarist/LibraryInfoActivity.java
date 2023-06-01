@@ -1,12 +1,15 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.DEFAULT_ZOOM;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.locationPermissionGranted;
 
 import android.content.DialogInterface;
 import android.content.Intent;
 
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -24,6 +27,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.dhaval2404.imagepicker.ImagePicker;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.libraries.places.api.Places;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
@@ -36,13 +48,19 @@ import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateBookPopUp;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
-public class LibraryInfoActivity extends AppCompatActivity {
+public class LibraryInfoActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private int libraryId;
     private String libraryName;
+
+    private LatLng libraryLatLng;
     private String libraryAddress;
 
     private byte[] libraryPhoto;
+
+    private boolean isFavorited;
+
+    private GoogleMap mMap;
 
     private ActivityResultLauncher<ScanOptions> barCodeLauncherCheckIn;
     private ActivityResultLauncher<ScanOptions> barCodeLauncherCheckOut;
@@ -69,6 +87,14 @@ public class LibraryInfoActivity extends AppCompatActivity {
         // Set text from intent into Library Name Title text view
         TextView nameView = findViewById(R.id.library_name_title);
         nameView.setText(libraryName);
+
+        // Construct a PlacesClient (for map)
+        Places.initialize(getApplicationContext(), getString(R.string.maps_api_key));
+        // The entry point to the Places API.
+        Places.createClient(this);
+
+        // Initializes the map
+        initMap();
 
         // Change image to library's photo
         ImageView imageView = findViewById(R.id.library_photo);
@@ -147,6 +173,81 @@ public class LibraryInfoActivity extends AppCompatActivity {
         }
     }
 
+    /** -----------------------------------------------------------------------------
+     *                                 MAP FUNCTIONS
+     -------------------------------------------------------------------------------- */
+
+    private void initMap() {
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        assert supportMapFragment != null;
+        supportMapFragment.getMapAsync(this);
+    }
+
+    /**
+     * Manipulates the map once available.
+     * This callback is triggered when the map is ready to be used.
+     * This is where we can add markers or lines, add listeners or move the camera.
+     *
+     * If Google Play services is not installed on the device, the user will be prompted to install
+     * it inside the SupportMapFragment. This method will only be triggered once the user has
+     * installed Google Play services and returned to the app.
+     */
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        mMap = googleMap;
+
+        // Center map in this library
+        centerCamera();
+
+        // Turn on the My Location layer and the related control on the map.
+        updateLocationUI();
+    }
+
+    private void centerCamera() {
+
+        // Create a CameraPosition with desired properties
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(libraryLatLng)
+                .zoom(DEFAULT_ZOOM)
+                .build();
+
+        // Set image resource for the library marker
+        int imageResource;
+        if (isFavorited){
+            imageResource = R.drawable.marker_library_fav;
+        } else {
+            imageResource = R.drawable.marker_library;
+        }
+
+        // Add a marker in desired location and move the camera smoothly
+        mMap.clear();
+        mMap.addMarker(new MarkerOptions()
+                .position(libraryLatLng)
+                .icon(BitmapDescriptorFactory.fromResource(imageResource)));
+        // Animate the camera movement
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+    }
+
+    private void updateLocationUI() {
+        if (mMap == null) {
+            return;
+        }
+        try {
+            if (locationPermissionGranted) {
+                mMap.setMyLocationEnabled(true);
+                mMap.getUiSettings().setMyLocationButtonEnabled(true);
+            } else {
+                mMap.setMyLocationEnabled(false);
+                mMap.getUiSettings().setMyLocationButtonEnabled(false);
+             }
+        } catch (SecurityException e) {
+            Log.e("Exception: %s", e.getMessage());
+        }
+    }
+
+
 
     /** -----------------------------------------------------------------------------
      *                                  BUTTONS FUNCTIONS
@@ -169,6 +270,7 @@ public class LibraryInfoActivity extends AppCompatActivity {
                     }
                     favoriteButton.setImageResource(R.drawable.library_favorite_selected);
                     favoriteButton.setTag("selected");
+                    LibraryInfoActivity.this.isFavorited = true;
                     Toast.makeText(getApplicationContext(), "Library added to your favorites!", Toast.LENGTH_SHORT).show();
 
                 } else { // if it was already selected
@@ -179,8 +281,11 @@ public class LibraryInfoActivity extends AppCompatActivity {
                     }
                     favoriteButton.setImageResource(R.drawable.library_favorite_unselected);
                     favoriteButton.setTag("unselected");
+                    LibraryInfoActivity.this.isFavorited = false;
                     Toast.makeText(getApplicationContext(), "Library removed from your favorites!", Toast.LENGTH_SHORT).show();
                 }
+                // Center map with the changed marker
+                centerCamera();
             }
         });
     }
@@ -238,14 +343,16 @@ public class LibraryInfoActivity extends AppCompatActivity {
 
         // Get the message from the intent
         Intent intent = getIntent();
-        libraryId = intent.getIntExtra("libId", -1);
+        this.libraryId = intent.getIntExtra("libId", -1);
 
         Library lib = libraryCache.getLibrary(libraryId);
-        libraryName = lib.getName();
-        libraryAddress = lib.getAddress();
-        libraryPhoto = lib.getPhoto();
+        this.libraryName = lib.getName();
+        this.libraryLatLng = lib.getLatLng();
+        this.libraryAddress = lib.getAddress();
+        this.libraryPhoto = lib.getPhoto();
+        this.isFavorited = lib.isFavorite();
 
-        if (libraryName.isEmpty() || libraryAddress.isEmpty()){
+        if (this.libraryName.isEmpty() || this.libraryAddress.isEmpty()){
             Toast.makeText(getApplicationContext(), "There was an error processing your request", Toast.LENGTH_SHORT).show();
             finish();
         }

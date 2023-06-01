@@ -47,7 +47,7 @@ import java.util.Map;
 
 
 public class ServerConnection {
-    public static final String endpoint = "http://172.19.122.27:5000";
+    public static final String endpoint = "http://192.92.147.54:5000";
     //public static final String wsEndpoint = "ws://cmov2-docentes-tp-1.vps.tecnico.ulisboa.pt:5000/ws";
     //WebSocketClient webSocketClient = null;
 
