@@ -15,17 +15,19 @@ public class Library {
 
     private final byte[] photo;
 
-    private List<Integer> bookIds;
+    private final List<Integer> bookIds;
 
-    private final boolean isFavorite = false; // TODO get this from backend
+    private boolean isFavorite;
 
-    public Library(int id, String name, LatLng latLng, String address, byte[] photo, List<Integer> bookIds){
+    public Library(int id, String name, LatLng latLng, String address, byte[] photo,
+                   List<Integer> bookIds, boolean favorite){
         this.id = id;
         this.name = name;
         this.latLng = latLng;
         this.address = address;
         this.photo = photo;
         this.bookIds = bookIds;
+        this.isFavorite = favorite;
     }
 
     public int getId() {
@@ -48,11 +50,15 @@ public class Library {
         return bookIds;
     }
 
+    public byte[] getPhoto() { return photo; }
+
     public boolean isFavorite() {
         return isFavorite;
     }
 
-    public byte[] getPhoto() { return photo; }
+    public void setFavorite(boolean status){
+        this.isFavorite = status;
+    }
 
     public void addBook(int bookId){
         if (!bookIds.contains(bookId)){

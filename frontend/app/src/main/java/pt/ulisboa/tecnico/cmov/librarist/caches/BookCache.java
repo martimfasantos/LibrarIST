@@ -11,7 +11,7 @@ import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
 public class BookCache {
 
-    private HashMap<Integer, Book> books = new HashMap<>();
+    private final HashMap<Integer, Book> books = new HashMap<>();
 
     public BookCache(){}
 

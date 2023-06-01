@@ -162,10 +162,10 @@ public class BookInfoActivity extends AppCompatActivity {
 
         if (active) {
             notif_btn.setImageResource(R.drawable.bell_filled);
-            notifMessage.setText(R.string.book_notif_enabled);
+            notifMessage.setText(R.string.book_notif_disabled);
         } else {
             notif_btn.setImageResource(R.drawable.bell_unfilled);
-            notifMessage.setText(R.string.book_notif_disabled);
+            notifMessage.setText(R.string.book_notif_enabled);
         }
 
         notif_btn.setTag(this.book);

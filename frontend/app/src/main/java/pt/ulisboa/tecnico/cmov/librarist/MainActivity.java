@@ -28,12 +28,14 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -51,7 +53,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // User ID
     public final static int userId = 0;
-    private GoogleMap mMap;
+    public static GoogleMap mMap;
+
+    public static HashMap<Integer, Marker> markerMap = new HashMap<>();
 
     // The entry point to the Fused Location Provider.
     private FusedLocationProviderClient fusedLocationProviderClient;
@@ -64,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // location retrieved by the Fused Location Provider.
 //    private Location lastKnownLocation;
 
-    public static Location currentLocation = null;
+    public static Location currentLocation;
 
     public static LibraryCache libraryCache = new LibraryCache();
     public static BookCache booksCache = new BookCache();
@@ -318,8 +322,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Uri currentLibraryPhotoURI = data.getData();
 
         currentCreateLibraryPopUp.changeUploadImageIcon(currentLibraryPhotoURI);
-        // currentLibraryPhoto.setImageURI(uri);
-
     }
 
     // Save the current map (location and camera position)

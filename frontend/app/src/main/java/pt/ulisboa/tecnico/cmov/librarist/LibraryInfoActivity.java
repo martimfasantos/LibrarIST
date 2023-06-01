@@ -1,9 +1,10 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.DEFAULT_ZOOM;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.locationPermissionGranted;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.DEFAULT_ZOOM;
 
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -31,9 +32,11 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.libraries.places.api.Places;
 import com.journeyapps.barcodescanner.ScanContract;
@@ -60,7 +63,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
     private boolean isFavorited;
 
-    private GoogleMap mMap;
+    private GoogleMap libraryMap;
 
     private ActivityResultLauncher<ScanOptions> barCodeLauncherCheckIn;
     private ActivityResultLauncher<ScanOptions> barCodeLauncherCheckOut;
@@ -196,7 +199,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
      */
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
-        mMap = googleMap;
+        libraryMap = googleMap;
 
         // Center map in this library
         centerCamera();
@@ -222,25 +225,25 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         }
 
         // Add a marker in desired location and move the camera smoothly
-        mMap.clear();
-        mMap.addMarker(new MarkerOptions()
+        libraryMap.clear();
+        libraryMap.addMarker(new MarkerOptions()
                 .position(libraryLatLng)
                 .icon(BitmapDescriptorFactory.fromResource(imageResource)));
         // Animate the camera movement
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        libraryMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
 
     private void updateLocationUI() {
-        if (mMap == null) {
+        if (libraryMap == null) {
             return;
         }
         try {
             if (locationPermissionGranted) {
-                mMap.setMyLocationEnabled(true);
-                mMap.getUiSettings().setMyLocationButtonEnabled(true);
+                libraryMap.setMyLocationEnabled(true);
+                libraryMap.getUiSettings().setMyLocationButtonEnabled(true);
             } else {
-                mMap.setMyLocationEnabled(false);
-                mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                libraryMap.setMyLocationEnabled(false);
+                libraryMap.getUiSettings().setMyLocationButtonEnabled(false);
              }
         } catch (SecurityException e) {
             Log.e("Exception: %s", e.getMessage());
@@ -268,26 +271,17 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    favoriteButton.setImageResource(R.drawable.library_favorite_selected);
-                    favoriteButton.setTag("selected");
-                    LibraryInfoActivity.this.isFavorited = true;
-                    Toast.makeText(getApplicationContext(), "Library added to your favorites!", Toast.LENGTH_SHORT).show();
-
                 } else { // if it was already selected
                     try {
                         removeLibraryFromFavorites();
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    favoriteButton.setImageResource(R.drawable.library_favorite_unselected);
-                    favoriteButton.setTag("unselected");
-                    LibraryInfoActivity.this.isFavorited = false;
-                    Toast.makeText(getApplicationContext(), "Library removed from your favorites!", Toast.LENGTH_SHORT).show();
                 }
-                // Center map with the changed marker
-                centerCamera();
             }
         });
+        // Update the Star Favorite button
+        updateFavoriteButtonIcon();
     }
 
     private void setupCheckInButton(){
@@ -485,6 +479,25 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Wait for thread to join
         _thread.join();
 
+        // If library is in cache, update locally as well
+        LibraryInfoActivity.this.isFavorited = true;
+        if(libraryCache.getLibrary(libraryId) != null){
+            libraryCache.getLibrary(libraryId).setFavorite(true);
+        }
+
+        // Retrieve the marker you want to modify
+        Marker marker = markerMap.get(libraryId);
+        // Set the new icon for the marker
+        if (marker != null) {
+            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_library_fav));
+        }
+
+        // Update the Star Favorite button
+        updateFavoriteButtonIcon();
+
+        // Center map with the changed marker in this view
+        centerCamera();
+
         Toast.makeText(getApplicationContext(), "Library added to favorites!", Toast.LENGTH_SHORT).show();
     }
 
@@ -505,9 +518,39 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Wait for thread to join
         _thread.join();
 
+        // If library is in cache, update locally as well
+        LibraryInfoActivity.this.isFavorited = false;
+        if(libraryCache.getLibrary(libraryId) != null){
+            libraryCache.getLibrary(libraryId).setFavorite(false);
+        }
+
+        // Retrieve the marker you want to modify
+        Marker marker = markerMap.get(libraryId);
+        // Set the new icon for the marker
+        if (marker != null) {
+            marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_library));
+        }
+
+        // Update the Star Favorite button
+        updateFavoriteButtonIcon();
+
+        // Center map with the changed marker in this view
+        centerCamera();
+
         Toast.makeText(getApplicationContext(), "Library removed to favorites!", Toast.LENGTH_SHORT).show();
     }
 
+    private void updateFavoriteButtonIcon(){
+        ImageView favoriteButton = findViewById(R.id.favorite_library);
+        if (isFavorited){
+            favoriteButton.setImageResource(R.drawable.library_favorite_selected);
+            favoriteButton.setTag("selected");
+
+        } else {
+            favoriteButton.setImageResource(R.drawable.library_favorite_unselected);
+            favoriteButton.setTag("unselected");
+        }
+    }
 
     public void listAvailableBooks() {
         // Get library's books that where loaded to cache when the library was loaded
