@@ -53,22 +53,24 @@ class Server:
     
     # List books from library
     def list_all_books_from_library(self, lib_id: int):
-        return jsonify(self.libraries[lib_id].getava)
+        return jsonify(self.libraries[lib_id].available_books), 200
     
     # Add library to users favorites
     def add_favorite_lib(self, lib_id: int, user_id: int):
         self.users[user_id].add_library(lib_id)
+        self.libraries[lib_id].add_favorite_user(user_id)
         print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
         return jsonify({}), 200
 
     # Remove library from users favorites
-    def remove_favorite_lib(self, lib_id, user_id):
+    def remove_favorite_lib(self, lib_id, user_id: int):
         self.users[user_id].remove_library(lib_id)
+        self.libraries[lib_id].remove_favorite_user(user_id)
         print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
         return jsonify({}), 200
     
     # Covert library into json
-    def library_to_json(self, library: Library):
+    def library_to_json(self, library: Library, user_id: int):
         photo = library.photo
 
         with open(photo, "rb") as file:
@@ -82,14 +84,15 @@ class Server:
                 "longitude": library.location[1],
                 "address": library.address,
                 "photo": photo_base64,
-                "bookIds": library.available_books}
+                "bookIds": library.available_books,
+                "isFavorite": library.is_user_favorite(user_id)}    
 
     # Get libraries with the given book available
-    def get_libraries_with_book(self, book_id: int):
+    def get_libraries_with_book(self, book_id: int, user_id: int):
         libraries = []
         for library in self.libraries.values():
             if book_id in library.available_books:
-                libraries.append(self.library_to_json(library))
+                libraries.append(self.library_to_json(library, user_id))
         return jsonify(libraries), 200
 
     # Find book id from barcode
@@ -114,11 +117,11 @@ class Server:
 
     
     # Get book with book id
-    def get_book(self, book_id: int, user_id: int = 0):
+    def get_book(self, book_id: int, user_id: int):
         return jsonify(self.book_to_json(self.books[book_id], user_id)), 200
     
     # Get all books
-    def get_all_books(self, user_id: int = 0):
+    def get_all_books(self, user_id: int):
         all_books = []
         for book in self.books.values():
             all_books.append(self.book_to_json(book, user_id))
@@ -168,7 +171,7 @@ class Server:
         return jsonify({"bookId": self.get_book_id_from_barcode_in_library(barcode, lib_id)}), 200   
 
     # User checkin book at a library
-    def check_out_book(self, barcode: str, lib_id: int, user_id: int = 0):
+    def check_out_book(self, barcode: str, lib_id: int):
         # find book id for the given barcode
         book_id = self.get_book_id_from_barcode(barcode)
 
@@ -185,7 +188,7 @@ class Server:
         return jsonify({"bookId": book_id}), 200
 
     # User return book at library
-    def return_book(self, book_id: int, lib_id: int, user_id: int = 0):
+    def return_book(self, book_id: int, lib_id: int, user_id: int):
         self.users[user_id].return_book(book_id)
         self.libraries[lib_id].add_book(book_id)
         self.notify_users(book_id, lib_id)
