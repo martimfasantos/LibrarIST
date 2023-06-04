@@ -42,4 +42,14 @@ public class Book {
     public void toggleNotifications() {
         this.activeNotif = !this.activeNotif;
     }
+
+    public int getSizeInBytes() {
+        int idSize = Integer.BYTES;  // Size of an integer in bytes
+        int titleSize = title.getBytes().length;
+        int coverSize = cover.length;
+        int barcodeSize = barcode.getBytes().length;
+        int activeNotifSize = 1;  // Assuming Boolean takes 1 byte
+
+        return idSize + titleSize + coverSize + barcodeSize + activeNotifSize;
+    }
 }

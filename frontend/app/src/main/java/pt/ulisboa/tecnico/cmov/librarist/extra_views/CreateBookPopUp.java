@@ -26,15 +26,19 @@ import com.github.dhaval2404.imagepicker.ImagePicker;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 
 import pt.ulisboa.tecnico.cmov.librarist.BookInfoActivity;
 import pt.ulisboa.tecnico.cmov.librarist.BookMenuActivity;
+import pt.ulisboa.tecnico.cmov.librarist.MainActivity;
 import pt.ulisboa.tecnico.cmov.librarist.R;
 import pt.ulisboa.tecnico.cmov.librarist.ServerConnection;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
+import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
 public class CreateBookPopUp {
 
@@ -47,11 +51,15 @@ public class CreateBookPopUp {
 
     private final ServerConnection serverConnection = new ServerConnection();
 
+    private final MessageDisplayer messageDisplayer;
+
+
     public CreateBookPopUp(Activity libraryInfoActivity, String barcode, int libraryId){
 
         this.LibraryInfoActivity = libraryInfoActivity;
         this.bookBarcode = barcode;
         this.libraryId = libraryId;
+        this.messageDisplayer = new MessageDisplayer(this.LibraryInfoActivity);
 
         // Display AlertDialog to get the title for the marker
         LayoutInflater inflater = libraryInfoActivity.getLayoutInflater();
@@ -125,9 +133,20 @@ public class CreateBookPopUp {
                     Thread thread = new Thread(() -> {
                         try {
                             serverConnection.checkInNewBook(bookTitle, convertUriToBytes(currentBookCoverURI), bookBarcode, libraryId);
+                        } catch (ConnectException e) {
+                            Toast.makeText(LibraryInfoActivity.getApplicationContext(), "Couldn't connect to the server!", Toast.LENGTH_SHORT).show();
+                            return;
+                        } catch (SocketTimeoutException e) {
+                            Toast.makeText(LibraryInfoActivity.getApplicationContext(), "Couldn't check in new book!", Toast.LENGTH_SHORT).show();
+                            return;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
+
+                        messageDisplayer.showToast("New Book checked in!");
+
+                        // Update available books
+                        listAvailableBooks();
                     });
 
                     // Start the thread
@@ -142,10 +161,6 @@ public class CreateBookPopUp {
                     // Dismiss the dialog
                     alertDialog.dismiss();
 
-                    Toast.makeText(LibraryInfoActivity.getApplicationContext(), "New Book checked in!", Toast.LENGTH_SHORT).show();
-
-                    // Update available books
-                    listAvailableBooks();
                 }
             }
         });
@@ -232,7 +247,7 @@ public class CreateBookPopUp {
             // Update the layout parameters of the image view
             uploadView.setLayoutParams(layoutParams);
         } else {
-            Toast.makeText(LibraryInfoActivity, "There was an error processing your photo!", Toast.LENGTH_SHORT).show();
+            messageDisplayer.showToast("There was an error processing your photo!");
         }
     }
 

@@ -4,6 +4,7 @@ from flask import jsonify
 from PIL import Image
 from io import BytesIO
 from typing import Dict
+from haversine import haversine, Unit
 
 from models.book import Book
 from models.library import Library
@@ -55,20 +56,42 @@ class Server:
     def list_all_books_from_library(self, lib_id: int):
         return jsonify(self.libraries[lib_id].available_books), 200
     
-    # Add library to users favorites
-    def add_favorite_lib(self, lib_id: int, user_id: int):
-        self.users[user_id].add_library(lib_id)
-        self.libraries[lib_id].add_favorite_user(user_id)
-        print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
-        return jsonify({}), 200
 
-    # Remove library from users favorites
-    def remove_favorite_lib(self, lib_id, user_id: int):
-        self.users[user_id].remove_library(lib_id)
-        self.libraries[lib_id].remove_favorite_user(user_id)
-        print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
-        return jsonify({}), 200
+    # ------------------------------------------------------------
+    # -                         MARKERS                          -
+    # ------------------------------------------------------------
+
+    # List libraries markers info in a given radius
+    def get_libraries_markers(self, lat: float, lon: float, radius: int, user_id: int):
+        libraries_markers = []
+        for lib in self.libraries.values():
+            if (haversine((lat, lon), lib.location, unit=Unit.KILOMETERS) <= radius):
+                libraries_markers.append(self.library_marker_to_json(lib, user_id))
+        return jsonify(libraries_markers), 200
+
+     # Covert library marker into json
+    def library_marker_to_json(self, library: Library, user_id: int):
+        return {"libId": library.id,
+                "name": library.name,
+                "latitude": library.location[0],
+                "longitude": library.location[1],
+                "address": library.address,
+                "isFavorite": library.is_user_favorite(user_id)} 
     
+
+    # ------------------------------------------------------------
+    # -                         LOAD                             -
+    # ------------------------------------------------------------
+
+    # List libraries in a given radius
+    def get_libraries_to_load_cache(self, lat: float, lon: float, radius: int, user_id: int):
+        libraries, books = [], []
+        for lib in self.libraries.values():
+            if (haversine((lat, lon), lib.location, unit=Unit.KILOMETERS) <= radius):
+                libraries.append(self.library_to_json(lib, user_id))
+                books.extend(self.book_to_json(self.books[book_id], user_id) for book_id in lib.available_books)
+        return jsonify({"libraries": libraries, "books": books}), 200
+                
     # Covert library into json
     def library_to_json(self, library: Library, user_id: int):
         photo = library.photo
@@ -86,6 +109,21 @@ class Server:
                 "photo": photo_base64,
                 "bookIds": library.available_books,
                 "isFavorite": library.is_user_favorite(user_id)}    
+                 
+    # Add library to users favorites
+    def add_favorite_lib(self, lib_id: int, user_id: int):
+        self.users[user_id].add_library(lib_id)
+        self.libraries[lib_id].add_favorite_user(user_id)
+        print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
+        return jsonify({}), 200
+
+    # Remove library from users favorites
+    def remove_favorite_lib(self, lib_id: int, user_id: int):
+        self.users[user_id].remove_library(lib_id)
+        self.libraries[lib_id].remove_favorite_user(user_id)
+        print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
+        return jsonify({}), 200
+    
 
     # Get libraries with the given book available
     def get_libraries_with_book(self, book_id: int, user_id: int):
@@ -186,13 +224,6 @@ class Server:
         print(lib_id)
         print(self.libraries[lib_id].available_books)
         return jsonify({"bookId": book_id}), 200
-
-    # User return book at library
-    def return_book(self, book_id: int, lib_id: int, user_id: int):
-        self.users[user_id].return_book(book_id)
-        self.libraries[lib_id].add_book(book_id)
-        self.notify_users(book_id, lib_id)
-        return json.dumps({"status": 200})
 
     # Filter book by title
     def filter_books_by_title(self, filter_title):

@@ -18,15 +18,20 @@ import androidx.cardview.widget.CardView;
 
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
+import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
 public class BookMenuActivity extends AppCompatActivity {
 
     private final ServerConnection serverConnection = new ServerConnection();
+
+    private final MessageDisplayer messageDisplayer = new MessageDisplayer(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,9 +118,17 @@ public class BookMenuActivity extends AppCompatActivity {
             try {
                 allBooks.addAll(serverConnection.getAllBooks());
                 Log.d("GET ALL BOOKS", allBooks.toString());
+            } catch (ConnectException e) {
+                Toast.makeText(getApplicationContext(), "Couldn't connect to the server!", Toast.LENGTH_SHORT).show();
+                return;
+            } catch (SocketTimeoutException e) {
+                Toast.makeText(getApplicationContext(), "Couldn't get books!", Toast.LENGTH_SHORT).show();
+                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
+            messageDisplayer.showToast("Got all books!");
         });
 
         // Start the thread
@@ -126,8 +139,6 @@ public class BookMenuActivity extends AppCompatActivity {
         } catch (InterruptedException e){
             throw new RuntimeException(e);
         }
-
-        Toast.makeText(getApplicationContext(), "Got all books!", Toast.LENGTH_SHORT).show();
 
         return allBooks;
     }

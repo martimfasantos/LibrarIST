@@ -1,5 +1,7 @@
 package pt.ulisboa.tecnico.cmov.librarist.caches;
 
+import android.util.LruCache;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,28 +12,33 @@ import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 public class LibraryCache {
 
     // Map of the libraries
-    private HashMap<Integer, Library> libraries = new HashMap<>();
+    private final LruCache<Integer, Library> librariesCache;
 
-    public LibraryCache(){}
+    public LibraryCache(int cacheSize){
+        this.librariesCache = new LruCache<>(cacheSize){
+            @Override
+            protected int sizeOf(Integer key, Library library) {
+                return library.getSizeInBytes();
+            }
+        };
+    }
 
     public void addLibrary(Library library){
-        libraries.put(library.getId(), library);
-
-        // TODO add all the books that this library has and add them to the BookCache
+        librariesCache.put(library.getId(), library);
     }
 
     public Library getLibrary(int libId){
-        return libraries.get(libId);
+        return librariesCache.get(libId);
     }
 
     public List<Library> getLibraries(){
-        return new ArrayList<>(this.libraries.values());
+        return new ArrayList<>(this.librariesCache.snapshot().values());
     }
 
     public List<Book> getBooksFromLibrary(int libraryID, BookCache bookCache){
         // Find Library
         Library library = null;
-        for (Library lib : libraries.values()){
+        for (Library lib : librariesCache.snapshot().values()){
             if (lib.getId() == libraryID){
                 library = lib;
             }

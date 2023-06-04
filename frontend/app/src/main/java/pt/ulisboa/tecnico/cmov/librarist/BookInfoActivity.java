@@ -31,6 +31,8 @@ import com.google.android.gms.maps.model.LatLng;
 import org.w3c.dom.Text;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -39,12 +41,16 @@ import java.util.stream.Collectors;
 import pt.ulisboa.tecnico.cmov.librarist.caches.LibraryCache;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
+import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
 public class BookInfoActivity extends AppCompatActivity {
 
     private Book book;
 
     private final ServerConnection serverConnection = new ServerConnection();
+
+    private final MessageDisplayer messageDisplayer = new MessageDisplayer(this);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -140,6 +146,12 @@ public class BookInfoActivity extends AppCompatActivity {
         Thread thread = new Thread(() -> {
             try {
                 this.book = serverConnection.getBook(bookId);
+            } catch (ConnectException e) {
+                Toast.makeText(getApplicationContext(), "Couldn't connect to the server!", Toast.LENGTH_SHORT).show();
+                return;
+            } catch (SocketTimeoutException e) {
+                Toast.makeText(getApplicationContext(), "Couldn't get book!", Toast.LENGTH_SHORT).show();
+                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -196,9 +208,17 @@ public class BookInfoActivity extends AppCompatActivity {
             try {
                 libraries.addAll(serverConnection.getLibrariesWithBook(this.book));
                 Log.d("GET AVAILABLE LIBRARIES", libraries.toString());
+            } catch (ConnectException e) {
+                Toast.makeText(getApplicationContext(), "Couldn't connect to the server!", Toast.LENGTH_SHORT).show();
+                return;
+            } catch (SocketTimeoutException e) {
+                Toast.makeText(getApplicationContext(), "Couldn't get libraries!", Toast.LENGTH_SHORT).show();
+                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
+            messageDisplayer.showToast("Got all books!");
         });
 
         // Start the thread
@@ -209,8 +229,6 @@ public class BookInfoActivity extends AppCompatActivity {
         } catch (InterruptedException e){
             throw new RuntimeException(e);
         }
-
-        Toast.makeText(getApplicationContext(), "Got all books!", Toast.LENGTH_SHORT).show();
 
         return libraries;
     }

@@ -27,6 +27,28 @@ def create_user():
     return server.add_new_user(username, password)
 
 
+# List libraries info for markers in a given radius
+# path:
+#   - lat: float - latitude
+#   - lon: float - longitude
+#   - radius: int - radius in kilometers
+#   - userId: int
+@app.route("/libraries/markers", methods=['GET'])
+def get_libraries_markers():
+    return server.get_libraries_markers(float(request.args.get("lat")), float(request.args.get("lon")),
+                                        int(request.args.get("radius")), int(request.args.get("userId")))
+
+# List libraries in a given radius
+# path:
+#   - lat: float - latitude
+#   - lon: float - longitude
+#   - radius: int - radius in kilometers
+#   - userId: int
+@app.route("/libraries/load", methods=['GET'])
+def get_libraries_to_load_cache():
+    return server.get_libraries_to_load_cache(float(request.args.get("lat")), float(request.args.get("lon")),
+                                        int(request.args.get("radius")), int(request.args.get("userId")))
+
 # Add library to user's favorites
 # path:
 #   - userId: int - user to which add the library
