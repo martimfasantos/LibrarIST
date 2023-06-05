@@ -48,6 +48,7 @@ import pt.ulisboa.tecnico.cmov.librarist.MainActivity;
 import pt.ulisboa.tecnico.cmov.librarist.R;
 import pt.ulisboa.tecnico.cmov.librarist.ServerConnection;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
+import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
 public class CreateLibraryPopUp {
 
@@ -57,9 +58,13 @@ public class CreateLibraryPopUp {
 
     private final ServerConnection serverConnection = new ServerConnection();
 
+    private final MessageDisplayer messageDisplayer;
+
+
     public CreateLibraryPopUp(Activity mainActivity, LatLng latLng){
 
         this.MainActivity = mainActivity;
+        this.messageDisplayer = new MessageDisplayer(this.MainActivity);
 
         // Creating a marker
         MarkerOptions markerOptions = new MarkerOptions()
@@ -141,16 +146,16 @@ public class CreateLibraryPopUp {
                 String libraryName = editText.getText().toString();
 
                 if (libraryName.isEmpty()) {
-                    Toast.makeText(MainActivity, "Please insert a valid Library Name...", Toast.LENGTH_SHORT).show();
+                    messageDisplayer.showToast("Please insert a valid Library Name...");
                 } else if (currentLibraryPhotoURI == null){
-                    Toast.makeText(MainActivity, "Please upload a Library Photo...", Toast.LENGTH_SHORT).show();
+                    messageDisplayer.showToast("Please upload a Library Photo...");
                 } else {
 
                     // Get Address from Location
                     String libraryAddress = getAddressFromLocation(latLng);
 
                     if (libraryAddress.isEmpty()){
-                        Toast.makeText(MainActivity, "An error occurred, please try again!", Toast.LENGTH_SHORT).show();
+                        messageDisplayer.showToast("An error occurred, please try again!");
                         alertDialog.dismiss();
                     }
 
@@ -159,10 +164,10 @@ public class CreateLibraryPopUp {
                         try {
                             serverConnection.createLibrary(libraryName, new LatLng(latLng.latitude, latLng.longitude), libraryAddress, convertUriToBytes(currentLibraryPhotoURI));
                         } catch (ConnectException e) {
-                            Toast.makeText(MainActivity.getApplicationContext(), "Couldn't connect to the server!", Toast.LENGTH_SHORT).show();
+                            messageDisplayer.showToast("Couldn't connect to the server!");
                             return;
                         } catch (SocketTimeoutException e) {
-                            Toast.makeText(MainActivity.getApplicationContext(), "Couldn't create the library!", Toast.LENGTH_SHORT).show();
+                            messageDisplayer.showToast("Couldn't create the library!");
                             return;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
@@ -284,7 +289,7 @@ public class CreateLibraryPopUp {
             // Update the layout parameters of the image view
             uploadView.setLayoutParams(layoutParams);
         } else {
-            Toast.makeText(MainActivity, "There was an error processing your photo!", Toast.LENGTH_SHORT).show();
+            messageDisplayer.showToast("There was an error processing your photo!");
         }
     }
 

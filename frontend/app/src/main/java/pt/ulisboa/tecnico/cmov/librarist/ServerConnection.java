@@ -88,6 +88,46 @@ public class ServerConnection {
         }
     }
 
+    public void getLibrary(int libraryId) throws IOException {
+        String url = endpoint + "/libraries/get?libId=" + libraryId + "&userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Get book properties
+            assert responseJson != null;
+            int libId = responseJson.get("libId").getAsInt();
+            if(libId != libraryId){
+                Log.d("GET LIBRARY", "DIFFERENT LIB IDS");
+            }
+            String name = responseJson.get("name").getAsString();
+            double latitude = responseJson.get("latitude").getAsDouble();
+            double longitude = responseJson.get("longitude").getAsDouble();
+            String address = responseJson.get("address").getAsString();
+            byte[] photo = Base64.getDecoder().decode(responseJson.get("photo").getAsString());
+            boolean favorite = responseJson.get("isFavorite").getAsBoolean();
+
+            // Process bookIds
+            JsonArray bookIdsArray = responseJson.getAsJsonArray("bookIds");
+            List<Integer> bookIds = new ArrayList<>();
+            for (JsonElement bookIdElement : bookIdsArray) {
+                bookIds.add(bookIdElement.getAsInt());
+            }
+
+            libraryCache.addLibrary(new Library(libId, name, new LatLng(latitude, longitude),
+                    address, photo, bookIds, favorite));
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+
+    }
+
     public List<Library> getLibrariesWithBook(Book book) throws IOException {
         String url = endpoint + "/books/" + book.getId() + "/libraries?userId=" + userId;
 
@@ -131,9 +171,9 @@ public class ServerConnection {
         }
     }
 
-    public HashMap<Integer, MarkerOptions> getLibrariesMarkers(int radius) throws IOException {
-        String url = endpoint + "/libraries/markers?lat=" + currentLocation.getLatitude()
-                + "&lon=" + currentLocation.getLongitude() + "&radius=" + radius + "&userId=" + userId;
+    public HashMap<Integer, MarkerOptions> getLibrariesMarkers(LatLng coordinates, int radius) throws IOException {
+        String url = endpoint + "/libraries/markers?lat=" + coordinates.latitude
+                + "&lon=" + coordinates.longitude + "&radius=" + radius + "&userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
@@ -213,10 +253,6 @@ public class ServerConnection {
                 for (JsonElement bookIdElement : bookIdsArray) {
                     bookIds.add(bookIdElement.getAsInt());
                 }
-
-                Library lib = new Library(libId, name, new LatLng(latitude, longitude),
-                        address, photo, bookIds, favorite);
-                int size = lib.getSizeInBytes();
 
                 libraryCache.addLibrary(new Library(libId, name, new LatLng(latitude, longitude),
                         address, photo, bookIds, favorite));
@@ -329,8 +365,8 @@ public class ServerConnection {
     }
 
     // Method called when checking in a new book -- WORKING!
-    public void checkInBook(String barcode, int libraryID) throws IOException {
-        String url = endpoint + "/libraries/" + libraryID + "/books/checkin?userId=" + userId;
+    public void checkInBook(String barcode, int libraryId) throws IOException {
+        String url = endpoint + "/libraries/" + libraryId + "/books/checkin?userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
@@ -341,7 +377,7 @@ public class ServerConnection {
         // Create a JSON object
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("barcode", barcode);
-        jsonObject.addProperty("libId", libraryID);
+        jsonObject.addProperty("libId", libraryId);
 
         String jsonString = jsonObject.toString();
 
@@ -373,7 +409,7 @@ public class ServerConnection {
             Log.d("CHECKIN", String.valueOf(bookId));
 
             Book newBook = new Book(bookId, title, cover, barcode, activNotif);
-            libraryCache.getLibrary(libraryID).addBook(bookId);
+            libraryCache.getLibrary(libraryId).addBook(bookId);
             booksCache.addBook(newBook);
             Log.d("CHECKIN", "ADDED BOOK TO CACHE");
 

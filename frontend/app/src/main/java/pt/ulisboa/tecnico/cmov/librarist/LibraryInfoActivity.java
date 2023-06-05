@@ -344,15 +344,52 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         this.libraryId = intent.getIntExtra("libId", -1);
 
         Library lib = libraryCache.getLibrary(libraryId);
-        this.libraryName = lib.getName();
-        this.libraryLatLng = lib.getLatLng();
-        this.libraryAddress = lib.getAddress();
-        this.libraryPhoto = lib.getPhoto();
-        this.isFavorited = lib.isFavorite();
 
-        if (this.libraryName.isEmpty() || this.libraryAddress.isEmpty()){
-            messageDisplayer.showToast("There was an error processing your request");
-            finish();
+        // If the library is in cache
+        if (lib != null){
+            this.libraryName = lib.getName();
+            this.libraryLatLng = lib.getLatLng();
+            this.libraryAddress = lib.getAddress();
+            this.libraryPhoto = lib.getPhoto();
+            this.isFavorited = lib.isFavorite();
+
+            if (this.libraryName.isEmpty() || this.libraryAddress.isEmpty()){
+                messageDisplayer.showToast("There was an error processing your request");
+                finish();
+            }
+
+        } else { // Library need to be retrieved from the server
+            Thread thread = new Thread(() -> {
+                try {
+                    serverConnection.getLibrary(libraryId);
+                } catch (ConnectException e) {
+                    messageDisplayer.showToast("Couldn't connect to the server!");
+                    return;
+                } catch (SocketTimeoutException e) {
+                    messageDisplayer.showToast("Couldn't get this library!");
+                    return;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // Book should now be in cache
+                Library _lib = libraryCache.getLibrary(libraryId);
+
+                this.libraryName = _lib.getName();
+                this.libraryLatLng = _lib.getLatLng();
+                this.libraryAddress = _lib.getAddress();
+                this.libraryPhoto = _lib.getPhoto();
+                this.isFavorited = _lib.isFavorite();
+            });
+
+            // Start the thread
+            thread.start();
+            try {
+                // Wait for the thread to complete
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -478,15 +515,15 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 }
 
                 messageDisplayer.showToast("Book checked out!");
-
-                // Update available books
-                listAvailableBooks();
             });
 
             // Start the thread
             _thread.start();
             // Wait for thread to join
             _thread.join();
+
+            // Update available books
+            listAvailableBooks();
         }
     }
 

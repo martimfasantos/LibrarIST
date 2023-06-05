@@ -55,7 +55,7 @@ import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnCameraMoveStartedListener {
 
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final String KEY_CAMERA_POSITION = "camera_position";
@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public final static int userId = 0;
     public static GoogleMap mMap;
 
+    // TODO make this a cache !!!
     public static HashMap<Integer, Marker> markerMap = new HashMap<>();
 
     // The entry point to the Fused Location Provider.
@@ -81,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //    private Location lastKnownLocation;
 
     public static Location currentLocation;
+    private LatLng currentCameraCenter;
 
     // Caches
     private static final int maxMemorySize = (int) Runtime.getRuntime().maxMemory();
@@ -154,11 +156,53 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Get the current location of the device and set the position of the map.
         getDeviceLocation();
 
+        // Set the onCameraMoveStartedListener to monitor camera movements
+        mMap.setOnCameraMoveStartedListener(this);
+
+        // Get the initial camera target
+        currentCameraCenter = mMap.getCameraPosition().target;
+
         // Create OnClick listener to allow creation of new markers by clicking an empty place in the map
         setupOnClickMap();
 
         // Create custom popups for the libraries
         createCustomMarkerPopUps();
+
+    }
+
+    @Override
+    public void onCameraMoveStarted(int reason) {
+
+        // Check if the camera movement is due to a user gesture (swipe)
+        if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+
+            // Get the current center of the map
+            LatLng newCenter = mMap.getCameraPosition().target;
+
+            // Calculate the distance between the previous and current centers
+            float[] distance = new float[1];
+            Location.distanceBetween(currentCameraCenter.latitude, currentCameraCenter.longitude,
+                    newCenter.latitude, newCenter.longitude, distance);
+
+            // Define your threshold for significant bounds change
+            float significantDistanceThreshold = 10000; // 10km
+
+            Log.d("CENTER", String.valueOf(currentCameraCenter));
+            Log.d("NEW CENTER", String.valueOf(newCenter));
+            Log.d("NEW CENTER DIST", String.valueOf(distance[0]));
+
+            // Check if the distance exceeds the threshold
+            if (distance[0] > significantDistanceThreshold) {
+                Log.d("CENTER", "CHANGED");
+
+                // Update the previous center to the current center for the next comparison
+                currentCameraCenter = newCenter;
+
+                // Get new Library Markers
+                getLibrariesMarkers(currentCameraCenter);
+
+            }
+        }
     }
 
     private void goToLocation(LatLng coordinates) {
@@ -215,13 +259,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 });
     }
 
-    private void getLibrariesMarkers() {
+    private void getLibrariesMarkers(LatLng coordinates) {
 
         // Get libraries markers
         final HashMap<Integer, MarkerOptions> libraries = new HashMap<>();
         Thread _thread = new Thread(() -> {
             try {
-                libraries.putAll(serverConnection.getLibrariesMarkers(20));
+                libraries.putAll(serverConnection.getLibrariesMarkers(coordinates, 15));
             } catch (ConnectException e) {
                 messageDisplayer.showToast("Couldn't connect to the server!");
                 return;
@@ -418,7 +462,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     currentLocation.getLongitude()), DEFAULT_ZOOM));
 
                     // Load library markers
-                    getLibrariesMarkers();
+                    getLibrariesMarkers(new LatLng(location.getLatitude(), location.getLongitude()));
 
                     // Create custom popups for the libraries
                     createCustomMarkerPopUps();

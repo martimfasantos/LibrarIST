@@ -144,9 +144,6 @@ public class CreateBookPopUp {
                         }
 
                         messageDisplayer.showToast("New Book checked in!");
-
-                        // Update available books
-                        listAvailableBooks();
                     });
 
                     // Start the thread
@@ -157,6 +154,9 @@ public class CreateBookPopUp {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
+
+                    // Update available books
+                    listAvailableBooks();
 
                     // Dismiss the dialog
                     alertDialog.dismiss();

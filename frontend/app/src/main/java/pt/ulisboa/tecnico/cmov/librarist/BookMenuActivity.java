@@ -61,7 +61,9 @@ public class BookMenuActivity extends AppCompatActivity {
             public void onClick(View v) {
                 TextView textFilter = (TextView) findViewById(R.id.book_title_input);
                 String filter = (String) textFilter.getText().toString();
+                // Filter books
                 List<Book> filteredBooks = filterBooksByTitle(filter);
+                // Add the books to the view
                 addBookItemsToView(filteredBooks);
             }
         });
