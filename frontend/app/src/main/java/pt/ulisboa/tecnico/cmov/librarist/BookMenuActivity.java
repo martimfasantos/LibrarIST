@@ -1,6 +1,7 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -61,10 +62,12 @@ public class BookMenuActivity extends AppCompatActivity {
             public void onClick(View v) {
                 TextView textFilter = (TextView) findViewById(R.id.book_title_input);
                 String filter = (String) textFilter.getText().toString();
-                // Filter books
-                List<Book> filteredBooks = filterBooksByTitle(filter);
-                // Add the books to the view
-                addBookItemsToView(filteredBooks);
+                try {
+                    List<Book> filteredBooks = filterBooksByTitle(filter);
+                    addBookItemsToView(filteredBooks);
+                }  catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
     }
@@ -170,17 +173,35 @@ public class BookMenuActivity extends AppCompatActivity {
         Log.d("LIST ALL BOOKS", "ADDED TO VIEW");
     }
 
-    private List<Book> filterBooksByTitle(String titleFilter) {
-        List<Book> filteredBooks;
+    private List<Book> filterBooksByTitle(String titleFilter) throws InterruptedException{
+        final List<Book> filteredBooks = new ArrayList<>();
+
         // TODO if there is internet
-        if (false){
-            // Get books from the server
-            filteredBooks = new ArrayList<>(getAllBooks());
+        if (true){
+            Thread _thread = new Thread(() -> {
+                try {
+                    if (titleFilter.isEmpty()) {
+                        filteredBooks.addAll(serverConnection.getAllBooks());
+                    } else {
+                        filteredBooks.addAll(serverConnection.filterBooksByTitle(titleFilter));
+                    }
+                    Log.d("FILTER BOOKS", "TITLE " + titleFilter);
+
+                } catch (ConnectException e) {
+                    messageDisplayer.showToast("Couldn't connect to the server!");
+                } catch (SocketTimeoutException e) {
+                    messageDisplayer.showToast("Couldn't filter books!");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            _thread.start();
+            _thread.join();
         } else {
             // If there is NO internet available
-            filteredBooks = booksCache.getBooks().stream()
+            filteredBooks.addAll(booksCache.getBooks().stream()
                     .filter(book -> book.getTitle().contains(titleFilter))
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
         }
         return filteredBooks;
     }
