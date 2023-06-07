@@ -71,4 +71,16 @@ public class Library {
             bookIds.remove(bookId);
         }
     }
+
+    public int getSizeInBytes() {
+        int idSize = Integer.BYTES;
+        int nameSize = name.getBytes().length;
+        int latLngSize = 16; // Assuming LatLng object takes 16 bytes
+        int addressSize = address.getBytes().length;
+        int photoSize = photo.length;
+        int bookIdsSize = bookIds.size() * Integer.BYTES;
+        int favoriteSize = 1; // Assuming boolean takes 1 byte
+
+        return idSize + nameSize + latLngSize + addressSize + photoSize + bookIdsSize + favoriteSize;
+    }
 }

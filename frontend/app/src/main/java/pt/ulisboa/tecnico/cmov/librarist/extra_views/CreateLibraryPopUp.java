@@ -2,6 +2,7 @@ package pt.ulisboa.tecnico.cmov.librarist.extra_views;
 
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.mMap;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
 
 import android.app.Activity;
@@ -36,28 +37,34 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import pt.ulisboa.tecnico.cmov.librarist.LibraryInfoActivity;
+import pt.ulisboa.tecnico.cmov.librarist.MainActivity;
 import pt.ulisboa.tecnico.cmov.librarist.R;
 import pt.ulisboa.tecnico.cmov.librarist.ServerConnection;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
+import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
 public class CreateLibraryPopUp {
 
     private final Activity MainActivity;
-    private final GoogleMap mMap;
     private final View createLibraryView;
     private Uri currentLibraryPhotoURI;
 
     private final ServerConnection serverConnection = new ServerConnection();
 
-    public CreateLibraryPopUp(Activity mainActivity, GoogleMap map, LatLng latLng){
+    private final MessageDisplayer messageDisplayer;
+
+
+    public CreateLibraryPopUp(Activity mainActivity, LatLng latLng){
 
         this.MainActivity = mainActivity;
-        this.mMap = map;
+        this.messageDisplayer = new MessageDisplayer(this.MainActivity);
 
         // Creating a marker
         MarkerOptions markerOptions = new MarkerOptions()
@@ -85,58 +92,10 @@ public class CreateLibraryPopUp {
 
         // Show the AlertDialog
         alertDialog.show();
-
-        // Create a custom marker popup with marker's information
-        createCustomMarkerPopUp();
-    }
-
-    private void createCustomMarkerPopUp(){
-        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-            @Override
-            public View getInfoWindow(@NonNull Marker marker) {
-                return null;
-            }
-
-            @Override
-            public View getInfoContents(@NonNull Marker marker) {
-
-                if (marker.getTag() != null) {
-                    // Inflate the custom info window layout
-                    View view = MainActivity.getLayoutInflater().inflate(R.layout.library_popup, null);
-
-                    // Get the title and address TextViews
-                    TextView libraryName = view.findViewById(R.id.library_name);
-                    TextView libraryAddress = view.findViewById(R.id.library_location);
-
-                    libraryName.setText(marker.getTitle());
-                    libraryAddress.setText(marker.getSnippet());
-
-                    return view;
-                }
-
-                return null;
-            }
-        });
-
-        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-            @Override
-            public void onInfoWindowClick(@NonNull Marker marker) {
-                Intent intent = new Intent(MainActivity, LibraryInfoActivity.class);
-
-                // Get markers information and pass them to the intent
-                if (marker.getTag() != null){
-                    int libId = (int) marker.getTag();
-                    intent.putExtra("libId", libId);
-                    MainActivity.startActivity(intent);
-                }
-            }
-        });
     }
 
     private String getAddressFromLocation(LatLng latLng) {
-
         Geocoder geocoder = new Geocoder(MainActivity, Locale.getDefault());
-
         String fullAddress = "";
 
         try {
@@ -187,16 +146,16 @@ public class CreateLibraryPopUp {
                 String libraryName = editText.getText().toString();
 
                 if (libraryName.isEmpty()) {
-                    Toast.makeText(MainActivity, "Please insert a valid Library Name...", Toast.LENGTH_SHORT).show();
+                    messageDisplayer.showToast("Please insert a valid Library Name...");
                 } else if (currentLibraryPhotoURI == null){
-                    Toast.makeText(MainActivity, "Please upload a Library Photo...", Toast.LENGTH_SHORT).show();
+                    messageDisplayer.showToast("Please upload a Library Photo...");
                 } else {
 
                     // Get Address from Location
                     String libraryAddress = getAddressFromLocation(latLng);
 
                     if (libraryAddress.isEmpty()){
-                        Toast.makeText(MainActivity, "An error occurred, please try again!", Toast.LENGTH_SHORT).show();
+                        messageDisplayer.showToast("An error occurred, please try again!");
                         alertDialog.dismiss();
                     }
 
@@ -204,6 +163,12 @@ public class CreateLibraryPopUp {
                     Thread thread = new Thread(() -> {
                         try {
                             serverConnection.createLibrary(libraryName, new LatLng(latLng.latitude, latLng.longitude), libraryAddress, convertUriToBytes(currentLibraryPhotoURI));
+                        } catch (ConnectException e) {
+                            messageDisplayer.showToast("Couldn't connect to the server!");
+                            return;
+                        } catch (SocketTimeoutException e) {
+                            messageDisplayer.showToast("Couldn't create the library!");
+                            return;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -230,6 +195,7 @@ public class CreateLibraryPopUp {
                     Marker marker = mMap.addMarker(markerOptions);
                     assert marker != null;
 
+                    // Identify the library to set and save marker
                     for (Library library : libraryCache.getLibraries()){
                         if (library.getName().equals(libraryName)
                                 & library.getAddress().equals(libraryAddress)) {
@@ -238,12 +204,57 @@ public class CreateLibraryPopUp {
                         }
                     }
 
+                    // Create a custom marker for the marker
+                    createCustomMarkerPopUps();
+
                     Log.d("LIBRARY NAME", libraryName);
                     Log.d("LIBRARY ADDRESS", libraryAddress);
                     Log.d("LIBRARY ID", String.valueOf(marker.getTag()));
 
                     // Dismiss the dialog
                     alertDialog.dismiss();
+                }
+            }
+        });
+    }
+
+    private void createCustomMarkerPopUps() {
+        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+            @Override
+            public View getInfoWindow(@NonNull Marker marker) {
+                return null;
+            }
+
+            @Override
+            public View getInfoContents(@NonNull Marker marker) {
+
+                if (marker.getTag() != null) {
+                    // Inflate the custom info window layout
+                    View view = MainActivity.getLayoutInflater().inflate(R.layout.library_popup, null);
+
+                    // Get the title and address TextViews
+                    TextView libraryName = view.findViewById(R.id.library_name);
+                    TextView libraryAddress = view.findViewById(R.id.library_location);
+
+                    libraryName.setText(marker.getTitle());
+                    libraryAddress.setText(marker.getSnippet());
+
+                    return view;
+                }
+                return null;
+            }
+        });
+
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(@NonNull Marker marker) {
+                Intent intent = new Intent(MainActivity, LibraryInfoActivity.class);
+
+                // Get markers information and pass them to the intent
+                if (marker.getTag() != null){
+                    int libId = (int) marker.getTag();
+                    intent.putExtra("libId", libId);
+                    MainActivity.startActivity(intent);
                 }
             }
         });
@@ -278,7 +289,7 @@ public class CreateLibraryPopUp {
             // Update the layout parameters of the image view
             uploadView.setLayoutParams(layoutParams);
         } else {
-            Toast.makeText(MainActivity, "There was an error processing your photo!", Toast.LENGTH_SHORT).show();
+            messageDisplayer.showToast("There was an error processing your photo!");
         }
     }
 

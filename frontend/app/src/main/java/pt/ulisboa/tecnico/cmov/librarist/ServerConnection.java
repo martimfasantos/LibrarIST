@@ -1,18 +1,25 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userId;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentLocation;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.MAX_DIST_KM_CACHE;
 
+import pt.ulisboa.tecnico.cmov.librarist.caches.LibraryCache;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
 import android.location.Location;
 import android.util.Log;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -30,6 +37,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -44,6 +52,7 @@ public class ServerConnection {
         String url = endpoint + "/libraries/create";
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
@@ -80,10 +89,51 @@ public class ServerConnection {
         }
     }
 
+    public void getLibrary(int libraryId) throws IOException {
+        String url = endpoint + "/libraries/get?libId=" + libraryId + "&userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Get book properties
+            assert responseJson != null;
+            int libId = responseJson.get("libId").getAsInt();
+            if(libId != libraryId){
+                Log.d("GET LIBRARY", "DIFFERENT LIB IDS");
+            }
+            String name = responseJson.get("name").getAsString();
+            double latitude = responseJson.get("latitude").getAsDouble();
+            double longitude = responseJson.get("longitude").getAsDouble();
+            String address = responseJson.get("address").getAsString();
+            byte[] photo = Base64.getDecoder().decode(responseJson.get("photo").getAsString());
+            boolean favorite = responseJson.get("isFavorite").getAsBoolean();
+
+            // Process bookIds
+            JsonArray bookIdsArray = responseJson.getAsJsonArray("bookIds");
+            List<Integer> bookIds = new ArrayList<>();
+            for (JsonElement bookIdElement : bookIdsArray) {
+                bookIds.add(bookIdElement.getAsInt());
+            }
+
+            libraryCache.addLibrary(new Library(libId, name, new LatLng(latitude, longitude),
+                    address, photo, bookIds, favorite));
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+
+    }
+
     public List<Library> getLibrariesWithBook(Book book) throws IOException {
         String url = endpoint + "/books/" + book.getId() + "/libraries?userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
 
@@ -122,10 +172,61 @@ public class ServerConnection {
         }
     }
 
-    public List<Library> loadLibraries(int maxDistance) throws IOException {
-        String url = endpoint + "/libraries?distance=" + maxDistance + "&userId=" + userId;
+    public HashMap<Integer, MarkerOptions> getLibrariesMarkers(LatLng coordinates, int radius) throws IOException {
+        String url = endpoint + "/libraries/markers?lat=" + coordinates.latitude
+                + "&lon=" + coordinates.longitude + "&radius=" + radius + "&userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonArray responseJsonArray = getJsonArrayFromResponse(connection.getInputStream());
+
+            // Parse libraries markers
+            HashMap<Integer, MarkerOptions> markers = new HashMap<>();
+            for (JsonElement element : responseJsonArray){
+                // Get library marker object
+                JsonObject libraryMarker = element.getAsJsonObject();
+                // Get library marker properties
+                int libId = libraryMarker.get("libId").getAsInt();
+                String name = libraryMarker.get("name").getAsString();
+                double latitude = libraryMarker.get("latitude").getAsDouble();
+                double longitude = libraryMarker.get("longitude").getAsDouble();
+                String address = libraryMarker.get("address").getAsString();
+                boolean favorite = libraryMarker.get("isFavorite").getAsBoolean();
+
+                int imageResource;
+                if (favorite){
+                    imageResource = R.drawable.marker_library_fav;
+                } else {
+                    imageResource = R.drawable.marker_library;
+                }
+
+                MarkerOptions markerOptions = new MarkerOptions()
+                        .position(new LatLng(latitude, longitude))
+                        .title(name)
+                        .snippet(address)
+                        .icon(BitmapDescriptorFactory.fromResource(imageResource));
+
+                markers.put(libId, markerOptions);
+            }
+
+            return markers;
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+
+    }
+
+    public void loadLibrariesToCache() throws IOException {
+        String url = endpoint + "/libraries/load?lat=" + currentLocation.getLatitude()
+                + "&lon=" + currentLocation.getLongitude() + "&radius=" + MAX_DIST_KM_CACHE
+                + "&userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
 
@@ -134,8 +235,6 @@ public class ServerConnection {
 
             // Parse libraries
             JsonArray librariesJsonArray = responseJson.getAsJsonArray("libraries");
-            List<Library> libraries = new ArrayList<>();
-            List<Integer> booksToCache = new ArrayList<>();
 
             for (JsonElement element : librariesJsonArray){
                 // Get book object
@@ -156,22 +255,8 @@ public class ServerConnection {
                     bookIds.add(bookIdElement.getAsInt());
                 }
 
-                Library library = new Library(libId, name, new LatLng(latitude, longitude),
-                        address, photo, bookIds, favorite);
-                libraries.add(library);
-
-                // If in a 10km radius, add to the cache
-                float[] result = new float[10];
-                Location.distanceBetween(currentLocation.getLatitude(), currentLocation.getLongitude(),
-                        latitude, longitude, result);
-                // Convert result from meters to km
-                float lib_distance = result[0] / 1000;
-
-                //
-                if (lib_distance <= MAX_DIST_KM_CACHE){
-                    libraryCache.addLibrary(library);
-                    booksToCache.addAll(bookIds);
-                }
+                libraryCache.addLibrary(new Library(libId, name, new LatLng(latitude, longitude),
+                        address, photo, bookIds, favorite));
             }
 
             // Parse books in the libraries
@@ -182,18 +267,14 @@ public class ServerConnection {
                 JsonObject bookObject = element.getAsJsonObject();
                 // Get book properties
                 int bookId = bookObject.get("bookId").getAsInt();
-                // If book is from a library that is not in cache
-                if (booksToCache.contains(bookId)){
-                    String title = bookObject.get("title").getAsString();
-                    byte[] cover = Base64.getDecoder().decode(bookObject.get("cover").getAsString());
-                    String barcode = bookObject.get("barcode").getAsString();
-                    boolean activNotif = bookObject.get("activNotif").getAsBoolean();
+                String title = bookObject.get("title").getAsString();
+                byte[] cover = Base64.getDecoder().decode(bookObject.get("cover").getAsString());
+                String barcode = bookObject.get("barcode").getAsString();
+                boolean activNotif = bookObject.get("activNotif").getAsBoolean();
 
-                    booksCache.addBook(new Book(bookId, title,cover, barcode, activNotif));
-                }
+                booksCache.addBook(new Book(bookId, title,cover, barcode, activNotif));
             }
 
-            return libraries;
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
@@ -203,6 +284,7 @@ public class ServerConnection {
         String url = endpoint + "/books?userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
 
@@ -219,6 +301,7 @@ public class ServerConnection {
         String url = endpoint + "/books/find?barcode=" + barcode;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
 
@@ -235,6 +318,7 @@ public class ServerConnection {
         String url = endpoint + "/books/get?bookId=" + bookId + "&userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
 
@@ -263,8 +347,11 @@ public class ServerConnection {
     }
 
     // Method called when checking in a new book -- WORKING!
-    public void checkInBook(String barcode, int libraryID) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + "/libraries/" + libraryID + "/books/checkin").openConnection();
+    public void checkInBook(String barcode, int libraryId) throws IOException {
+        String url = endpoint + "/libraries/" + libraryId + "/books/checkin?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
@@ -272,7 +359,7 @@ public class ServerConnection {
         // Create a JSON object
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("barcode", barcode);
-        jsonObject.addProperty("libId", libraryID);
+        jsonObject.addProperty("libId", libraryId);
 
         String jsonString = jsonObject.toString();
 
@@ -304,7 +391,7 @@ public class ServerConnection {
             Log.d("CHECKIN", String.valueOf(bookId));
 
             Book newBook = new Book(bookId, title, cover, barcode, activNotif);
-            libraryCache.getLibrary(libraryID).addBook(bookId);
+            libraryCache.getLibrary(libraryId).addBook(bookId);
             booksCache.addBook(newBook);
             Log.d("CHECKIN", "ADDED BOOK TO CACHE");
 
@@ -317,7 +404,10 @@ public class ServerConnection {
 
     // Method called when checking in a new book -- WORKING!
     public void checkInNewBook(String title, byte[] cover, String barcode, int libraryID) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + "/libraries/" + libraryID + "/books/checkin/newbook").openConnection();
+        String url = endpoint + "/libraries/" + libraryID + "/books/checkin/newbook?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
@@ -370,6 +460,7 @@ public class ServerConnection {
         String url = endpoint + "/libraries/" + libraryId + "/books/find?barcode=" + barcode;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
 
@@ -433,6 +524,7 @@ public class ServerConnection {
         String url = endpoint + "/libraries/" + libraryId + "/add_fav?userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
 
@@ -446,6 +538,7 @@ public class ServerConnection {
         String url = endpoint + "/libraries/" + libraryId + "/remove_fav?userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
 
@@ -460,6 +553,7 @@ public class ServerConnection {
         String url = endpoint + "/libraries/" + libraryId + "/books?userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
         connection.setRequestMethod("GET");
 
         // Create a JSON object

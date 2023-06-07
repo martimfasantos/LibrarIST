@@ -43,6 +43,8 @@ import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,6 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateBookPopUp;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
+import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
 public class LibraryInfoActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -71,6 +74,8 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
     private CreateBookPopUp currentCreateBookPopUp;
 
     private final ServerConnection serverConnection = new ServerConnection();
+
+    private final MessageDisplayer messageDisplayer = new MessageDisplayer(this);
 
 
     @Override
@@ -309,7 +314,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         back_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "Returned to Main!", Toast.LENGTH_SHORT).show();
                 finish();
             }
         });
@@ -340,15 +344,52 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         this.libraryId = intent.getIntExtra("libId", -1);
 
         Library lib = libraryCache.getLibrary(libraryId);
-        this.libraryName = lib.getName();
-        this.libraryLatLng = lib.getLatLng();
-        this.libraryAddress = lib.getAddress();
-        this.libraryPhoto = lib.getPhoto();
-        this.isFavorited = lib.isFavorite();
 
-        if (this.libraryName.isEmpty() || this.libraryAddress.isEmpty()){
-            Toast.makeText(getApplicationContext(), "There was an error processing your request", Toast.LENGTH_SHORT).show();
-            finish();
+        // If the library is in cache
+        if (lib != null){
+            this.libraryName = lib.getName();
+            this.libraryLatLng = lib.getLatLng();
+            this.libraryAddress = lib.getAddress();
+            this.libraryPhoto = lib.getPhoto();
+            this.isFavorited = lib.isFavorite();
+
+            if (this.libraryName.isEmpty() || this.libraryAddress.isEmpty()){
+                messageDisplayer.showToast("There was an error processing your request");
+                finish();
+            }
+
+        } else { // Library need to be retrieved from the server
+            Thread thread = new Thread(() -> {
+                try {
+                    serverConnection.getLibrary(libraryId);
+                } catch (ConnectException e) {
+                    messageDisplayer.showToast("Couldn't connect to the server!");
+                    return;
+                } catch (SocketTimeoutException e) {
+                    messageDisplayer.showToast("Couldn't get this library!");
+                    return;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // Book should now be in cache
+                Library _lib = libraryCache.getLibrary(libraryId);
+
+                this.libraryName = _lib.getName();
+                this.libraryLatLng = _lib.getLatLng();
+                this.libraryAddress = _lib.getAddress();
+                this.libraryPhoto = _lib.getPhoto();
+                this.isFavorited = _lib.isFavorite();
+            });
+
+            // Start the thread
+            thread.start();
+            try {
+                // Wait for the thread to complete
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -377,6 +418,12 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
             try {
                 bookId.set(serverConnection.findBook(barcode));
                 Log.d("CHECKIN", "BOOK ID " + bookId.get());
+            } catch (ConnectException e) {
+                messageDisplayer.showToast("Couldn't connect to the server!");
+                return;
+            } catch (SocketTimeoutException e) {
+                messageDisplayer.showToast("Couldn't find book!");
+                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -397,6 +444,12 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 try {
                     serverConnection.checkInBook(barcode, libraryId);
                     Log.d("CHECKIN", "BOOK ID " + bookId.get());
+                } catch (ConnectException e) {
+                messageDisplayer.showToast("Couldn't connect to the server!");
+                return;
+                } catch (SocketTimeoutException e) {
+                    messageDisplayer.showToast("Couldn't check in book!");
+                    return;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -407,7 +460,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
             // Wait for thread to join
             _thread.join();
 
-            Toast.makeText(getApplicationContext(), "Book checked in!", Toast.LENGTH_SHORT).show();
+            messageDisplayer.showToast("Book checked in!");
 
             // Update available books
             listAvailableBooks();
@@ -424,6 +477,12 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
             try {
                 bookId.set(serverConnection.findBookInLibrary(barcode, libraryId));
                 Log.d("CHECKOUT", "BOOK ID " + bookId.get());
+            } catch (ConnectException e) {
+                messageDisplayer.showToast("Couldn't connect to the server!");
+                return;
+            } catch (SocketTimeoutException e) {
+                messageDisplayer.showToast( "Couldn't find book!");
+                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -438,24 +497,30 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
         // New book in the system
         if (bookId.get() == -1) {
-            Toast.makeText(getApplicationContext(), "Book is not from this library!", Toast.LENGTH_SHORT).show();
+            messageDisplayer.showToast("Book is not from this library!");
         } else {
             // Create library on the backend
             Thread _thread = new Thread(() -> {
                 try {
                     serverConnection.checkOutBook(barcode, libraryId);
                     Log.d("CHECKOUT", "BOOK ID " + bookId.get());
+                } catch (ConnectException e) {
+                    messageDisplayer.showToast("Couldn't connect to the server!");
+                    return;
+                } catch (SocketTimeoutException e) {
+                    messageDisplayer.showToast("Couldn't check out book!");
+                    return;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
+
+                messageDisplayer.showToast("Book checked out!");
             });
 
             // Start the thread
             _thread.start();
             // Wait for thread to join
             _thread.join();
-
-            Toast.makeText(getApplicationContext(), "Book checked out!", Toast.LENGTH_SHORT).show();
 
             // Update available books
             listAvailableBooks();
@@ -469,21 +534,29 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
             try {
                 serverConnection.addLibraryToFavorites(libraryId);
                 Log.d("ADD TO FAVORITES", "LIBRARY " + libraryId);
+            } catch (ConnectException e) {
+                messageDisplayer.showToast("Couldn't connect to the server!");
+                return;
+            } catch (SocketTimeoutException e) {
+                messageDisplayer.showToast("Couldn't add library to favorites!");
+                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
+            // If library is in cache, update locally as well
+            LibraryInfoActivity.this.isFavorited = true;
+            if(libraryCache.getLibrary(libraryId) != null){
+                libraryCache.getLibrary(libraryId).setFavorite(true);
+            }
+
+            messageDisplayer.showToast("Library added to favorites!");
         });
 
         // Start the thread
         _thread.start();
         // Wait for thread to join
         _thread.join();
-
-        // If library is in cache, update locally as well
-        LibraryInfoActivity.this.isFavorited = true;
-        if(libraryCache.getLibrary(libraryId) != null){
-            libraryCache.getLibrary(libraryId).setFavorite(true);
-        }
 
         // Retrieve the marker you want to modify
         Marker marker = markerMap.get(libraryId);
@@ -498,7 +571,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Center map with the changed marker in this view
         centerCamera();
 
-        Toast.makeText(getApplicationContext(), "Library added to favorites!", Toast.LENGTH_SHORT).show();
     }
 
     private void removeLibraryFromFavorites() throws InterruptedException {
@@ -508,9 +580,17 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
             try {
                 serverConnection.removeLibraryFromFavorites(libraryId);
                 Log.d("REMOVE FROM FAVORITES", "LIBRARY " + libraryId);
+            } catch (ConnectException e) {
+                messageDisplayer.showToast("Couldn't connect to the server!");
+                return;
+            } catch (SocketTimeoutException e) {
+                messageDisplayer.showToast("Couldn't remove library from favorites!");
+                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
+            messageDisplayer.showToast("Library removed to favorites!");
         });
 
         // Start the thread
@@ -537,7 +617,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Center map with the changed marker in this view
         centerCamera();
 
-        Toast.makeText(getApplicationContext(), "Library removed to favorites!", Toast.LENGTH_SHORT).show();
     }
 
     private void updateFavoriteButtonIcon(){
