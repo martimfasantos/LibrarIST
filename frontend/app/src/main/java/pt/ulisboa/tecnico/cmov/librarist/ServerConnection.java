@@ -68,6 +68,7 @@ public class ServerConnection {
             JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
 
             // Received values
+            assert responseJson != null;
             int libraryId = responseJson.get("libId").getAsInt();
 
             Library newLibrary = new Library(libraryId, name, latLng, address, photo, new ArrayList<>(), false);
@@ -207,25 +208,8 @@ public class ServerConnection {
 
         if (connection.getResponseCode() == 200) {
             JsonArray responseJsonArray = getJsonArrayFromResponse(connection.getInputStream());
-
-            List<Book> allBooks = new ArrayList<>();
-            for (JsonElement element : responseJsonArray){
-                // Get book object
-                JsonObject bookObject = element.getAsJsonObject();
-                // Get book properties
-                int bookId = bookObject.get("bookId").getAsInt();
-                String title = bookObject.get("title").getAsString();
-                byte[] cover = Base64.getDecoder().decode(bookObject.get("cover").getAsString());
-                String barcode = bookObject.get("barcode").getAsString();
-                boolean activNotif = bookObject.get("activNotif").getAsBoolean();
-
-                Book book = new Book(bookId, title,cover, barcode, activNotif);
-                allBooks.add(book);
-            }
-
-            Log.d("LIST ALL", allBooks.toString());
-
-            return allBooks;
+            assert responseJsonArray != null;
+            return getBookListFromJsonArray(responseJsonArray);
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
@@ -239,10 +223,8 @@ public class ServerConnection {
         connection.setRequestProperty("Content-Type", "application/json");
 
         if (connection.getResponseCode() == 200) {
-            JsonParser jsonParser = new JsonParser();
-            JsonObject responseJson = jsonParser.parse(new InputStreamReader(connection.getInputStream()))
-                    .getAsJsonObject();
-
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+            assert responseJson != null;
             return responseJson.get("bookId").getAsInt();
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
@@ -493,22 +475,8 @@ public class ServerConnection {
 
         if (connection.getResponseCode() == 200) {
             JsonArray jsonArray = getJsonArrayFromResponse(connection.getInputStream());
-
-            List<Book> books = new ArrayList<>();
-
-            for (JsonElement jsonElement : jsonArray) {
-                JsonObject item = jsonElement.getAsJsonObject();
-                int id = item.get("id").getAsInt();
-                String title = item.get("title").getAsString();
-                String base64Cover = item.get("cover").getAsString();
-                byte[] cover = Base64.getDecoder().decode(base64Cover);
-                String barcode = item.get("barcode").getAsString();
-                boolean activeNotif = item.get("activeNotif").getAsBoolean();
-
-                // Create a Book object and add it to the list
-                books.add(new Book(id, title, cover, barcode, activeNotif));
-            }
-
+            assert jsonArray != null;
+            List<Book> books = getBookListFromJsonArray(jsonArray);
             booksCache.addBooks(books);
             return books;
 
@@ -518,50 +486,22 @@ public class ServerConnection {
     }
 
 
-//    public Book getBookByTitle(String bookTitle, String path) throws IOException {
-//
-//        // Create a JSON payload with the book title
-//        String payload = "{\"title\": \"" + bookTitle + "\"}";
-//
-//        // Create a connection to the backend API
-//        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + path).openConnection();
-//        connection.setRequestMethod("POST");
-//        connection.setRequestProperty("Content-Type", "application/json");
-//        connection.setDoOutput(true);
-//
-//        // Send the JSON payload to the backend
-//        OutputStream outputStream = connection.getOutputStream();
-//        outputStream.write(payload.getBytes());
-//        outputStream.flush();
-//        outputStream.close();
-//
-//
-//        if (connection.getResponseCode() == 200) {
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-//            StringBuilder response = new StringBuilder();
-//            String line;
-//            while ((line = reader.readLine()) != null) {
-//                response.append(line);
-//            }
-//            reader.close();
-//
-//            // Parse the response JSON to a Book object
-//
-//            Gson gson = new Gson();
-//            JsonObject jsonObject = gson.fromJson(response.toString(), JsonObject.class);
-//
-//            int id = jsonObject.get("id").getAsInt();
-//            String title = jsonObject.get("title").getAsString();
-//            String base64Cover = jsonObject.get("cover").getAsString();
-//            byte[] cover = Base64.getDecoder().decode(base64Cover);
-//            boolean activeNotif = jsonObject.get("activeNotif").getAsBoolean();
-//            String barcode = item.get("barcode").getAsString();
-//
-//            // Return a Book object
-//            return new Book(id, title, cover, activeNotif);
-//        }
-//        throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
-//    }
+    public List<Book> filterBooksByTitle(String bookTitle) throws IOException {
+
+        String url = endpoint + "/books/title/filter" + "?title=" + bookTitle + "&userId=" + userId;
+
+        // Create a connection to the backend API
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonArray responseJsonArray = getJsonArrayFromResponse(connection.getInputStream());
+            assert responseJsonArray != null;
+            return getBookListFromJsonArray(responseJsonArray);
+        }
+        throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+    }
 
     /*
     public void startWebSocket() {
@@ -662,5 +602,19 @@ public class ServerConnection {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private List<Book> getBookListFromJsonArray(JsonArray jsonArray) {
+        List<Book> books = new ArrayList<>();
+        jsonArray.forEach(jsonElement -> {
+
+            JsonObject obj = jsonElement.getAsJsonObject();
+            books.add(new Book(obj.get("bookId").getAsInt(),
+                    obj.get("title").getAsString(),
+                    Base64.getDecoder().decode(obj.get("cover").getAsString()),
+                    obj.get("barcode").getAsString(),
+                    obj.get("activNotif").getAsBoolean()));
+        });
+        return books;
     }
 }
