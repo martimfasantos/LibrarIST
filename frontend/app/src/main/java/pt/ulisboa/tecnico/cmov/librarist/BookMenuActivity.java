@@ -36,8 +36,8 @@ public class BookMenuActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_menu_books);
-        Log.d("BookMenuActivity", "loaded layout");
 
         // List all books
         listAllBooks();
@@ -121,10 +121,10 @@ public class BookMenuActivity extends AppCompatActivity {
                 allBooks.addAll(serverConnection.getAllBooks());
                 Log.d("GET ALL BOOKS", allBooks.toString());
             } catch (ConnectException e) {
-                Toast.makeText(getApplicationContext(), "Couldn't connect to the server!", Toast.LENGTH_SHORT).show();
+                messageDisplayer.showToast("Couldn't connect to the server!");
                 return;
             } catch (SocketTimeoutException e) {
-                Toast.makeText(getApplicationContext(), "Couldn't get books!", Toast.LENGTH_SHORT).show();
+                messageDisplayer.showToast("Couldn't get books!");
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);

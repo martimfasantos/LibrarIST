@@ -1,6 +1,5 @@
-package pt.ulisboa.tecnico.cmov.librarist.extra_views;
+package pt.ulisboa.tecnico.cmov.librarist.popups;
 
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.mMap;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
@@ -21,7 +20,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
@@ -41,10 +39,8 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import pt.ulisboa.tecnico.cmov.librarist.LibraryInfoActivity;
-import pt.ulisboa.tecnico.cmov.librarist.MainActivity;
 import pt.ulisboa.tecnico.cmov.librarist.R;
 import pt.ulisboa.tecnico.cmov.librarist.ServerConnection;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
@@ -161,16 +157,48 @@ public class CreateLibraryPopUp {
 
                     // Create library on the backend
                     Thread thread = new Thread(() -> {
+                        boolean connectionError = false;
                         try {
                             serverConnection.createLibrary(libraryName, new LatLng(latLng.latitude, latLng.longitude), libraryAddress, convertUriToBytes(currentLibraryPhotoURI));
                         } catch (ConnectException e) {
                             messageDisplayer.showToast("Couldn't connect to the server!");
-                            return;
+                            connectionError = true;
                         } catch (SocketTimeoutException e) {
                             messageDisplayer.showToast("Couldn't create the library!");
-                            return;
+                            connectionError = true;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
+                        }
+
+                        if (!connectionError) {
+                            MainActivity.runOnUiThread(() -> {
+                                markerOptions.title(libraryName);
+                                markerOptions.snippet(libraryAddress);
+
+                                // Animating to the touched position
+                                mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+
+                                // Placing a marker on the touched position
+                                Marker marker = mMap.addMarker(markerOptions);
+                                assert marker != null;
+
+                                // Identify the library to set and save marker
+                                for (Library library : libraryCache.getLibraries()){
+                                    if (library.getName().equals(libraryName)
+                                            & library.getAddress().equals(libraryAddress)) {
+                                        marker.setTag(library.getId());
+                                        markerMap.put(library.getId(), marker);
+                                    }
+                                }
+
+                                // Create a custom marker for the marker
+                                createCustomMarkerPopUps();
+
+                                Log.d("LIBRARY NAME", libraryName);
+                                Log.d("LIBRARY ADDRESS", libraryAddress);
+                                Log.d("LIBRARY ID", String.valueOf(marker.getTag()));
+
+                            });
                         }
                     });
 
@@ -180,36 +208,9 @@ public class CreateLibraryPopUp {
                     try {
                         // Wait for the thread to complete
                         thread.join();
-                        Log.d("LIBRARY", "WAITED");
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-
-                    markerOptions.title(libraryName);
-                    markerOptions.snippet(libraryAddress);
-
-                    // Animating to the touched position
-                    mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
-
-                    // Placing a marker on the touched position
-                    Marker marker = mMap.addMarker(markerOptions);
-                    assert marker != null;
-
-                    // Identify the library to set and save marker
-                    for (Library library : libraryCache.getLibraries()){
-                        if (library.getName().equals(libraryName)
-                                & library.getAddress().equals(libraryAddress)) {
-                            marker.setTag(library.getId());
-                            markerMap.put(library.getId(), marker);
-                        }
-                    }
-
-                    // Create a custom marker for the marker
-                    createCustomMarkerPopUps();
-
-                    Log.d("LIBRARY NAME", libraryName);
-                    Log.d("LIBRARY ADDRESS", libraryAddress);
-                    Log.d("LIBRARY ID", String.valueOf(marker.getTag()));
 
                     // Dismiss the dialog
                     alertDialog.dismiss();

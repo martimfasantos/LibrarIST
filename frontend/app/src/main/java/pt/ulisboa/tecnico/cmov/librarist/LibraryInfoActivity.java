@@ -15,6 +15,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
@@ -25,17 +26,16 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.github.dhaval2404.imagepicker.ImagePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.libraries.places.api.Places;
@@ -49,7 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateBookPopUp;
+import pt.ulisboa.tecnico.cmov.librarist.popups.CreateBookPopUp;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
@@ -206,11 +206,25 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
     public void onMapReady(@NonNull GoogleMap googleMap) {
         libraryMap = googleMap;
 
+        // Set map theme
+        setMapTheme();
+
         // Center map in this library
         centerCamera();
 
         // Turn on the My Location layer and the related control on the map.
         updateLocationUI();
+    }
+
+    public void setMapTheme() {
+        // Check if dark mode is enabled
+        boolean isDarkModeEnabled = (getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+
+        if (isDarkModeEnabled) {
+            libraryMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(
+                    this, R.raw.maps_theme_night));
+        }
     }
 
     private void centerCamera() {
@@ -590,7 +604,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 throw new RuntimeException(e);
             }
 
-            messageDisplayer.showToast("Library removed to favorites!");
+            messageDisplayer.showToast("Library removed from favorites!");
         });
 
         // Start the thread
@@ -622,11 +636,11 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
     private void updateFavoriteButtonIcon(){
         ImageView favoriteButton = findViewById(R.id.favorite_library);
         if (isFavorited){
-            favoriteButton.setImageResource(R.drawable.library_favorite_selected);
+            favoriteButton.setImageResource(R.drawable.star_selected);
             favoriteButton.setTag("selected");
 
         } else {
-            favoriteButton.setImageResource(R.drawable.library_favorite_unselected);
+            favoriteButton.setImageResource(R.drawable.star_unselected);
             favoriteButton.setTag("unselected");
         }
     }

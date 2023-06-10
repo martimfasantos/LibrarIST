@@ -8,6 +8,7 @@ import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -19,7 +20,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -30,9 +30,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -42,7 +42,6 @@ import com.google.android.libraries.places.api.Places;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -50,9 +49,7 @@ import java.util.Map;
 
 import pt.ulisboa.tecnico.cmov.librarist.caches.BookCache;
 import pt.ulisboa.tecnico.cmov.librarist.caches.LibraryCache;
-import pt.ulisboa.tecnico.cmov.librarist.extra_views.CreateLibraryPopUp;
-import pt.ulisboa.tecnico.cmov.librarist.models.Book;
-import pt.ulisboa.tecnico.cmov.librarist.models.Library;
+import pt.ulisboa.tecnico.cmov.librarist.popups.CreateLibraryPopUp;
 import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnCameraMoveStartedListener {
@@ -101,8 +98,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
-        Log.d("MainActivity", "Hey, here is my fancy debug message!");
 
         // Construct a PlacesClient
         Places.initialize(getApplicationContext(), getString(R.string.maps_api_key));
@@ -133,8 +130,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         assert supportMapFragment != null;
         supportMapFragment.getMapAsync(this);
-
-        // messageDisplayer.showToast("Map loaded in current location!");
     }
 
     /**
@@ -156,8 +151,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Get the current location of the device and set the position of the map.
         getDeviceLocation();
 
-        // Set the onCameraMoveStartedListener to monitor camera movements
+        // Map settings configuration
         mMap.setOnCameraMoveStartedListener(this);
+        setMapTheme();
 
         // Get the initial camera target
         currentCameraCenter = mMap.getCameraPosition().target;
@@ -202,6 +198,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 getLibrariesMarkers(currentCameraCenter);
 
             }
+        }
+    }
+
+    public void setMapTheme() {
+        // Check if dark mode is enabled
+        boolean isDarkModeEnabled = (getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+
+        if (isDarkModeEnabled) {
+            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(
+                    this, R.raw.maps_theme_night));
         }
     }
 
@@ -482,7 +489,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onActivityResult(requestCode, resultCode, data);
 
         Uri currentLibraryPhotoURI = data.getData();
-
         currentCreateLibraryPopUp.changeUploadImageIcon(currentLibraryPhotoURI);
     }
 

@@ -56,7 +56,6 @@ public class BookInfoActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_book_info);
-        Log.d("BookInfoActivity", "loaded layout");
 
         // Parse intent and its information
         parseIntent();
@@ -173,10 +172,10 @@ public class BookInfoActivity extends AppCompatActivity {
         TextView notifMessage = findViewById(R.id.book_info_notif_message);
 
         if (active) {
-            notif_btn.setImageResource(R.drawable.bell_filled);
+            notif_btn.setImageResource(R.drawable.bell_notif_on);
             notifMessage.setText(R.string.book_notif_disabled);
         } else {
-            notif_btn.setImageResource(R.drawable.bell_unfilled);
+            notif_btn.setImageResource(R.drawable.bell_notif_off);
             notifMessage.setText(R.string.book_notif_enabled);
         }
 

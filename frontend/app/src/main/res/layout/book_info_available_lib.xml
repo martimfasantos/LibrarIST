@@ -4,7 +4,6 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    app:cardBackgroundColor="@color/almost_white"
     android:layout_margin="5dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="2dp"

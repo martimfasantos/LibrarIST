@@ -14,11 +14,10 @@
 
         <ImageView
             android:id="@+id/back_btn"
-            android:src="@drawable/return_arrow"
-            android:layout_width="35dp"
-            android:layout_height="35dp"
+            android:src="@drawable/back_button"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_centerVertical="true"
-            android:layout_marginStart="5dp"
             android:scaleType="fitXY"
             android:contentDescription="@string/back" />
 
@@ -30,7 +29,6 @@
             android:layout_marginBottom="2dp"
             android:gravity="center"
             android:layout_toEndOf="@+id/back_btn"
-            android:layout_marginStart="5dp"
             android:text="@string/book_title"
             android:textAlignment="center"
             android:textSize="40sp"
@@ -66,7 +64,7 @@
             android:layout_width="55dp"
             android:layout_height="55dp"
             android:scaleType="fitCenter"
-            app:srcCompat="@drawable/bell_unfilled" />
+            app:srcCompat="@drawable/bell_notif_off" />
 
         <TextView
             android:id="@+id/book_info_notif_message"

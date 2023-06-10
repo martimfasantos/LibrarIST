@@ -12,11 +12,10 @@
 
         <ImageView
             android:id="@+id/back_btn"
-            android:src="@drawable/return_arrow"
-            android:layout_width="35dp"
-            android:layout_height="35dp"
+            android:background="@drawable/back_button"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_centerVertical="true"
-            android:layout_marginStart="5dp"
             android:scaleType="fitXY"
             android:contentDescription="@string/back" />
 
@@ -25,7 +24,6 @@
             android:layout_width="290dp"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:layout_marginStart="5dp"
             android:layout_marginBottom="2dp"
             android:layout_toEndOf="@+id/back_btn"
             android:gravity="center"
@@ -41,7 +39,6 @@
             android:layout_height="55dp"
             android:layout_marginTop="7dp"
             android:layout_marginEnd="2dp"
-            app:cardBackgroundColor="@color/white"
             app:cardCornerRadius="10dp"
             app:cardUseCompatPadding="true"
             android:layout_toEndOf="@+id/library_name_title"
@@ -60,7 +57,7 @@
                     android:layout_gravity="center"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:src="@drawable/library_favorite_unselected" />
+                    android:src="@drawable/star_unselected" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -124,7 +121,6 @@
                     android:layout_width="130dp"
                     android:layout_height="90dp"
                     android:layout_gravity="center"
-                    app:cardBackgroundColor="@color/white"
                     app:cardCornerRadius="15dp"
                     app:cardElevation="2dp"
                     app:cardUseCompatPadding="true"
@@ -140,7 +136,7 @@
                         <ImageView
                             android:layout_width="60dp"
                             android:layout_height="45dp"
-                            android:src="@drawable/library_book_barcode" />
+                            android:src="@drawable/barcode" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -148,8 +144,7 @@
                             android:layout_marginTop="3dp"
                             android:text="@string/check_in_book"
                             android:textSize="14sp"
-                            android:textAlignment="center"
-                            android:textColor="@color/black" />
+                            android:textAlignment="center" />
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
@@ -160,7 +155,6 @@
                     android:layout_width="130dp"
                     android:layout_height="90dp"
                     android:layout_gravity="center"
-                    app:cardBackgroundColor="@color/white"
                     app:cardCornerRadius="15dp"
                     app:cardElevation="2dp"
                     app:cardUseCompatPadding="true"
@@ -176,7 +170,7 @@
                         <ImageView
                             android:layout_width="60dp"
                             android:layout_height="45dp"
-                            android:src="@drawable/library_book_barcode" />
+                            android:src="@drawable/barcode" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -184,8 +178,7 @@
                             android:layout_marginTop="3dp"
                             android:text="@string/check_out_book"
                             android:textSize="14sp"
-                            android:textAlignment="center"
-                            android:textColor="@color/black" />
+                            android:textAlignment="center" />
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>

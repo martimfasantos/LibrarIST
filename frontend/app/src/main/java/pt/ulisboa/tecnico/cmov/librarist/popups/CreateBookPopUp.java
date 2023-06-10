@@ -1,4 +1,4 @@
-package pt.ulisboa.tecnico.cmov.librarist.extra_views;
+package pt.ulisboa.tecnico.cmov.librarist.popups;
 
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
@@ -32,8 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pt.ulisboa.tecnico.cmov.librarist.BookInfoActivity;
-import pt.ulisboa.tecnico.cmov.librarist.BookMenuActivity;
-import pt.ulisboa.tecnico.cmov.librarist.MainActivity;
 import pt.ulisboa.tecnico.cmov.librarist.R;
 import pt.ulisboa.tecnico.cmov.librarist.ServerConnection;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
