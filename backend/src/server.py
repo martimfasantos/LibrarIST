@@ -10,11 +10,12 @@ from models.book import Book
 from models.library import Library
 from models.user import User
 
+
 class Server:
 
     def __init__(self):
         # counters to attribute ids to new objects
-        self.id_users_counter = 0
+        self.id_users_counter = 1
         self.id_library_counter = 0
         self.id_books_counter = 0
 
@@ -24,7 +25,32 @@ class Server:
         self.users: Dict[int, User] = {0: User(0, "admin", "admin")} # admin user (for testing purposes)
 
 
-    # Add new library
+    # ------------------------------------------------------------
+    # -                         USERS                            -
+    # ------------------------------------------------------------
+
+    # Create new user
+    def create_new_user(self, username: str, password: str):
+        user_id = self.id_users_counter
+        self.id_users_counter += 1
+
+        # check if username already exists
+        for user in self.users.values():
+            if (user.username == username):
+                return jsonify({"userId": -1}), 200
+            
+        self.users[user_id] = User(user_id, username, password)
+        return jsonify({"userId": user_id}), 200
+
+    # Login user
+    def login_user(self, username: str, password: str):
+        for user in self.users.values():
+            if (user.username == username and user.password == password):
+                return jsonify({"userId": user.id}), 200
+        return jsonify({"userId": -1}), 200
+    
+
+    # Create new library
     def create_new_library(
             self, 
             name: str, 
@@ -231,12 +257,7 @@ class Server:
         filtered_books = list(filter(lambda book: book.title.upper().find(filter_title.upper()) != -1, books))
         return json.dumps(filtered_books, default=vars)
 
-    # Add new user
-    def add_new_user(self, username, password):        
-        id = len(self.users)
-        self.users[id] = User(id, username, password)
-        return json.dumps({"status": 200})
-
+ 
     # Add user to book notifications
     def add_user_book_notif(self, user_id, book_id):
         self.books[book_id].add_user_to_notify(user_id)

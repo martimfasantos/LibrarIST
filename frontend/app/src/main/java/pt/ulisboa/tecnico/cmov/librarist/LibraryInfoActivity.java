@@ -82,7 +82,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_library_info);
-        Log.d("MainActivity", "Hey, here is my fancy debug message!");
 
         // Parse intent and its information
         parseIntent();

@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public static final int MAX_DIST_KM_CACHE = 10;
 
     // User ID
-    public final static int userId = 0;
+    public static int userId;
     public static GoogleMap mMap;
 
     // TODO make this a cache !!!
@@ -98,8 +98,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
+
+        // Parse intent and its information
+        parseIntent();
 
         // Construct a PlacesClient
         Places.initialize(getApplicationContext(), getString(R.string.maps_api_key));
@@ -235,9 +237,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (locationPermissionGranted) {
                 mMap.setMyLocationEnabled(true);
                 mMap.getUiSettings().setMyLocationButtonEnabled(true);
+                mMap.getUiSettings().setZoomControlsEnabled(true);
             } else {
                 mMap.setMyLocationEnabled(false);
                 mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                mMap.getUiSettings().setZoomControlsEnabled(true);
                 getLocationPermission();
             }
         } catch (SecurityException e) {
@@ -430,6 +434,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     /** -----------------------------------------------------------------------------
      *                                  OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
+
+    private void parseIntent(){
+        Intent intent = getIntent();
+        userId = intent.getIntExtra("userId", -1);
+    }
 
     private void updateCurrentLocation() {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED

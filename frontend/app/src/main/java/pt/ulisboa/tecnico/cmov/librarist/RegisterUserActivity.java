@@ -1,0 +1,113 @@
+package pt.ulisboa.tecnico.cmov.librarist;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
+
+import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
+
+public class RegisterUserActivity extends AppCompatActivity {
+
+    private final ServerConnection serverConnection = new ServerConnection();
+    private final MessageDisplayer messageDisplayer = new MessageDisplayer(this);
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_register);
+
+        // Register Button
+        setupRegisterButton();
+
+        // Log in User
+        setupLoginButton();
+    }
+
+    private void setupRegisterButton(){
+        EditText usernameInput = findViewById(R.id.username_input);
+        EditText passwordInput = findViewById(R.id.password_input);
+        EditText confirmPasswordInput = findViewById(R.id.confirm_password_input);
+
+        Button register_btn = findViewById(R.id.register_btn);
+        register_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String username = usernameInput.getText().toString();
+                String password = passwordInput.getText().toString();
+                String confirmPassword = confirmPasswordInput.getText().toString();
+
+                if (username.length() == 0 || password.length() == 0 || confirmPassword.length() == 0) {
+                    messageDisplayer.showToast("Please fill all details");
+                } else if (!confirmPassword.equals(password)) {
+                    messageDisplayer.showToast("Passwords do not match");
+                } else {
+                    // Get user if exists in the backend
+                    Thread thread = new Thread(() -> {
+                        int userId = -1;
+                        boolean connectionError = false;
+                        try {
+                            userId = serverConnection.registerUser(username, password);
+                        } catch (ConnectException e) {
+                            messageDisplayer.showToast("Couldn't connect to the server!");
+                            connectionError = true;
+                        } catch (SocketTimeoutException e) {
+                            messageDisplayer.showToast("Couldn't create the library!");
+                            connectionError = true;
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        if (!connectionError) {
+                            if (userId == -1) {
+                                usernameInput.setText("");
+                                passwordInput.setText("");
+                                confirmPasswordInput.setText("");
+                                messageDisplayer.showToast("User already exists");
+                            } else {
+                                Intent intent = new Intent(RegisterUserActivity.this, MainActivity.class);
+                                intent.putExtra("userId", userId);
+                                // Set the flag to clear the activity stack
+                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                startActivity(intent);
+                                finish();
+                            }
+                        }
+                    });
+
+                    // Start the thread
+                    thread.start();
+                    // Wait for thread to join
+                    try {
+                        thread.join();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
+    }
+
+    public void setupLoginButton(){
+        TextView login = findViewById(R.id.log_in);
+        login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(RegisterUserActivity.this, LoginUserActivity.class);
+                // Set the flag to clear the activity stack
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                finish();
+            }
+        });
+    }
+}

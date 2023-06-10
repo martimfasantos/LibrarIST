@@ -19,12 +19,20 @@ def handle_call():
 # body:
 #   - username: string
 #   - passwords: string
-@app.route("/users/create", methods=['POST'])
+@app.route("/users/register", methods=['POST'])
 def create_user():
     request_data = request.json
     username = request_data["username"]
     password = request_data["password"]
-    return server.add_new_user(username, password)
+    return server.create_new_user(username, password)
+
+# Login user
+# body:
+#   - username: string
+#   - passwords: string
+@app.route("/users/login", methods=['POST'])
+def login_user():
+    return server.login_user(request.args.get("username"), request.args.get("password"))
 
 
 # List libraries info for markers in a given radius
@@ -38,6 +46,7 @@ def get_libraries_markers():
     return server.get_libraries_markers(float(request.args.get("lat")), float(request.args.get("lon")),
                                         int(request.args.get("radius")), int(request.args.get("userId")))
 
+
 # List libraries in a given radius
 # path:
 #   - lat: float - latitude
@@ -48,6 +57,25 @@ def get_libraries_markers():
 def get_libraries_to_load_cache():
     return server.get_libraries_to_load_cache(float(request.args.get("lat")), float(request.args.get("lon")),
                                         int(request.args.get("radius")), int(request.args.get("userId")))
+
+
+# Create library
+# body:
+#   - name: string
+#   - address: string
+#   - location: (int, int)
+#   - location: string
+#   - photo: image
+@app.route("/libraries/create", methods=['POST'])
+def create_library():
+    request_data = request.json
+    name = request_data["name"]
+    address = request_data["address"]
+    location = (request_data["latitude"], request_data["longitude"])
+    photo = base64.b64decode(request_data["photo"])
+    return server.create_new_library(name, location, photo, address)
+
+
 
 # Add library to user's favorites
 # path:
@@ -138,23 +166,6 @@ def get_book():
 @app.route("/books", methods=['GET'])
 def get_all_books():
     return server.get_all_books(int(request.args.get("userId")))
-
-
-# Create library
-# body:
-#   - name: string
-#   - address: string
-#   - location: (int, int)
-#   - location: string
-#   - photo: image
-@app.route("/libraries/create", methods=['POST'])
-def create_library():
-    request_data = request.json
-    name = request_data["name"]
-    address = request_data["address"]
-    location = (request_data["latitude"], request_data["longitude"])
-    photo = base64.b64decode(request_data["photo"])
-    return server.create_new_library(name, location, photo, address)
 
 
 # Get books for a given library
