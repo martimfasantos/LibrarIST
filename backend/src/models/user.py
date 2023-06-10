@@ -6,6 +6,7 @@ class User:
         self.password = password
         self.current_books = []
         self.favorite_libraries = []
+        self.book_ratings = {}
 
 
     def checkin_book(self, book_id):
@@ -24,4 +25,12 @@ class User:
         if (lib_id in self.favorite_libraries):
             self.favorite_libraries.remove(lib_id)
 
+    def give_rate(self, book_id, stars):
+        self.book_ratings[book_id] = stars
+
+    def already_rated_book(self, book_id):
+        return book_id in self.book_ratings.keys()
+    
+    def get_book_rate(self, book_id):
+        return self.book_ratings[book_id]
 

@@ -116,7 +116,7 @@ class Server:
             if (haversine((lat, lon), lib.location, unit=Unit.KILOMETERS) <= radius):
                 libraries.append(self.library_to_json(lib, user_id))
                 books.extend(self.book_to_json(self.books[book_id], user_id) for book_id in lib.available_books)
-        return jsonify({"libraries": libraries, "books": books}), 200
+        return jsonify({"libraries": libraries, "books": self.sort_books_by_average_rate(books)}), 200
                 
     # Covert library into json
     def library_to_json(self, library: Library, user_id: int):
@@ -191,7 +191,7 @@ class Server:
             all_books.append(self.book_to_json(book, user_id))
 
         print([book_json["bookId"] for book_json in all_books])
-        return jsonify(all_books), 200
+        return jsonify(self.sort_books_by_average_rate(all_books)), 200
     
     def check_in_book(self, barcode: str, lib_id: int):
         book_id = self.get_book_id_from_barcode(barcode)
@@ -259,6 +259,30 @@ class Server:
         for book in sorted_filtered_books:
             filtered_books_json.append(self.book_to_json(book, user_id))
         return jsonify(filtered_books_json), 200
+    
+    # Rate a book
+    def rate_book(self, book_id, stars, user_id):
+        user = self.users[user_id]
+        book = self.books[book_id]
+
+        # if user already rated the book, remove that rate
+        if (user.already_rated_book()):
+            book.remove_rate(user.get_book_rate(book_id))
+        # give new rate
+        user.give_rate(book_id, stars)
+        book.add_rate(stars)
+
+        return json.dumps({"status": 200})
+    
+    # Sort books by average rating
+    def sort_books_by_average_rate(self, books):
+        return sorted(books, key=lambda book: book.get_average_rate())
+
+    # Add new user
+    def add_new_user(self, username, password):        
+        id = len(self.users)
+        self.users[id] = User(id, username, password)
+        return json.dumps({"status": 200})
 
  
     # Add user to book notifications

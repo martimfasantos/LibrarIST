@@ -1,4 +1,3 @@
-import json
 import base64
 from server import Server
 from flask import Flask, request, jsonify
@@ -211,7 +210,15 @@ def remove_user_from_book_notifications(book_id):
 def filter_books_by_title():
     return server.filter_books_by_title(request.args.get("title"), int(request.args.get("userId")))
 
-    
+# Rate book
+# path:
+#   - book_id: int - rate this book
+# query:
+#   - user_id: int - user giving the rate
+#   - stars: int - the number of stars given   
+@app.route("/books/<int:book_id>/ratings", methods=["POST"])
+def rate_book(book_id):
+    return server.rate_book(book_id, int(request.args.get("user_id")), int(request.args.get("stars")))
     
 if __name__ == "__main__":
      app.run(host="0.0.0.0", port=5000)
