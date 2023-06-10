@@ -230,6 +230,20 @@ class Server:
         books = list(self.books.values())
         filtered_books = list(filter(lambda book: book.title.upper().find(filter_title.upper()) != -1, books))
         return json.dumps(filtered_books, default=vars)
+    
+    # Rate a book
+    def rate_book(self, book_id, stars, user_id):
+        user = self.users[user_id]
+        book = self.books[book_id]
+
+        # if user already rated the book, remove that rate
+        if (user.already_rated_book()):
+            book.remove_rate(user.get_book_rate(book_id))
+        # give new rate
+        user.give_rate(book_id, stars)
+        book.add_rate(stars)
+        
+        return json.dumps({"status": 200})
 
     # Add new user
     def add_new_user(self, username, password):        

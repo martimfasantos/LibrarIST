@@ -7,6 +7,7 @@ class Book:
         self.barcode = barcode
         self.lib_id = lib_id
         self.users_to_notify = []
+        self.ratings = [0, 0, 0, 0, 0]
         
 
     def add_user_to_notify(self, user_id):
@@ -19,3 +20,9 @@ class Book:
     
     def is_user_to_notify(self, user_id):
         return user_id in self.users_to_notify
+    
+    def add_rate(self, stars):
+        self.ratings[stars] += 1
+
+    def remove_rate(self, stars):
+        self.ratings[stars] -= 1
