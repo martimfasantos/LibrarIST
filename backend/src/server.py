@@ -252,10 +252,13 @@ class Server:
         return jsonify({"bookId": book_id}), 200
 
     # Filter book by title
-    def filter_books_by_title(self, filter_title):
+    def filter_books_by_title(self, filter_title, user_id):
         books = list(self.books.values())
-        filtered_books = list(filter(lambda book: book.title.upper().find(filter_title.upper()) != -1, books))
-        return json.dumps(filtered_books, default=vars)
+        sorted_filtered_books = list(filter(lambda book: book.title.upper().find(filter_title.upper()) != -1, books))
+        filtered_books_json = []
+        for book in sorted_filtered_books:
+            filtered_books_json.append(self.book_to_json(book, user_id))
+        return jsonify(filtered_books_json), 200
 
  
     # Add user to book notifications

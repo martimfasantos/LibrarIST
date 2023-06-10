@@ -438,6 +438,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void parseIntent(){
         Intent intent = getIntent();
         userId = intent.getIntExtra("userId", -1);
+        userId = 0;
     }
 
     private void updateCurrentLocation() {

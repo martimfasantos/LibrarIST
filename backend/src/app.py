@@ -206,7 +206,8 @@ def remove_user_from_book_notifications(book_id):
 # Get books filtered by title
 # query:
 #   - title: string - text from which to filter
-@app.route("/books/title/filter", methods=['GET'])
+#   - userId: int - user to which the books will be filtered
+@app.route("/books/filter", methods=['GET'])
 def filter_books_by_title():
     return server.filter_books_by_title(request.args.get("title"), int(request.args.get("userId")))
 

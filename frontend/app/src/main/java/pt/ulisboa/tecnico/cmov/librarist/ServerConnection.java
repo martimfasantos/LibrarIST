@@ -636,7 +636,7 @@ public class ServerConnection {
 
     public List<Book> filterBooksByTitle(String bookTitle) throws IOException {
 
-        String url = endpoint + "/books/title/filter" + "?title=" + bookTitle + "&userId=" + userId;
+        String url = endpoint + "/books/filter" + "?title=" + bookTitle + "&userId=" + userId;
 
         // Create a connection to the backend API
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();

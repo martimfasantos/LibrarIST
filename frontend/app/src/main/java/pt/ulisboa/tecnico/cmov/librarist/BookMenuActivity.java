@@ -178,7 +178,7 @@ public class BookMenuActivity extends AppCompatActivity {
 
         // TODO if there is internet
         if (true){
-            Thread _thread = new Thread(() -> {
+            Thread thread = new Thread(() -> {
                 try {
                     if (titleFilter.isEmpty()) {
                         filteredBooks.addAll(serverConnection.getAllBooks());
@@ -186,7 +186,6 @@ public class BookMenuActivity extends AppCompatActivity {
                         filteredBooks.addAll(serverConnection.filterBooksByTitle(titleFilter));
                     }
                     Log.d("FILTER BOOKS", "TITLE " + titleFilter);
-
                 } catch (ConnectException e) {
                     messageDisplayer.showToast("Couldn't connect to the server!");
                 } catch (SocketTimeoutException e) {
@@ -195,8 +194,16 @@ public class BookMenuActivity extends AppCompatActivity {
                     throw new RuntimeException(e);
                 }
             });
-            _thread.start();
-            _thread.join();
+
+            // Start the thread
+            thread.start();
+            // Wait for thread to join
+            try{
+                thread.join();
+            } catch (InterruptedException e){
+                throw new RuntimeException(e);
+            }
+
         } else {
             // If there is NO internet available
             filteredBooks.addAll(booksCache.getBooks().stream()
