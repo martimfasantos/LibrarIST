@@ -33,4 +33,4 @@ class Book:
         for star in range(1,6):
             sum_ratings += (star+1) * self.ratings[star]
             total_number_votes += self.ratings[star]
-        return sum_ratings // total_number_votes
+        return sum_ratings / total_number_votes
