@@ -47,7 +47,61 @@ public class ServerConnection {
     //public static final String wsEndpoint = "ws://cmov2-docentes-tp-1.vps.tecnico.ulisboa.pt:5000/ws";
     //WebSocketClient webSocketClient = null;
 
-    // Method called when creating a new Library -- WORKING!
+    public int registerUser(String username, String password) throws IOException {
+        String url = endpoint + "/users/register";
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
+
+        // Create a JSON object
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("username", username);
+        jsonObject.addProperty("password", password);
+
+        String jsonString = jsonObject.toString();
+
+        DataOutputStream outputStream = new DataOutputStream((OutputStream) connection.getOutputStream());
+        outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
+        outputStream.close();
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Received values
+            assert responseJson != null;
+            return responseJson.get("userId").getAsInt();
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    public int loginUser(String username, String password) throws IOException {
+        String url = endpoint + "/users/login?username=" + username + "&password=" + password;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Received values
+            assert responseJson != null;
+            return responseJson.get("userId").getAsInt();
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    // Method called when creating a new Library
     public void createLibrary(String name, LatLng latLng, String address, byte[] photo) throws IOException {
         String url = endpoint + "/libraries/create";
 
@@ -582,7 +636,7 @@ public class ServerConnection {
 
     public List<Book> filterBooksByTitle(String bookTitle) throws IOException {
 
-        String url = endpoint + "/books/title/filter" + "?title=" + bookTitle + "&userId=" + userId;
+        String url = endpoint + "/books/filter" + "?title=" + bookTitle + "&userId=" + userId;
 
         // Create a connection to the backend API
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();

@@ -10,11 +10,12 @@ from models.book import Book
 from models.library import Library
 from models.user import User
 
+
 class Server:
 
     def __init__(self):
         # counters to attribute ids to new objects
-        self.id_users_counter = 0
+        self.id_users_counter = 1
         self.id_library_counter = 0
         self.id_books_counter = 0
 
@@ -24,7 +25,32 @@ class Server:
         self.users: Dict[int, User] = {0: User(0, "admin", "admin")} # admin user (for testing purposes)
 
 
-    # Add new library
+    # ------------------------------------------------------------
+    # -                         USERS                            -
+    # ------------------------------------------------------------
+
+    # Create new user
+    def create_new_user(self, username: str, password: str):
+        user_id = self.id_users_counter
+        self.id_users_counter += 1
+
+        # check if username already exists
+        for user in self.users.values():
+            if (user.username == username):
+                return jsonify({"userId": -1}), 200
+            
+        self.users[user_id] = User(user_id, username, password)
+        return jsonify({"userId": user_id}), 200
+
+    # Login user
+    def login_user(self, username: str, password: str):
+        for user in self.users.values():
+            if (user.username == username and user.password == password):
+                return jsonify({"userId": user.id}), 200
+        return jsonify({"userId": -1}), 200
+    
+
+    # Create new library
     def create_new_library(
             self, 
             name: str, 
@@ -89,7 +115,10 @@ class Server:
         for lib in self.libraries.values():
             if (haversine((lat, lon), lib.location, unit=Unit.KILOMETERS) <= radius):
                 libraries.append(self.library_to_json(lib, user_id))
-                books.extend(self.book_to_json(self.books[book_id], user_id) for book_id in lib.available_books)
+                books_list = [self.books[book_id] for book_id in lib.available_books]
+                books_sorted = self.sort_books_by_average_rate(books_list)
+                books.extend(self.book_to_json(book, user_id) for book in books_sorted)
+                print(books)
         return jsonify({"libraries": libraries, "books": books}), 200
                 
     # Covert library into json
@@ -165,7 +194,7 @@ class Server:
             all_books.append(self.book_to_json(book, user_id))
 
         print([book_json["bookId"] for book_json in all_books])
-        return jsonify(all_books), 200
+        return jsonify(self.sort_books_by_average_rate(all_books)), 200
     
     def check_in_book(self, barcode: str, lib_id: int):
         book_id = self.get_book_id_from_barcode(barcode)
@@ -226,10 +255,31 @@ class Server:
         return jsonify({"bookId": book_id}), 200
 
     # Filter book by title
-    def filter_books_by_title(self, filter_title):
+    def filter_books_by_title(self, filter_title, user_id):
         books = list(self.books.values())
-        filtered_books = list(filter(lambda book: book.title.upper().find(filter_title.upper()) != -1, books))
-        return json.dumps(filtered_books, default=vars)
+        sorted_filtered_books = list(filter(lambda book: book.title.upper().find(filter_title.upper()) != -1, books))
+        filtered_books_json = []
+        for book in sorted_filtered_books:
+            filtered_books_json.append(self.book_to_json(book, user_id))
+        return jsonify(filtered_books_json), 200
+    
+    # Rate a book
+    def rate_book(self, book_id, stars, user_id):
+        user = self.users[user_id]
+        book = self.books[book_id]
+
+        # if user already rated the book, remove that rate
+        if (user.already_rated_book()):
+            book.remove_rate(user.get_book_rate(book_id))
+        # give new rate
+        user.give_rate(book_id, stars)
+        book.add_rate(stars)
+
+        return json.dumps({"status": 200})
+    
+    # Sort books by average rating
+    def sort_books_by_average_rate(self, books):
+        return sorted(books, key=lambda book: book.get_average_rate())
 
     # Add new user
     def add_new_user(self, username, password):        
@@ -237,6 +287,7 @@ class Server:
         self.users[id] = User(id, username, password)
         return json.dumps({"status": 200})
 
+ 
     # Add user to book notifications
     def add_user_book_notif(self, user_id, book_id):
         self.books[book_id].add_user_to_notify(user_id)
