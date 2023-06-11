@@ -28,4 +28,5 @@
     <string name="default_library_distance">0.0Km</string>
     <string name="books_currently_available">Books currently available:</string>
     <string name="library_address">Library Address</string>
+    <string name="starValue">starValue</string>
 </resources>

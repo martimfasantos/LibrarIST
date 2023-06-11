@@ -34,7 +34,6 @@
             android:textSize="40sp"
             android:textStyle="bold" />
 
-
     </RelativeLayout>
 
     <ImageView
@@ -68,12 +67,21 @@
 
         <TextView
             android:id="@+id/book_info_notif_message"
-            android:layout_width="wrap_content"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
             android:text="@string/notify_when_available"
             android:layout_gravity="center_vertical"
             android:textSize="20sp" />
+
+        <Button
+            android:id="@+id/rate_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rate"
+            android:textSize="15sp"
+            android:layout_gravity="center"
+            android:layout_marginStart="20dp"/>
 
     </LinearLayout>
 
