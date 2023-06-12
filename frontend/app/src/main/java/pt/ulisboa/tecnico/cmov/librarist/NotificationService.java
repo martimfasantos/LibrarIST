@@ -26,6 +26,7 @@ public class NotificationService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
     private static final String CHANNEL_ID = "ForegroundServiceChannel";
+    private static final String SERVER = "ws://192.92.147.54:5000/ws";
 
     private WebSocketClient webSocketClient;
 
@@ -34,28 +35,23 @@ public class NotificationService extends Service {
         super.onCreate();
 
         // Create and configure the WebSocket client
-        URI serverUri = URI.create("ws://192.92.147.54:5000/ws");
+        URI serverUri = URI.create(SERVER);
         webSocketClient = new WebSocketClient(serverUri) {
             @Override
-            public void onOpen(ServerHandshake handshakedata) {
+            public void onOpen(ServerHandshake handshakeData) {
                 // WebSocket connection is established
-                //displayNotification("yooo");
             }
 
             @Override
             public void onMessage(String message) {
                 // Handle incoming message here
-                if(message != null){
-                    try{
+                if (message != null){
+                    try {
                         JSONObject json = new JSONObject(message);
                         String title = json.getString("title");
-                        Log.d("WebSocket", "Received title: " + title);
+                        Log.d("WEBSOCKET", "Received title: " + title);
                         displayNotification(title);
-                    }
-                    //catch (JSONException e){
-                    //   throw new RuntimeException("Bad Message in Socket!" + e);
-                    //}
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                         throw new RuntimeException("Bad Message in Socket!" + e);
                     }
@@ -73,6 +69,7 @@ public class NotificationService extends Service {
                 ex.printStackTrace();
             }
         };
+        // Connect tot he socket
         webSocketClient.connect();
 
         // Start the service in the foreground
@@ -102,15 +99,13 @@ public class NotificationService extends Service {
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Foreground Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(channel);
-        }
+        NotificationChannel channel = new NotificationChannel(
+                CHANNEL_ID,
+                "Foreground Service Channel",
+                NotificationManager.IMPORTANCE_DEFAULT
+        );
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        manager.createNotificationChannel(channel);
     }
 
     private Notification createNotification() {

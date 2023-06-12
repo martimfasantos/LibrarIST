@@ -1,9 +1,12 @@
 import base64
 import json
+import time
 from server import Server
 from flask import Flask, request, jsonify
 from flask_sock import Sock
 from flask_cors import CORS
+from gevent import monkey
+from gevent.pywsgi import WSGIServer
 
 latest_book_title = None 
 websocket_connections = []
@@ -263,8 +266,6 @@ def filter_books_by_title():
     
 ##################   SOCKETS  ##################
 
-import time
-
 
 @sockets.route('/ws')
 def ws(ws):
@@ -274,9 +275,9 @@ def ws(ws):
 
   while True:
     try:
-        if(latest_book_title != None):
+        if latest_book_title != None:
             for connection in websocket_connections:
-                if(connection in interested_connections):
+                if connection in interested_connections:
                     connection.send(json.dumps({"title": latest_book_title}))
             latest_book_title = None
 
@@ -293,9 +294,7 @@ def ws(ws):
 #     except ConnectionClosed:
 #       interestedConnections.remove(ws)
 
-from gevent import monkey
-from gevent.pywsgi import WSGIServer
-    
+
 if __name__ == "__main__":
      #app.run(host="0.0.0.0", port=5000)
     monkey.patch_all()

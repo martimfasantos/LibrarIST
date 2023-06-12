@@ -110,10 +110,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // TODO use this in MainActivity to start the service for the first time
+        // Start Notifications Service
+        startForegroundService(new Intent(this, NotificationService.class));
+
         // Define user Id
         updateUserId();
-
-        Log.d("AFTER USER ID", String.valueOf(userId));
 
         // Construct a PlacesClient
         Places.initialize(getApplicationContext(), getString(R.string.maps_api_key));
@@ -135,13 +137,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Menu Button
         setupMenuButton();
 
-        //TODO use this in MainActivity to start the service for the first time
-        Intent serviceIntent = new Intent(this, NotificationService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
-        }
     }
 
 
@@ -481,14 +476,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .apply();
         } else { // Try to get Ids from shared Preferences
             int _userId = sharedPreferences.getInt("userId", -1);
-            Log.d("GUEST USER ID", String.valueOf(userId));
-            Log.d("GUEST USER ID", String.valueOf(_userId));
+            Log.d("USER ID", String.valueOf(userId));
             // If there is already a user ID associated with the device
             if (_userId != -1 & validUser(_userId)) {
                 // Check if user ID exists in the system
-                Log.d("PPP USER ID", String.valueOf(_userId));
                 userId = _userId;
-                Log.d("PPP USER ID", String.valueOf(userId));
                 deviceId = sharedPreferences.getInt("deviceId", -1);
                 loggedIn = sharedPreferences.getBoolean("loggedIn", true);
             } else {
