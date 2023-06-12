@@ -1,11 +1,19 @@
 import base64
+import json
 from server import Server
 from flask import Flask, request, jsonify
+from flask_sock import Sock
+from flask_cors import CORS
+
+latest_book_title = None 
+websocket_connections = []
+interested_connections = []
 
 
 app = Flask(__name__)
 server = Server()
-
+sockets = Sock(app)
+cors = CORS(app)
 app.debug = True
 
 
@@ -55,6 +63,19 @@ def login_user():
 #   - userId: int
 @app.route("/libraries/markers", methods=['GET'])
 def get_libraries_markers():
+
+    global latest_book_title
+
+    print("Current websockets: ", websocket_connections)
+
+    for connection in websocket_connections:
+        interested_connections.append(connection)
+
+    print("Current interested connections: ", interested_connections)
+
+    latest_book_title = "Pachinko"
+
+
     return server.get_libraries_markers(float(request.args.get("lat")), float(request.args.get("lon")),
                                         int(request.args.get("radius")), int(request.args.get("userId")))
 
@@ -233,5 +254,44 @@ def filter_books_by_title():
 def rate_book(book_id):
     return server.rate_book(book_id, int(request.args.get("user_id")), int(request.args.get("stars")))
     
+##################   SOCKETS  ##################
+
+import time
+
+
+@sockets.route('/ws')
+def ws(ws):
+  print("Tried to connect to socket")
+  global websocket_connections, latest_book_title
+  websocket_connections.append(ws)
+
+  while True:
+    try:
+        if(latest_book_title != None):
+            for connection in websocket_connections:
+                if(connection in interested_connections):
+                    connection.send(json.dumps({"title": latest_book_title}))
+            latest_book_title = None
+
+    except Exception as e:
+        print(f"Error sending notification to client: {str(e)}")
+    
+    time.sleep(10)
+      
+
+# def websocket_broadcast(messageJson, interestedConnections):
+#   for ws in interestedConnections:
+#     try:
+#       ws.send(messageJson)
+#     except ConnectionClosed:
+#       interestedConnections.remove(ws)
+
+from gevent import monkey
+from gevent.pywsgi import WSGIServer
+    
 if __name__ == "__main__":
-     app.run(host="0.0.0.0", port=5000)
+     #app.run(host="0.0.0.0", port=5000)
+    monkey.patch_all()
+    WSGIServer(('0.0.0.0', 5000), app).serve_forever()
+    # http_server = WSGIServer(('0.0.0.0', 5000), app, handler_class=WebSocketHandler)
+    # http_server.serve_forever()
