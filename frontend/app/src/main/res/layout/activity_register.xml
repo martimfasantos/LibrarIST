@@ -60,4 +60,14 @@
         android:layout_marginTop="16dp"
         android:text="@string/already_have_an_account_log_in" />
 
+    <Button
+        android:id="@+id/guest_btn"
+        android:layout_width="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/log_in"
+        android:layout_marginTop="40dp"
+        android:text="@string/continue_as_guest"
+        android:textSize="14sp"/>
+
 </RelativeLayout>

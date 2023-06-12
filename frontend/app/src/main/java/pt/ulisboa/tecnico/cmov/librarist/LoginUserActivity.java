@@ -1,5 +1,10 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.loggedIn;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userId;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.deviceId;
+
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -13,7 +18,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
@@ -32,6 +36,9 @@ public class LoginUserActivity extends AppCompatActivity {
 
         // Register User
         setupRegisterButton();
+
+        // Continue as Guest
+        setupContinueAsGuestButton();
     }
 
     private void setupLoginButton(){
@@ -50,10 +57,10 @@ public class LoginUserActivity extends AppCompatActivity {
                 } else {
                     // Get user if exists in the backend
                     Thread thread = new Thread(() -> {
-                        int userId = -1;
+                        int _userId = -1;
                         boolean connectionError = false;
                         try {
-                            userId = serverConnection.loginUser(username, password);
+                            _userId = serverConnection.loginUser(username, password);
                         } catch (ConnectException e) {
                             messageDisplayer.showToast("Couldn't connect to the server!");
                             connectionError = true;
@@ -65,16 +72,19 @@ public class LoginUserActivity extends AppCompatActivity {
                         }
 
                         if (!connectionError) {
-                            if (userId == -1) {
+                            if (_userId == -1) {
                                 usernameInput.setText("");
                                 passwordInput.setText("");
                                 messageDisplayer.showToast("User does not exist");
                             } else {
-                                Intent intent = new Intent(LoginUserActivity.this, MainActivity.class);
-                                intent.putExtra("userId", userId);
-                                // Set the flag to clear the activity stack
-                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                startActivity(intent);
+                                loggedIn = true;
+                                // Save device's User ID for future log outs
+                                deviceId = userId;
+                                // Change user ID
+                                userId = _userId;
+
+                                // Start new activity
+                                startActivity(new Intent(LoginUserActivity.this, MainActivity.class));
                                 finish();
                             }
                         }
@@ -93,15 +103,26 @@ public class LoginUserActivity extends AppCompatActivity {
         });
     }
 
-    public void setupRegisterButton(){
+    public void setupRegisterButton() {
         TextView register_btn = findViewById(R.id.create_an_account);
         register_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(LoginUserActivity.this, RegisterUserActivity.class);
-                // Set the flag to clear the activity stack
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
+                // Start new activity
+                startActivity(new Intent(LoginUserActivity.this, RegisterUserActivity.class));
+                finish();
+            }
+        });
+    }
+
+    private void setupContinueAsGuestButton() {
+        Button continueAsGuest_btn = findViewById(R.id.guest_btn);
+        continueAsGuest_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                userId = deviceId;
+                // Start new activity
+                startActivity(new Intent(LoginUserActivity.this, MainActivity.class));
                 finish();
             }
         });

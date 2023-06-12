@@ -53,5 +53,14 @@
         android:layout_marginTop="16dp"
         android:text="@string/create_an_account" />
 
+    <Button
+        android:id="@+id/guest_btn"
+        android:layout_width="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/create_an_account"
+        android:layout_marginTop="60dp"
+        android:text="@string/continue_as_guest"
+        android:textSize="14sp"/>
 
 </RelativeLayout>

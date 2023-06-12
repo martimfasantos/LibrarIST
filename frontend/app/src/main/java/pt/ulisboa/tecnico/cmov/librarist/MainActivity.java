@@ -1,5 +1,6 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import android.content.Context;
 import android.content.Intent;
 
 import androidx.annotation.NonNull;
@@ -7,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.location.Address;
@@ -19,6 +21,7 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -46,11 +49,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import pt.ulisboa.tecnico.cmov.librarist.caches.BookCache;
 import pt.ulisboa.tecnico.cmov.librarist.caches.LibraryCache;
 import pt.ulisboa.tecnico.cmov.librarist.popups.CreateLibraryPopUp;
 import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
+import pt.ulisboa.tecnico.cmov.librarist.popups.UserAuthenticationPopUp;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnCameraMoveStartedListener {
 
@@ -60,8 +66,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public static final int MAX_DIST_KM_CACHE = 10;
 
-    // User ID
-    public static int userId;
+    public static boolean loggedIn = false;
+    // User IDs
+    public static int userId = -1;
+    public static int deviceId = -1;
     public static GoogleMap mMap;
 
     // TODO make this a cache !!!
@@ -92,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final ServerConnection serverConnection = new ServerConnection();
     // Current visible library pop up
     private CreateLibraryPopUp currentCreateLibraryPopUp;
+    private UserAuthenticationPopUp currentAuthenticationPopUp;
 
     private final MessageDisplayer messageDisplayer = new MessageDisplayer(this);
 
@@ -100,8 +109,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Parse intent and its information
-        parseIntent();
+        // Define user Id
+        updateUserId();
+
+        Log.d("AFTER USER ID", String.valueOf(userId));
 
         // Construct a PlacesClient
         Places.initialize(getApplicationContext(), getString(R.string.maps_api_key));
@@ -119,6 +130,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Books Button
         setupBooksButton();
+
+        // Menu Button
+        setupMenuButton();
     }
 
 
@@ -397,6 +411,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
+    private void setupMenuButton() {
+        ImageView menuButton = findViewById(R.id.menu_btn);
+        menuButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d("VALID USER ID", String.valueOf(userId));
+                currentAuthenticationPopUp = new UserAuthenticationPopUp(MainActivity.this);
+            }
+        });
+    }
+
 
     /** -----------------------------------------------------------------------------
      *                                  PERMISSIONS
@@ -435,10 +460,100 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      *                                  OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
 
-    private void parseIntent(){
-        Intent intent = getIntent();
-        userId = intent.getIntExtra("userId", -1);
-        userId = 0;
+    private void updateUserId(){
+        SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        // User already as an Id, save it
+        if (userId != -1){
+            // Save the user ID in SharedPreferences
+            sharedPreferences.edit()
+                    .putBoolean("loggedIn", loggedIn)
+                    .putInt("userId", userId)
+                    .putInt("deviceId", deviceId)
+                    .apply();
+        } else { // Try to get Ids from shared Preferences
+            int _userId = sharedPreferences.getInt("userId", -1);
+            Log.d("GUEST USER ID", String.valueOf(userId));
+            Log.d("GUEST USER ID", String.valueOf(_userId));
+            // If there is already a user ID associated with the device
+            if (_userId != -1 & validUser(_userId)) {
+                // Check if user ID exists in the system
+                Log.d("PPP USER ID", String.valueOf(_userId));
+                userId = _userId;
+                Log.d("PPP USER ID", String.valueOf(userId));
+                deviceId = sharedPreferences.getInt("deviceId", -1);
+                loggedIn = sharedPreferences.getBoolean("loggedIn", true);
+            } else {
+                // User ID doesn't exist, generate a new one
+                userId = createGuestUser();
+                // Save the user ID in SharedPreferences
+                sharedPreferences.edit()
+                        .putBoolean("loggedIn", loggedIn)
+                        .putInt("userId", userId)
+                        .putInt("deviceId", deviceId)
+                        .apply();
+            }
+
+        }
+    }
+
+    private int createGuestUser() {
+        AtomicInteger generatedUserId = new AtomicInteger(-1);
+        // Add library to favorites in the backend
+        Thread thread = new Thread(() -> {
+            try {
+                generatedUserId.set(serverConnection.createGuestUser());
+            } catch (ConnectException e) {
+                messageDisplayer.showToast("Couldn't connect to the server!");
+                return;
+            } catch (SocketTimeoutException e) {
+                messageDisplayer.showToast("Couldn't create Guest user!");
+                return;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            Log.d("GUEST USER ID", String.valueOf(generatedUserId));
+        });
+
+        // Start the thread
+        thread.start();
+        // Wait for thread to join
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        Log.d("GUEST USER ID", String.valueOf(generatedUserId));
+        return generatedUserId.get();
+    }
+
+    private boolean validUser(int userId) {
+        AtomicBoolean validUserId = new AtomicBoolean(true);
+        // Add library to favorites in the backend
+        Thread thread = new Thread(() -> {
+            try {
+                validUserId.set(serverConnection.validateUser(userId));
+            } catch (ConnectException e) {
+                messageDisplayer.showToast("Couldn't connect to the server!");
+                return;
+            } catch (SocketTimeoutException e) {
+                messageDisplayer.showToast("Couldn't verify user!");
+                return;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Start the thread
+        thread.start();
+        // Wait for thread to join
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        return validUserId.get();
     }
 
     private void updateCurrentLocation() {
@@ -552,13 +667,5 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             outState.putParcelable(KEY_LOCATION, currentLocation);
         }
         super.onSaveInstanceState(outState);
-    }
-
-    // TODO Extra work
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
     }
 }

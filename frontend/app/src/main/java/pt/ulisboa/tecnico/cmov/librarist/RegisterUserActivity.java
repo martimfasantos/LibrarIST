@@ -1,5 +1,9 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.deviceId;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.loggedIn;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userId;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,11 +30,16 @@ public class RegisterUserActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
+        Log.d("GUEST USER ID", String.valueOf(userId));
+
         // Register Button
         setupRegisterButton();
 
         // Log in User
         setupLoginButton();
+
+        // Continue as Guest
+        setupContinueAsGuestButton();
     }
 
     private void setupRegisterButton(){
@@ -53,33 +62,41 @@ public class RegisterUserActivity extends AppCompatActivity {
                 } else {
                     // Get user if exists in the backend
                     Thread thread = new Thread(() -> {
-                        int userId = -1;
+                        int _userId = -1;
                         boolean connectionError = false;
                         try {
-                            userId = serverConnection.registerUser(username, password);
+                            // TODO error! ALWAYS -1 HERE
+                            _userId = serverConnection.registerUser(userId, username, password);
                         } catch (ConnectException e) {
                             messageDisplayer.showToast("Couldn't connect to the server!");
                             connectionError = true;
                         } catch (SocketTimeoutException e) {
-                            messageDisplayer.showToast("Couldn't create the library!");
+                            messageDisplayer.showToast("Couldn't register the user!");
                             connectionError = true;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
 
                         if (!connectionError) {
-                            if (userId == -1) {
+                            // User already exists
+                            if (_userId == -1) {
                                 usernameInput.setText("");
                                 passwordInput.setText("");
                                 confirmPasswordInput.setText("");
                                 messageDisplayer.showToast("User already exists");
                             } else {
-                                Intent intent = new Intent(RegisterUserActivity.this, MainActivity.class);
-                                intent.putExtra("userId", userId);
-                                // Set the flag to clear the activity stack
-                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                startActivity(intent);
-                                finish();
+                                if (_userId != userId){
+                                    usernameInput.setText("");
+                                    passwordInput.setText("");
+                                    confirmPasswordInput.setText("");
+                                    messageDisplayer.showToast("Error creating user");
+                                // User Register successfully
+                                } else {
+                                    loggedIn = true;
+                                    // Start new activity
+                                    startActivity(new Intent(RegisterUserActivity.this, MainActivity.class));
+                                    finish();
+                                }
                             }
                         }
                     });
@@ -102,10 +119,20 @@ public class RegisterUserActivity extends AppCompatActivity {
         login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(RegisterUserActivity.this, LoginUserActivity.class);
-                // Set the flag to clear the activity stack
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
+                // Start new activity
+                startActivity(new Intent(RegisterUserActivity.this, LoginUserActivity.class));
+                finish();
+            }
+        });
+    }
+
+    private void setupContinueAsGuestButton() {
+        Button continueAsGuest_btn = findViewById(R.id.guest_btn);
+        continueAsGuest_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Start new activity
+                startActivity(new Intent(RegisterUserActivity.this, MainActivity.class));
                 finish();
             }
         });

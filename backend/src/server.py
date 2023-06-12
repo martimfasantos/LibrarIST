@@ -29,23 +29,39 @@ class Server:
     # -                         USERS                            -
     # ------------------------------------------------------------
 
-    # Create new user
-    def create_new_user(self, username: str, password: str):
+    # Create guest user
+    def create_guest_user(self):
         user_id = self.id_users_counter
         self.id_users_counter += 1
+        
+        self.users[user_id] = User(user_id, None, None)
+        return jsonify({"userId": user_id}), 200
+    
+    # Validate user
+    def validate_user(self, user_id: int):
+        if user_id in self.users.keys() and user_id != 0:
+            return jsonify({"validUser": True}), 200
+        else:
+            return jsonify({"validUser": False}), 200
 
+    # Create new user
+    def create_new_user(self, user_id: int, username: str, password: str):
         # check if username already exists
         for user in self.users.values():
-            if (user.username == username):
+            if user.username == username:
                 return jsonify({"userId": -1}), 200
-            
+        
+        if user_id <= 0:
+            return jsonify({"userId": -1}), 200
+        
+        # modify guest user to new user
         self.users[user_id] = User(user_id, username, password)
         return jsonify({"userId": user_id}), 200
 
     # Login user
     def login_user(self, username: str, password: str):
         for user in self.users.values():
-            if (user.username == username and user.password == password):
+            if user.username == username and user.password == password:
                 return jsonify({"userId": user.id}), 200
         return jsonify({"userId": -1}), 200
     

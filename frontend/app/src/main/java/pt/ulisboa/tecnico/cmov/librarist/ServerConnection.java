@@ -44,11 +44,55 @@ import java.util.List;
 public class ServerConnection {
     // Server and port
     public static final String endpoint = "http://192.92.147.54:5000";
-    //public static final String wsEndpoint = "ws://cmov2-docentes-tp-1.vps.tecnico.ulisboa.pt:5000/ws";
-    //WebSocketClient webSocketClient = null;
 
-    public int registerUser(String username, String password) throws IOException {
-        String url = endpoint + "/users/register";
+
+    /** -----------------------------------------------------------------------------
+     *                                  USER ACCOUNTS
+     -------------------------------------------------------------------------------- */
+
+    public int createGuestUser() throws IOException {
+        String url = endpoint + "/users/guest";
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Received values
+            assert responseJson != null;
+            return responseJson.get("userId").getAsInt();
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    public boolean validateUser(int userId) throws IOException {
+        String url = endpoint + "/users/validate?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Received values
+            assert responseJson != null;
+            return responseJson.get("validUser").getAsBoolean();
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    public int registerUser(int userId, String username, String password) throws IOException {
+        String url = endpoint + "/users/register?userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
@@ -73,6 +117,11 @@ public class ServerConnection {
 
             // Received values
             assert responseJson != null;
+            // User id confirmation for safety
+            if (responseJson.get(("userId")).getAsInt() != -1 &
+                    responseJson.get(("userId")).getAsInt() != userId){
+                Log.d("REGISTER USER", "DIFFERENT IDS");
+            }
             return responseJson.get("userId").getAsInt();
 
         } else {

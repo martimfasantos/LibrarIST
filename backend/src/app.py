@@ -14,6 +14,19 @@ def handle_call():
     return jsonify({}), 200
 
 
+# Create guest user
+# body: none
+@app.route("/users/guest", methods=['POST'])
+def create_guest_user():
+    return server.create_guest_user()
+
+# Validate user
+# path:
+#   - userId: int
+@app.route("/users/validate", methods=['GET'])
+def validate_user():
+    return server.validate_user(int(request.args.get("userId")))
+
 # Create user
 # body:
 #   - username: string
@@ -23,7 +36,7 @@ def create_user():
     request_data = request.json
     username = request_data["username"]
     password = request_data["password"]
-    return server.create_new_user(username, password)
+    return server.create_new_user(int(request.args.get("userId")), username, password)
 
 # Login user
 # body:
