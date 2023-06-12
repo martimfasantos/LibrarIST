@@ -15,6 +15,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -133,6 +134,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Menu Button
         setupMenuButton();
+
+        //TODO use this in MainActivity to start the service for the first time
+        Intent serviceIntent = new Intent(this, NotificationService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
     }
 
 
