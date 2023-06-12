@@ -28,6 +28,7 @@
     <string name="default_library_distance">0.0Km</string>
     <string name="books_currently_available">Books currently available:</string>
     <string name="library_address">Library Address</string>
+    <string name="starValue">starValue</string>
     <string name="create_an_account">Create an account</string>
     <string name="already_have_an_account_log_in">Already have an account? Log in</string>
     <string name="title_activity_login">LoginActivity</string>

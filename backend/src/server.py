@@ -131,8 +131,11 @@ class Server:
         for lib in self.libraries.values():
             if (haversine((lat, lon), lib.location, unit=Unit.KILOMETERS) <= radius):
                 libraries.append(self.library_to_json(lib, user_id))
-                books.extend(self.book_to_json(self.books[book_id], user_id) for book_id in lib.available_books)
-        return jsonify({"libraries": libraries, "books": self.sort_books_by_average_rate(books)}), 200
+                books_list = [self.books[book_id] for book_id in lib.available_books]
+                books_sorted = self.sort_books_by_average_rate(books_list)
+                books.extend(self.book_to_json(book, user_id) for book in books_sorted)
+                print(books)
+        return jsonify({"libraries": libraries, "books": books}), 200
                 
     # Covert library into json
     def library_to_json(self, library: Library, user_id: int):

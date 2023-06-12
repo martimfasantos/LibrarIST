@@ -5,6 +5,7 @@ import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentLocation;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -15,6 +16,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -42,10 +44,13 @@ import pt.ulisboa.tecnico.cmov.librarist.caches.LibraryCache;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
+import pt.ulisboa.tecnico.cmov.librarist.popups.CreateBookPopUp;
+import pt.ulisboa.tecnico.cmov.librarist.popups.RateBookPopUp;
 
 public class BookInfoActivity extends AppCompatActivity {
 
     private Book book;
+    private RateBookPopUp currentRateBookPopUp;
 
     private final ServerConnection serverConnection = new ServerConnection();
 
@@ -81,6 +86,9 @@ public class BookInfoActivity extends AppCompatActivity {
         // Notifications Button
         setupNotificationButton();
 
+        // Rate button
+        setupRateButton();
+
         // List libraries where the book is available
         listAvailableLibraries();
     }
@@ -107,7 +115,6 @@ public class BookInfoActivity extends AppCompatActivity {
                 finish();
             }
         });
-
     }
 
     // Used when creating each element of the list of the libraries
@@ -121,6 +128,16 @@ public class BookInfoActivity extends AppCompatActivity {
         });
     }
 
+    private void setupRateButton() {
+        Button rate_btn = findViewById(R.id.rate_btn);
+        rate_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                currentRateBookPopUp = new RateBookPopUp(BookInfoActivity.this,
+                        book.getId(), book.getTitle());
+            }
+        });
+    }
 
     /** -----------------------------------------------------------------------------
      *                                  OTHER FUNCTIONS

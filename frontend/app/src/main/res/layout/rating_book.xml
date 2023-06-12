@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="25dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/rating_book_tile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Default title"
+            android:textSize="27sp"
+            android:background="@color/almost_white"/>
+
+        <LinearLayout
+            android:id="@+id/rating_book_star_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal" >
+
+            <ImageView
+                android:id="@+id/rating_book_star_1"
+                android:tag="1"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_margin="10dp"
+                android:src="@drawable/star_unselected" />
+
+            <ImageView
+                android:id="@+id/rating_book_star_2"
+                android:tag="2"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_margin="10dp"
+                android:src="@drawable/star_unselected" />
+
+            <ImageView
+                android:id="@+id/rating_book_star_3"
+                android:tag="3"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_margin="10dp"
+                android:src="@drawable/star_unselected" />
+
+            <ImageView
+                android:id="@+id/rating_book_star_4"
+                android:tag="4"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_margin="10dp"
+                android:src="@drawable/star_unselected" />
+
+            <ImageView
+                android:id="@+id/rating_book_star_5"
+                android:tag="5"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_margin="10dp"
+                android:src="@drawable/star_unselected" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="15dp"
+            android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/rating_book_cancel_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="Cancel"
+                android:textSize="18sp"
+                android:layout_marginEnd="15dp"
+                android:backgroundTint="@color/quantum_googred"/>
+
+            <Button
+                android:id="@+id/rating_book_rate_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="Rate"
+                android:layout_marginStart="40dp"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
