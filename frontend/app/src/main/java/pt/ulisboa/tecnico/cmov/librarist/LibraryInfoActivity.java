@@ -458,8 +458,8 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                     serverConnection.checkInBook(barcode, libraryId);
                     Log.d("CHECKIN", "BOOK ID " + bookId.get());
                 } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
-                return;
+                    messageDisplayer.showToast("Couldn't connect to the server!");
+                    return;
                 } catch (SocketTimeoutException e) {
                     messageDisplayer.showToast("Couldn't check in book!");
                     return;

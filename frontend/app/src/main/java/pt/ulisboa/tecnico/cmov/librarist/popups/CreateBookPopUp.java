@@ -122,9 +122,9 @@ public class CreateBookPopUp {
                 String bookTitle = editText.getText().toString();
 
                 if (bookTitle.isEmpty()) {
-                    Toast.makeText(LibraryInfoActivity, "Please insert a valid Book Title...", Toast.LENGTH_SHORT).show();
+                    messageDisplayer.showToast("Please insert a valid Book Title...");
                 } else if (currentBookCoverURI == null){
-                    Toast.makeText(LibraryInfoActivity, "Please upload a photo of the Book cover...", Toast.LENGTH_SHORT).show();
+                    messageDisplayer.showToast("Please upload a photo of the Book cover...");
                 } else {
 
                     // Create library on the backend
@@ -132,10 +132,10 @@ public class CreateBookPopUp {
                         try {
                             serverConnection.checkInNewBook(bookTitle, convertUriToBytes(currentBookCoverURI), bookBarcode, libraryId);
                         } catch (ConnectException e) {
-                            Toast.makeText(LibraryInfoActivity.getApplicationContext(), "Couldn't connect to the server!", Toast.LENGTH_SHORT).show();
+                            messageDisplayer.showToast("Couldn't connect to the server!");
                             return;
                         } catch (SocketTimeoutException e) {
-                            Toast.makeText(LibraryInfoActivity.getApplicationContext(), "Couldn't check in new book!", Toast.LENGTH_SHORT).show();
+                            messageDisplayer.showToast("Couldn't check in new book!");
                             return;
                         } catch (IOException e) {
                             throw new RuntimeException(e);

@@ -16,7 +16,7 @@ def handle_call():
 
 # Create guest user
 # body: none
-@app.route("/users/guest", methods=['POST'])
+@app.route("/users/guest/create", methods=['POST'])
 def create_guest_user():
     return server.create_guest_user()
 
@@ -119,6 +119,8 @@ def check_in_book(lib_id):
     lib_id = request_data["libId"]
     return server.check_in_book(barcode, lib_id)
 
+# TODO : receive also the user id
+
 
 # User checkin new book
 # path:
@@ -155,6 +157,19 @@ def check_out_book(lib_id):
 @app.route("/books/find", methods=['GET'])
 def find_book():
     return server.find_book(request.args.get("barcode"))
+
+
+# Rate book
+# path:
+#   - book_id: int - book being rated
+# query:
+#   - stars: int - rate given to the book in stars (1-5)   
+#   - userId: int - user giving the rate
+@app.route("/books/<int:book_id>/rate", methods=["POST"])
+def rate_book(book_id):
+    request_data = request.json
+    rating = request_data["rating"]
+    return server.rate_book(book_id, rating, int(request.args.get("userId")))
 
 
 # Find a book with a given barcode in a given library
@@ -223,15 +238,7 @@ def remove_user_from_book_notifications(book_id):
 def filter_books_by_title():
     return server.filter_books_by_title(request.args.get("title"), int(request.args.get("userId")))
 
-# Rate book
-# path:
-#   - book_id: int - rate this book
-# query:
-#   - user_id: int - user giving the rate
-#   - stars: int - the number of stars given   
-@app.route("/books/<int:book_id>/ratings", methods=["POST"])
-def rate_book(book_id):
-    return server.rate_book(book_id, int(request.args.get("user_id")), int(request.args.get("stars")))
+
     
 if __name__ == "__main__":
      app.run(host="0.0.0.0", port=5000)

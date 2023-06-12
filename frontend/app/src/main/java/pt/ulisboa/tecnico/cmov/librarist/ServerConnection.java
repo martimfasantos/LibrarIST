@@ -51,7 +51,7 @@ public class ServerConnection {
      -------------------------------------------------------------------------------- */
 
     public int createGuestUser() throws IOException {
-        String url = endpoint + "/users/guest";
+        String url = endpoint + "/users/guest/create";
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
@@ -580,9 +580,10 @@ public class ServerConnection {
 
     }
 
-    // Method called when checking out a book -- WORKING!
-    public void checkOutBook(String barcode, int libraryID) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint + "/libraries/" + libraryID + "/books/checkout").openConnection();
+    public void checkOutBook(String barcode, int libraryId) throws IOException {
+        String url = endpoint + "/libraries/" + libraryId + "/books/checkout";
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
@@ -590,7 +591,6 @@ public class ServerConnection {
         // Create a JSON object
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("barcode", barcode);
-        jsonObject.addProperty("libId", libraryID);
 
         String jsonString = jsonObject.toString();
 
@@ -615,10 +615,35 @@ public class ServerConnection {
             Log.d("CHECKOUT", "RECEBI");
 
             booksCache.removeBook(bookId);
-            libraryCache.getLibrary(libraryID).removeBook(bookId);
+            libraryCache.getLibrary(libraryId).removeBook(bookId);
             Log.d("BOOK", "REMOVED BOOK FROM CACHE");
 
         } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    public void rateBook(int bookId, int rating) throws IOException {
+        String url = endpoint + "/books/" + bookId + "/rate?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
+
+        // Create a JSON object
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("rating", rating);
+
+        String jsonString = jsonObject.toString();
+
+        DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
+        outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
+        outputStream.close();
+
+        if (connection.getResponseCode() != 200) {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
     }
@@ -634,7 +659,6 @@ public class ServerConnection {
          if (connection.getResponseCode() != 200) {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
-
     }
 
     public void removeLibraryFromFavorites(int libraryId) throws IOException {
@@ -648,7 +672,6 @@ public class ServerConnection {
         if (connection.getResponseCode() != 200) {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
-
     }
 
     

@@ -2,19 +2,26 @@ package pt.ulisboa.tecnico.cmov.librarist.popups;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 
 import pt.ulisboa.tecnico.cmov.librarist.R;
 import pt.ulisboa.tecnico.cmov.librarist.ServerConnection;
+import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
 public class RateBookPopUp {
 
@@ -24,11 +31,14 @@ public class RateBookPopUp {
     private final int bookId;
 
     private final ServerConnection serverConnection = new ServerConnection();
+    private final MessageDisplayer messageDisplayer;
+
 
     public RateBookPopUp(Activity BookInfoActivity, int bookId, String bookTitle) {
 
         this.BookInfoActivity = BookInfoActivity;
         this.bookId = bookId;
+        this.messageDisplayer = new MessageDisplayer(this.BookInfoActivity);
 
         // Display AlertDialog to get the book rating
         LayoutInflater inflater = BookInfoActivity.getLayoutInflater();
@@ -56,11 +66,10 @@ public class RateBookPopUp {
         alertDialog.show();
     }
 
-    /**
-     * -----------------------------------------------------------------------------
-     * BUTTONS FUNCTIONS
-     * --------------------------------------------------------------------------------
-     */
+
+    /** -----------------------------------------------------------------------------
+     *                                 BUTTONS FUNCTIONS
+     -------------------------------------------------------------------------------- */
 
     private void setupPopUpTitle(String title) {
         TextView titleView = rateBookView.findViewById(R.id.rating_book_tile);
@@ -76,9 +85,6 @@ public class RateBookPopUp {
                 rateBookView.findViewById(R.id.rating_book_star_4),
                 rateBookView.findViewById(R.id.rating_book_star_5));
 
-        // for each star button set tag to unselected
-        starsByNumber.forEach(starBtn -> starBtn.setTag(R.string.starValue,"unselected"));
-
         // for each star do its on click
         for (int i = 0; i < 5; i++) {
             final int starNr = i;
@@ -88,11 +94,12 @@ public class RateBookPopUp {
                     // put star value in the group
                     LinearLayout starGroup = rateBookView.findViewById(R.id.rating_book_star_group);
                     starGroup.setTag(starNr + 1);
+                    Log.d("RATING BOOK", String.valueOf(starGroup.getTag()));
                     // make all unselected
                     starsByNumber.forEach(starBtn -> cleanStarButton(starBtn));
                     // set button to selected the ones before
                     for (int j = 0; j <= starNr; j++) {
-                        toggleStarButton(starsByNumber.get(starNr));
+                        toggleStarButton(starsByNumber.get(j));
                     }
                 }
             });
@@ -100,39 +107,74 @@ public class RateBookPopUp {
     }
 
     private void setupRateButton(AlertDialog alertDialog) {
-        // Get the stars value
-        LinearLayout starGroup = rateBookView.findViewById(R.id.rating_book_star_group);
-        int rate = Integer.parseInt(starGroup.getTag().toString());
+        Button rateButton = rateBookView.findViewById(R.id.rating_book_rate_btn);
+        rateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Get the stars value
+                LinearLayout starGroup = rateBookView.findViewById(R.id.rating_book_star_group);
+                int rating = Integer.parseInt(starGroup.getTag().toString());
 
-        // Call method on serverConnection
+                // Create library on the backend
+                Thread thread = new Thread(() -> {
+                    try {
+                        Log.d("RATING BOOK", String.valueOf(rating));
+                        serverConnection.rateBook(bookId, rating);
+                    } catch (ConnectException e) {
+                        messageDisplayer.showToast("Couldn't connect to the server!");
+                        return;
+                    } catch (SocketTimeoutException e) {
+                        messageDisplayer.showToast("Couldn't rate this book!");
+                        return;
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    messageDisplayer.showToast("Book rated!");
+                });
 
-        // Dismiss the diaalog
-        alertDialog.dismiss();
+                // Start the thread
+                thread.start();
+                // Wait for thread to join
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // Dismiss the dialog
+                alertDialog.dismiss();
+            }
+        });
     }
 
     private void setupCancelButton(AlertDialog alertDialog) {
-        ImageButton cancelButton = rateBookView.findViewById(R.id.rating_book_cancel_btn);
+        Button cancelButton = rateBookView.findViewById(R.id.rating_book_cancel_btn);
         cancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Handle Cancel (X) button click
+                // Handle Cancel button click
                 alertDialog.dismiss(); // Dismiss the dialog
             }
         });
     }
 
+
+    /** -----------------------------------------------------------------------------
+     *                               AUXILIARY FUNCTIONS
+     -------------------------------------------------------------------------------- */
+
     private void toggleStarButton(ImageView starBtn) {
-        if (starBtn.getTag(2) == "unselected") {
+        if (starBtn.getTag().toString().equals("unselected")) {
             starBtn.setImageResource(R.drawable.star_selected);
-            starBtn.setTag(2, "selected");
+            starBtn.setTag("selected");
         } else {
             starBtn.setImageResource(R.drawable.star_unselected);
-            starBtn.setTag(2, "unselected");
+            starBtn.setTag("unselected");
         }
     }
 
     private void cleanStarButton(ImageView starBtn) {
         starBtn.setImageResource(R.drawable.star_unselected);
-        starBtn.setTag(2, "unselected");
+        starBtn.setTag("unselected");
     }
 }

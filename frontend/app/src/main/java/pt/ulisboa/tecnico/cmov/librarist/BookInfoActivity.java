@@ -163,10 +163,10 @@ public class BookInfoActivity extends AppCompatActivity {
             try {
                 this.book = serverConnection.getBook(bookId);
             } catch (ConnectException e) {
-                Toast.makeText(getApplicationContext(), "Couldn't connect to the server!", Toast.LENGTH_SHORT).show();
+                messageDisplayer.showToast("Couldn't connect to the server!");
                 return;
             } catch (SocketTimeoutException e) {
-                Toast.makeText(getApplicationContext(), "Couldn't get book!", Toast.LENGTH_SHORT).show();
+                messageDisplayer.showToast("Couldn't get book!");
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -225,10 +225,10 @@ public class BookInfoActivity extends AppCompatActivity {
                 libraries.addAll(serverConnection.getLibrariesWithBook(this.book));
                 Log.d("GET AVAILABLE LIBRARIES", libraries.toString());
             } catch (ConnectException e) {
-                Toast.makeText(getApplicationContext(), "Couldn't connect to the server!", Toast.LENGTH_SHORT).show();
+                messageDisplayer.showToast("Couldn't connect to the server!");
                 return;
             } catch (SocketTimeoutException e) {
-                Toast.makeText(getApplicationContext(), "Couldn't get libraries!", Toast.LENGTH_SHORT).show();
+                messageDisplayer.showToast("Couldn't get libraries!");
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
