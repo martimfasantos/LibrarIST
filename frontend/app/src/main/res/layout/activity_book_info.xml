@@ -55,7 +55,6 @@
         android:orientation="horizontal"
         android:layout_marginTop="20dp"
         android:layout_marginStart="10dp"
-        android:layout_marginBottom="10dp"
         android:gravity="start" >
 
         <ImageButton
@@ -85,9 +84,23 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/div_rating_chart"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_below="@id/div_book_info_notif"
+        android:layout_margin="10dp" >
+
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/book_info_rate_chart"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </LinearLayout>
+
     <TextView
         android:id="@+id/list_libraries_prompt"
-        android:layout_below="@+id/div_book_info_notif"
+        android:layout_below="@+id/div_rating_chart"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/book_available_in_following_libraries"
