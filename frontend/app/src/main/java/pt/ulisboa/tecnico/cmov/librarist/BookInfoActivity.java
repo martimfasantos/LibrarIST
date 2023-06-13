@@ -392,7 +392,8 @@ public class BookInfoActivity extends AppCompatActivity {
                 CardView card = (CardView) parent.getChildAt(i);
                 TextView view = card.findViewById(R.id.book_available_library_distance);
                 String text = view.getText().toString();
-                double dist = Double.parseDouble(text.substring(0, text.length() - 2));
+                String cleanedText = text.replace(",", ".");
+                double dist = Double.parseDouble(cleanedText.substring(0, text.length() - 2));
                 if (distance > dist){
                     insertionIndex++;
                 } else {

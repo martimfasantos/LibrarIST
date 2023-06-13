@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // TODO use this in MainActivity to start the service for the first time
         // Start Notifications Service
-        startForegroundService(new Intent(this, NotificationService.class));
+        //startForegroundService(new Intent(this, NotificationService.class));
 
         // Define user Id
         updateUserId();
