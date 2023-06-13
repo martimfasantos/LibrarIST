@@ -24,6 +24,9 @@ class Server:
         self.libraries: Dict[int, Library] = {}
         self.users: Dict[int, User] = {0: User(0, "admin", "admin")} # admin user (for testing purposes)
 
+        # populate 
+        self.populate()
+
 
     # ------------------------------------------------------------
     # -                         USERS                            -
@@ -205,11 +208,12 @@ class Server:
     # Get all books
     def get_all_books(self, user_id: int):
         all_books = []
-        for book in self.books.values():
+        books_sorted = self.sort_books_by_average_rate(self.books.values())
+        for book in books_sorted:
             all_books.append(self.book_to_json(book, user_id))
 
         print([book_json["bookId"] for book_json in all_books])
-        return jsonify(self.sort_books_by_average_rate(all_books)), 200
+        return jsonify(all_books), 200
     
     # TODO : receive also the user id
     def check_in_book(self, barcode: str, lib_id: int):
@@ -336,8 +340,8 @@ class Server:
     def get_users_fav_libs(self, user_id):
         return json.dumps(self.users[user_id].favoriteLibs, default=vars)
 
-    def get_library_by_id(self, lib_id):
-        return json.dumps(self.libraries[lib_id], default=vars)
+    def get_library_by_id(self, lib_id, user_id):
+        return jsonify(self.library_to_json(self.libraries[lib_id], user_id))
     
     def get_book_by_id(self, book_id):
         return json.dumps(self.books[book_id], default=vars)
@@ -350,5 +354,23 @@ class Server:
     
     def get_users(self):
         return json.dumps(list(self.users.values()), default=vars)
+    
+    
+    def populate(self):
+
+        # Add libraries
+        l1 = Library(0, "Library 0", (38.931680, -9.256503), f'./images/populate/library0.jpg', "Malveira 0")
+        l2 = Library(1, "Library 1", (38.931680, -9.257503), f'./images/populate/library1.jpg', "Malveira 1")
+        self.libraries[0] = l1
+        self.libraries[1] = l2
+
+        # Add books
+        b1 = Book(0, "Book 0", f'./images/populate/book0.jpg', "book_0", 0)
+        b2 = Book(1, "Book 1", f'./images/populate/book1.jpg', "book_1", 1)
+        self.books[0] = b1
+        self.books[1] = b2
+        l1.add_book(0)
+        l2.add_book(1)
+
 
 

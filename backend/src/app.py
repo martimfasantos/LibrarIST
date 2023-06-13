@@ -112,6 +112,13 @@ def create_library():
     return server.create_new_library(name, location, photo, address)
 
 
+# Get library by id
+# body:
+#   - id: int
+@app.route("/libraries/get", methods=['GET'])
+def get_library():
+    return server.get_library_by_id(int(request.args.get("libId")), int(request.args.get("userId")))
+
 
 # Add library to user's favorites
 # path:
