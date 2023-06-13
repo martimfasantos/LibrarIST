@@ -98,6 +98,13 @@ public class BookMenuActivity extends AppCompatActivity {
      *                                  OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Update view with changes
+        listAllBooks();
+    }
+
     private void listAllBooks() {
 
         List<Book> allBooks;

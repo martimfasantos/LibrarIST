@@ -24,16 +24,26 @@
 
         <TextView
             android:id="@+id/book_info_title"
-            android:layout_width="320dp"
+            android:layout_width="310dp"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:layout_marginBottom="2dp"
-            android:gravity="center"
             android:layout_toEndOf="@+id/back_btn"
+            android:gravity="center"
             android:text="@string/book_title"
             android:textAlignment="center"
-            android:textSize="40sp"
+            android:textSize="34sp"
             android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/book_report"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/report"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="2dp"
+            android:layout_centerHorizontal="true"
+            android:layout_toEndOf="@id/book_info_title"/>
 
     </RelativeLayout>
 

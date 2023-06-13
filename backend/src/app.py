@@ -113,11 +113,12 @@ def create_library():
 
 
 # Get library by id
-# body:
-#   - id: int
+# query:
+#   - libId: int
+#   - userId: int
 @app.route("/libraries/get", methods=['GET'])
 def get_library():
-    return server.get_library_by_id(int(request.args.get("libId")), int(request.args.get("userId")))
+    return server.get_library(int(request.args.get("libId")), int(request.args.get("userId")))
 
 
 # Add library to user's favorites
@@ -136,6 +137,15 @@ def add_favorite_library_to_user(lib_id):
 @app.route("/libraries/<int:lib_id>/remove_fav", methods=['POST'])
 def remove_favorite_library_from_user(lib_id):
     return server.remove_favorite_lib(lib_id, int(request.args.get("userId")))
+
+# Report library
+# path:
+#   - libId: int - library to report
+# query:
+#   - userId: int - user reporting the library
+@app.route("/libraries/<int:lib_id>/report", methods=['POST'])
+def report_library(lib_id):
+    return server.report_library(lib_id, int(request.args.get("userId")))
 
 # User checkin book
 # path:
@@ -201,6 +211,15 @@ def rate_book(book_id):
     request_data = request.json
     rating = request_data["rating"]
     return server.rate_book(book_id, rating, int(request.args.get("userId")))
+
+# Report book
+# path:
+#   - book_id: int - book being reported
+# query:
+#   - userId: int - user reporting the book
+@app.route("/books/<int:book_id>/report", methods=["POST"])
+def report_book(book_id):
+    return server.report_book(book_id, int(request.args.get("userId")))
 
 
 # Find a book with a given barcode in a given library

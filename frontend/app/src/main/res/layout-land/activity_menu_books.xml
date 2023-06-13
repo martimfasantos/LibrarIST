@@ -65,12 +65,20 @@
             android:padding="5dp"/>
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/div_sorted_by"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/div_search_book"
+        android:layout_marginStart="20dp"
+        android:text="@string/sorted_by_rating"
+        android:textSize="12sp" />
+
     <LinearLayout
         android:id="@+id/div_books_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layout_below="@id/div_search_book"
+        android:layout_below="@id/div_sorted_by"
         android:orientation="vertical" >
     </LinearLayout>
 

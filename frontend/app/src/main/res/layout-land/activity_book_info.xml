@@ -28,7 +28,7 @@
 
             <TextView
                 android:id="@+id/book_info_title"
-                android:layout_width="320dp"
+                android:layout_width="310dp"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
                 android:layout_marginBottom="2dp"
@@ -38,6 +38,16 @@
                 android:textAlignment="center"
                 android:textSize="40sp"
                 android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/book_report"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/report"
+                android:layout_marginTop="22dp"
+                android:layout_marginStart="2dp"
+                android:layout_centerHorizontal="true"
+                android:layout_toEndOf="@id/book_info_title"/>
 
         </RelativeLayout>
 
@@ -92,9 +102,9 @@
 
     <LinearLayout
         android:id="@+id/div_rating_chart"
-        android:layout_width="350dp"
+        android:layout_width="320dp"
         android:layout_height="150dp"
-        android:layout_marginStart="360dp"
+        android:layout_marginStart="395dp"
         tools:ignore="MissingClass">
 
         <com.github.mikephil.charting.charts.BarChart
@@ -111,7 +121,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/div_rating_chart"
         android:layout_marginStart="400dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:text="@string/book_available_in_following_libraries"
         android:textSize="15sp" />
 

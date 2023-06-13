@@ -8,7 +8,9 @@ class Book:
         self.lib_id = lib_id
         self.users_to_notify = []
         self.ratings = [0, 0, 0, 0, 0]
-        
+        self.nr_reports = 0
+        self.hidden = False
+    
 
     def add_user_to_notify(self, user_id):
         if (user_id not in self.users_to_notify):
@@ -32,3 +34,10 @@ class Book:
         for star in range(len(self.ratings)):
             sum_ratings += (star+1) * self.ratings[star]
         return sum_ratings / sum(self.ratings) if sum(self.ratings) > 0 else 0
+    
+    def add_report(self):
+        self.nr_reports += 1
+        if self.nr_reports >= 2:
+            self.hidden = True
+        print("BOOK " + str(self.id) + " REPORTS: " + str(self.nr_reports))
+        

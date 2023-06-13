@@ -3,6 +3,7 @@ package pt.ulisboa.tecnico.cmov.librarist;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.locationPermissionGranted;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.mMap;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.DEFAULT_ZOOM;
 
@@ -109,6 +110,9 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
         // Back Button
         setupBackButton();
+
+        // Report Button
+        setupReportButton();
 
         // Add/Remove Favorites Button
         setupAddRemFavButton();
@@ -274,6 +278,50 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
      *                                  BUTTONS FUNCTIONS
      -------------------------------------------------------------------------------- */
 
+    private void setupReportButton() {
+        ImageView report_btn = findViewById(R.id.library_report);
+        report_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Thread thread = new Thread(() -> {
+                    try {
+                        serverConnection.reportLibrary(libraryId);
+                    } catch (ConnectException e) {
+                        messageDisplayer.showToast("Couldn't connect to the server!");
+                        return;
+                    } catch (SocketTimeoutException e) {
+                        messageDisplayer.showToast("Error reporting book");
+                        return;
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Log.d("REPORT BOOK", String.valueOf(libraryId));
+
+                    // Remove book from the libraries cache
+                    libraryCache.removeLibrary(libraryId);
+
+                    // Close current activity
+                    finish();
+                });
+
+                // Start the thread
+                thread.start();
+                // Wait for thread to join
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // Remove marker from map
+                Marker marker = markerMap.get(libraryId);
+                assert marker != null;
+                marker.remove();
+                markerMap.remove(libraryId);
+            }
+        });
+    }
+
     private void setupAddRemFavButton(){
         CardView add_remove_favorites_btn = findViewById(R.id.library_add_remove_favorites_btn);
         add_remove_favorites_btn.setOnClickListener(new View.OnClickListener() {
@@ -349,6 +397,13 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
     /** -----------------------------------------------------------------------------
      *                                OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Update view with changes
+        listAvailableBooks();
+    }
 
     private void parseIntent(){
 
@@ -650,7 +705,9 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         List<Integer> bookIds = lib.getBookIds();
         List<Book> books = new ArrayList<>();
         for (int id : bookIds) {
-            books.add(booksCache.getBook(id));
+            if (booksCache.getBook(id) != null) {
+                books.add(booksCache.getBook(id));
+            }
         }
         // Add books to the view
         addBookItemsToView(books);

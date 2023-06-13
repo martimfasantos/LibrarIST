@@ -128,15 +128,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Initializes the map
         initMap();
 
+        // Menu Button
+        setupMenuButton();
+
         // Search Button
         setupSearchButton();
 
         // Books Button
         setupBooksButton();
-
-        // Menu Button
-        setupMenuButton();
-
     }
 
 
@@ -660,9 +659,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
-    // Save the current map (location and camera position)
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
+        // Save the current map (location and camera position)
         if (mMap != null) {
             outState.putParcelable(KEY_CAMERA_POSITION, mMap.getCameraPosition());
             outState.putParcelable(KEY_LOCATION, currentLocation);

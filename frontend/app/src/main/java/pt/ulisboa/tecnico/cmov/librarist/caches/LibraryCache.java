@@ -27,6 +27,10 @@ public class LibraryCache {
         librariesCache.put(library.getId(), library);
     }
 
+    public void removeLibrary(int libId){
+        librariesCache.remove(libId);
+    }
+
     public Library getLibrary(int libId){
         return librariesCache.get(libId);
     }
