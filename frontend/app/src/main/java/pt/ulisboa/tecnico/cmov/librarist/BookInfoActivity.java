@@ -37,6 +37,7 @@ import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.gms.maps.model.LatLng;
 
@@ -147,8 +148,9 @@ public class BookInfoActivity extends AppCompatActivity {
         rate_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                currentRateBookPopUp = new RateBookPopUp(BookInfoActivity.this,
-                        book.getId(), book.getTitle());
+                currentRateBookPopUp = new RateBookPopUp(BookInfoActivity.this, book);
+
+
             }
         });
     }
@@ -355,7 +357,7 @@ public class BookInfoActivity extends AppCompatActivity {
     private ArrayList<BarEntry> getRateChartEntries() {
         ArrayList<BarEntry> barEntries = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            barEntries.add(new BarEntry(i+1, i+2));
+            barEntries.add(new BarEntry(i+1, book.getRates().get(i)));
         }
         return barEntries;
     }

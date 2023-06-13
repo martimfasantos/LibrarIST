@@ -375,7 +375,14 @@ public class ServerConnection {
                 String barcode = bookObject.get("barcode").getAsString();
                 boolean activNotif = bookObject.get("activNotif").getAsBoolean();
 
-                booksCache.addBook(new Book(bookId, title,cover, barcode, activNotif));
+                // Process rates
+                JsonArray ratesArray = bookObject.getAsJsonArray("rates");
+                List<Integer> rates = new ArrayList<>();
+                for (JsonElement bookIdElement : ratesArray) {
+                    rates.add(bookIdElement.getAsInt());
+                }
+
+                booksCache.addBook(new Book(bookId, title,cover, barcode, activNotif, rates));
             }
 
         } else {
@@ -439,7 +446,14 @@ public class ServerConnection {
             String barcode = responseJson.get("barcode").getAsString();
             boolean activNotif = responseJson.get("activNotif").getAsBoolean();
 
-            Book bookResponse = new Book(bookId, title,cover, barcode, activNotif);
+            // Process rates
+            JsonArray ratesArray = responseJson.get("rates").getAsJsonArray();
+            List<Integer> rates = new ArrayList<>();
+            for (JsonElement bookIdElement : ratesArray) {
+                rates.add(bookIdElement.getAsInt());
+            }
+
+            Book bookResponse = new Book(bookId, title,cover, barcode, activNotif, rates);
             booksCache.addBook(bookResponse);
 
             return bookResponse;
@@ -493,7 +507,14 @@ public class ServerConnection {
             Log.d("CHECKIN", "RECEBI");
             Log.d("CHECKIN", String.valueOf(bookId));
 
-            Book newBook = new Book(bookId, title, cover, barcode, activNotif);
+            // Process rates
+            JsonArray ratesArray = responseJson.get("rates").getAsJsonArray();
+            List<Integer> rates = new ArrayList<>();
+            for (JsonElement bookIdElement : ratesArray) {
+                rates.add(bookIdElement.getAsInt());
+            }
+
+            Book newBook = new Book(bookId, title, cover, barcode, activNotif, rates);
             libraryCache.getLibrary(libraryId).addBook(bookId);
             booksCache.addBook(newBook);
             Log.d("CHECKIN", "ADDED BOOK TO CACHE");
@@ -549,7 +570,7 @@ public class ServerConnection {
             Log.d("CHECKIN", "RECEBI");
             Log.d("CHECKIN", String.valueOf(bookId));
 
-            Book newBook = new Book(bookId, title, cover, barcode, false);
+            Book newBook = new Book(bookId, title, cover, barcode, false, new ArrayList<>());
             libraryCache.getLibrary(libraryID).addBook(bookId);
             booksCache.addBook(newBook);
             Log.d("BOOK", "ADDED BOOK TO CACHE");
@@ -643,7 +664,19 @@ public class ServerConnection {
         outputStream.flush();
         outputStream.close();
 
-        if (connection.getResponseCode() != 200) {
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            assert responseJson != null;
+            JsonArray ratesArray = responseJson.getAsJsonArray("rates");
+            List<Integer> rates = new ArrayList<>();
+            for (JsonElement bookIdElement : ratesArray) {
+                rates.add(bookIdElement.getAsInt());
+            }
+
+            booksCache.getBook(bookId).setRates(rates);
+
+        } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
     }
@@ -829,11 +862,20 @@ public class ServerConnection {
         jsonArray.forEach(jsonElement -> {
 
             JsonObject obj = jsonElement.getAsJsonObject();
+
+            // Process rates
+            JsonArray ratesArray = obj.getAsJsonArray("rates");
+            List<Integer> rates = new ArrayList<>();
+            for (JsonElement bookIdElement : ratesArray) {
+                rates.add(bookIdElement.getAsInt());
+            }
+
             books.add(new Book(obj.get("bookId").getAsInt(),
                     obj.get("title").getAsString(),
                     Base64.getDecoder().decode(obj.get("cover").getAsString()),
                     obj.get("barcode").getAsString(),
-                    obj.get("activNotif").getAsBoolean()));
+                    obj.get("activNotif").getAsBoolean(),
+                    rates));
         });
         return books;
     }

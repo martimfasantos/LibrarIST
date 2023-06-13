@@ -2,16 +2,21 @@ package pt.ulisboa.tecnico.cmov.librarist.popups;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
+import com.github.mikephil.charting.utils.ColorTemplate;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -21,6 +26,7 @@ import java.util.List;
 
 import pt.ulisboa.tecnico.cmov.librarist.R;
 import pt.ulisboa.tecnico.cmov.librarist.ServerConnection;
+import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
 public class RateBookPopUp {
@@ -28,16 +34,16 @@ public class RateBookPopUp {
     private final Activity BookInfoActivity;
     private final View rateBookView;
 
-    private final int bookId;
+    private final Book book;
 
     private final ServerConnection serverConnection = new ServerConnection();
     private final MessageDisplayer messageDisplayer;
 
 
-    public RateBookPopUp(Activity BookInfoActivity, int bookId, String bookTitle) {
+    public RateBookPopUp(Activity BookInfoActivity, Book book) {
 
         this.BookInfoActivity = BookInfoActivity;
-        this.bookId = bookId;
+        this.book = book;
         this.messageDisplayer = new MessageDisplayer(this.BookInfoActivity);
 
         // Display AlertDialog to get the book rating
@@ -51,7 +57,7 @@ public class RateBookPopUp {
         AlertDialog alertDialog = alertDialogBuilder.create();
 
         // Setup pop up title
-        setupPopUpTitle(bookTitle);
+        setupPopUpTitle(book.getTitle());
 
         // Setup stars buttons for rating
         setupStarsButtons();
@@ -119,7 +125,8 @@ public class RateBookPopUp {
                 Thread thread = new Thread(() -> {
                     try {
                         Log.d("RATING BOOK", String.valueOf(rating));
-                        serverConnection.rateBook(bookId, rating);
+                        serverConnection.rateBook(book.getId(), rating);
+
                     } catch (ConnectException e) {
                         messageDisplayer.showToast("Couldn't connect to the server!");
                         return;
@@ -140,6 +147,21 @@ public class RateBookPopUp {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
+
+                // Remove old data from rate chart
+                BarChart rateChart = BookInfoActivity.findViewById(R.id.book_info_rate_chart);
+                BarData data = rateChart.getData();
+                IBarDataSet set = data.getDataSetByIndex(0);
+                set.clear();
+
+                // Add new data to rate chart
+                ArrayList<BarEntry> rateChartEntries = getRateChartEntries();
+                rateChartEntries.forEach(set::addEntryOrdered);
+
+                // Update chart
+                data.notifyDataChanged();
+                rateChart.notifyDataSetChanged();
+                rateChart.invalidate();
 
                 // Dismiss the dialog
                 alertDialog.dismiss();
@@ -176,5 +198,13 @@ public class RateBookPopUp {
     private void cleanStarButton(ImageView starBtn) {
         starBtn.setImageResource(R.drawable.star_unselected);
         starBtn.setTag("unselected");
+    }
+
+    private ArrayList<BarEntry> getRateChartEntries() {
+        ArrayList<BarEntry> barEntries = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            barEntries.add(new BarEntry(i+1, book.getRates().get(i)));
+        }
+        return barEntries;
     }
 }
