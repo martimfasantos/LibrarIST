@@ -1,22 +1,24 @@
 package pt.ulisboa.tecnico.cmov.librarist.models;
 
-import android.graphics.Bitmap;
+import java.util.List;
 
 public class Book {
 
     private final int id;
     private final String title;
     private final byte[] cover;
-
     private final String barcode;
     private Boolean activeNotif;
+    private List<Integer> rates;
 
-    public Book(int id, String title, byte[] cover, String barcode, Boolean activeNotif) {
+    public Book(int id, String title, byte[] cover, String barcode,
+                Boolean activeNotif, List<Integer> rates) {
         this.id = id;
         this.title = title;
         this.cover = cover;
         this.barcode = barcode;
         this.activeNotif = activeNotif;
+        this.rates = rates;
     }
 
     public int getId() {
@@ -51,5 +53,16 @@ public class Book {
         int activeNotifSize = 1;  // Assuming Boolean takes 1 byte
 
         return idSize + titleSize + coverSize + barcodeSize + activeNotifSize;
+    }
+
+    public List<Integer> getRates() { return this.rates; }
+
+    public void rate(int rating) {
+        int curr_votes = rates.get(rating - 1);
+        rates.set(rating - 1, curr_votes + 1);
+    }
+
+    public void setRates(List<Integer> rates) {
+        this.rates = rates;
     }
 }
