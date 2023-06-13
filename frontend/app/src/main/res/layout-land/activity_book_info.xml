@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -42,10 +43,9 @@
 
         <ImageView
             android:id="@+id/book_info_cover_img"
-            android:layout_below="@id/top_bar"
-            android:layout_width="190dp"
-            android:layout_height="190dp"
-            android:layout_marginTop="20dp"
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:layout_marginTop="18dp"
             android:layout_marginStart="120dp"
             android:layout_gravity="start"
             android:scaleType="centerCrop"
@@ -55,9 +55,8 @@
             android:id="@+id/div_book_info_notif"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/book_info_cover_img"
             android:orientation="horizontal"
-            android:layout_marginTop="30dp"
+            android:layout_marginTop="25dp"
             android:layout_marginStart="12dp"
             android:layout_marginBottom="10dp"
             android:gravity="start" >
@@ -91,12 +90,28 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/div_rating_chart"
+        android:layout_width="350dp"
+        android:layout_height="150dp"
+        android:layout_marginStart="360dp"
+        tools:ignore="MissingClass">
+
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/book_info_rate_chart"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:ignore="MissingClass" />
+
+    </LinearLayout>
+
     <TextView
         android:id="@+id/list_libraries_prompt"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/div_rating_chart"
         android:layout_marginStart="400dp"
-        android:layout_marginTop="55dp"
+        android:layout_marginTop="12dp"
         android:text="@string/book_available_in_following_libraries"
         android:textSize="15sp" />
 

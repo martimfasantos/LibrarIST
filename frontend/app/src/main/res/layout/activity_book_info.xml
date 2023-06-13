@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -39,9 +40,9 @@
     <ImageView
         android:id="@+id/book_info_cover_img"
         android:layout_below="@id/top_bar"
-        android:layout_width="170dp"
-        android:layout_height="170dp"
-        android:layout_marginTop="15dp"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_marginTop="12dp"
         android:layout_gravity="center"
         android:scaleType="centerCrop"
         android:src="@drawable/book_cover"
@@ -53,7 +54,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/book_info_cover_img"
         android:orientation="horizontal"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="1dp"
         android:layout_marginStart="10dp"
         android:gravity="start" >
 
@@ -89,7 +90,8 @@
         android:layout_width="match_parent"
         android:layout_height="150dp"
         android:layout_below="@id/div_book_info_notif"
-        android:layout_margin="10dp" >
+        android:layout_margin="10dp"
+        tools:ignore="MissingClass">
 
         <com.github.mikephil.charting.charts.BarChart
             android:id="@+id/book_info_rate_chart"
