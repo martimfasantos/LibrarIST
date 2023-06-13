@@ -198,7 +198,8 @@ class Server:
                 "title": book.title,
                 "barcode": book.barcode,
                 "cover": cover_base64,
-                "activNotif": book.is_user_to_notify(user_id)}
+                "activNotif": book.is_user_to_notify(user_id),
+                "rates": book.ratings}
 
     
     # Get book with book id
@@ -295,11 +296,11 @@ class Server:
         user.give_rate(book_id, stars)
         book.add_rate(stars)
 
-        return jsonify({}), 200
+        return jsonify({"rates": book.ratings}), 200
     
     # Sort books by average rating
     def sort_books_by_average_rate(self, books):
-        return sorted(books, key=lambda book: book.get_average_rate())
+        return sorted(books, key=lambda book: book.get_average_rate(), reverse=True)
  
 
     # Add user to book notifications
@@ -339,9 +340,6 @@ class Server:
 
     def get_users_fav_libs(self, user_id):
         return json.dumps(self.users[user_id].favoriteLibs, default=vars)
-
-    def get_library_by_id(self, lib_id, user_id):
-        return jsonify(self.library_to_json(self.libraries[lib_id], user_id))
     
     def get_book_by_id(self, book_id):
         return json.dumps(self.books[book_id], default=vars)
