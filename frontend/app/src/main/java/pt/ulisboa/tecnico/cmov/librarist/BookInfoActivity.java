@@ -9,6 +9,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Base64;
@@ -28,6 +29,15 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.w3c.dom.Text;
@@ -35,6 +45,7 @@ import org.w3c.dom.Text;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -89,6 +100,9 @@ public class BookInfoActivity extends AppCompatActivity {
         // Rate button
         setupRateButton();
 
+        // Rating Chart
+        setupRateChart();
+
         // List libraries where the book is available
         listAvailableLibraries();
     }
@@ -137,6 +151,41 @@ public class BookInfoActivity extends AppCompatActivity {
                         book.getId(), book.getTitle());
             }
         });
+    }
+
+    private void setupRateChart() {
+        BarChart rateChart = findViewById(R.id.book_info_rate_chart);
+
+        // Place values in bar chart
+        ArrayList<BarEntry> rateChartEntries = getRateChartEntries();
+        BarDataSet barDataSet = new BarDataSet(rateChartEntries, "Book rates");
+        rateChart.setData(new BarData(barDataSet));
+
+        // Personalize bar chart
+        barDataSet.setColors(ColorTemplate.MATERIAL_COLORS);
+        barDataSet.setValueTextColor(Color.BLACK);
+        barDataSet.setValueTextSize(16f);
+        rateChart.getBarData().setBarWidth(0.4f);
+        rateChart.getDescription().setEnabled(false);
+        barDataSet.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return NumberFormat.getInstance().format(value);
+            }
+        });
+
+        XAxis xAxis = rateChart.getXAxis();
+        xAxis.setGranularity(1f);
+        xAxis.setGranularityEnabled(true);
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(false);
+
+        rateChart.getAxisLeft().setDrawLabels(false);
+        rateChart.getAxisRight().setDrawLabels(false);
+        rateChart.getAxisLeft().setDrawGridLines(false);
+        rateChart.getAxisRight().setDrawGridLines(false);
+        rateChart.getAxisLeft().setDrawAxisLine(false);
+        rateChart.getAxisRight().setDrawAxisLine(false);
     }
 
     /** -----------------------------------------------------------------------------
@@ -301,6 +350,14 @@ public class BookInfoActivity extends AppCompatActivity {
         return libraryCache.getLibraries().stream()
                 .filter(lib -> lib.getBookIds().contains(book.getId()))
                 .collect(Collectors.toList());
+    }
+
+    private ArrayList<BarEntry> getRateChartEntries() {
+        ArrayList<BarEntry> barEntries = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            barEntries.add(new BarEntry(i+1, i+2));
+        }
+        return barEntries;
     }
 
 }

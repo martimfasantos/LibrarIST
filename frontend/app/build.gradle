@@ -46,4 +46,5 @@ dependencies {
     implementation 'androidx.core:core:1.7.0'
     implementation 'org.slf4j:slf4j-api:1.7.32'
     implementation 'ch.qos.logback:logback-classic:1.2.5'
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
 }
