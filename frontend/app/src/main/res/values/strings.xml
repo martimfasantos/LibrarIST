@@ -35,6 +35,7 @@
     <string name="continue_as_guest">Continue as Guest</string>
     <string name="sorted_by_rating">Sorted by: Rating</string>
     <string name="book_rates">Book rates</string>
+    <string name="rate_book_btn">Rate</string>
 
     <string name="couldnt_connect_server">Couldn\'t connect to the server</string>
     <string name="user_does_not_exist">User does not exist</string>

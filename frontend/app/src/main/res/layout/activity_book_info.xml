@@ -64,34 +64,27 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/book_info_cover_img"
         android:orientation="horizontal"
-        android:layout_marginTop="1dp"
+        android:layout_marginTop="10dp"
         android:layout_marginStart="10dp"
-        android:gravity="start" >
+        android:gravity="center" >
 
         <ImageButton
             android:id="@+id/book_info_notif_btn"
-            android:layout_width="55dp"
-            android:layout_height="55dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:scaleType="fitCenter"
+            android:layout_marginEnd="30dp"
+            android:background="@null"
             app:srcCompat="@drawable/bell_notif_off" />
-
-        <TextView
-            android:id="@+id/book_info_notif_message"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:text="@string/notify_when_available"
-            android:layout_gravity="center_vertical"
-            android:textSize="18sp" />
 
         <Button
             android:id="@+id/rate_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Rate"
+            android:text="@string/rate_book_btn"
             android:textSize="15sp"
             android:layout_gravity="center"
-            android:layout_marginStart="20dp"/>
+            android:layout_marginStart="30dp"/>
 
     </LinearLayout>
 

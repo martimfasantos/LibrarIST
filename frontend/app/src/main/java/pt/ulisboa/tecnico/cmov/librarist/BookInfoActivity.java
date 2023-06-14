@@ -5,44 +5,32 @@ import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentLocation;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.location.Location;
-import android.media.Image;
 import android.os.Bundle;
-import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.github.mikephil.charting.charts.BarChart;
-import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
-import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
-import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
-import com.google.android.gms.maps.model.LatLng;
-
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -212,7 +200,6 @@ public class BookInfoActivity extends AppCompatActivity {
 
         // Personalize bar chart
         barDataSet.setColors(ColorTemplate.MATERIAL_COLORS);
-        barDataSet.setValueTextColor(Color.BLACK);
         barDataSet.setValueTextSize(16f);
         rateChart.getBarData().setBarWidth(0.4f);
         rateChart.getDescription().setEnabled(false);
@@ -235,6 +222,12 @@ public class BookInfoActivity extends AppCompatActivity {
         rateChart.getAxisRight().setDrawGridLines(false);
         rateChart.getAxisLeft().setDrawAxisLine(false);
         rateChart.getAxisRight().setDrawAxisLine(false);
+
+        if ((getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                == Configuration.UI_MODE_NIGHT_YES) {
+            barDataSet.setValueTextColor(Color.WHITE);
+            xAxis.setTextColor(Color.WHITE);
+        }
     }
 
     private ArrayList<BarEntry> getRateChartEntries() {
@@ -293,14 +286,11 @@ public class BookInfoActivity extends AppCompatActivity {
 
     private void setNotificationView(Boolean active) {
         ImageButton notif_btn = findViewById(R.id.book_info_notif_btn);
-        TextView notifMessage = findViewById(R.id.book_info_notif_message);
 
         if (active) {
             notif_btn.setImageResource(R.drawable.bell_notif_on);
-            notifMessage.setText(R.string.book_notif_disabled);
         } else {
             notif_btn.setImageResource(R.drawable.bell_notif_off);
-            notifMessage.setText(R.string.book_notif_enabled);
         }
 
         notif_btn.setTag(this.book);

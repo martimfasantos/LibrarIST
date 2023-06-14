@@ -36,6 +36,7 @@
     <string name="continue_as_guest">Entrar como Convidado</string>
     <string name="sorted_by_rating">Ordenados por: Avaliação</string>
     <string name="book_rates">Avaliações</string>
+    <string name="rate_book_btn">Avaliar</string>
 
     <string name="couldnt_connect_server">Não foi possível conectar ao servidor</string>
     <string name="user_does_not_exist">Usuário não existe</string>
