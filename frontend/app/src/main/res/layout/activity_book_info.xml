@@ -55,7 +55,7 @@
         android:orientation="horizontal"
         android:layout_marginTop="20dp"
         android:layout_marginStart="10dp"
-        android:gravity="start" >
+        android:gravity="center" >
 
         <ImageButton
             android:id="@+id/book_info_notif_btn"
@@ -63,15 +63,6 @@
             android:layout_height="55dp"
             android:scaleType="fitCenter"
             app:srcCompat="@drawable/bell_notif_off" />
-
-        <TextView
-            android:id="@+id/book_info_notif_message"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:text="@string/notify_when_available"
-            android:layout_gravity="center_vertical"
-            android:textSize="20sp" />
 
         <Button
             android:id="@+id/rate_btn"

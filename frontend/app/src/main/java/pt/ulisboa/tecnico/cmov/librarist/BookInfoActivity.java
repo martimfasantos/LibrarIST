@@ -7,6 +7,7 @@ import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -165,7 +166,6 @@ public class BookInfoActivity extends AppCompatActivity {
 
         // Personalize bar chart
         barDataSet.setColors(ColorTemplate.MATERIAL_COLORS);
-        barDataSet.setValueTextColor(Color.BLACK);
         barDataSet.setValueTextSize(16f);
         rateChart.getBarData().setBarWidth(0.4f);
         rateChart.getDescription().setEnabled(false);
@@ -188,6 +188,12 @@ public class BookInfoActivity extends AppCompatActivity {
         rateChart.getAxisRight().setDrawGridLines(false);
         rateChart.getAxisLeft().setDrawAxisLine(false);
         rateChart.getAxisRight().setDrawAxisLine(false);
+
+        if ((getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                == Configuration.UI_MODE_NIGHT_YES) {
+            barDataSet.setValueTextColor(Color.WHITE);
+            xAxis.setTextColor(Color.WHITE);
+        }
     }
 
     /** -----------------------------------------------------------------------------
@@ -237,14 +243,11 @@ public class BookInfoActivity extends AppCompatActivity {
 
     private void setNotificationView(Boolean active) {
         ImageButton notif_btn = findViewById(R.id.book_info_notif_btn);
-        TextView notifMessage = findViewById(R.id.book_info_notif_message);
 
         if (active) {
             notif_btn.setImageResource(R.drawable.bell_notif_on);
-            notifMessage.setText(R.string.book_notif_disabled);
         } else {
             notif_btn.setImageResource(R.drawable.bell_notif_off);
-            notifMessage.setText(R.string.book_notif_enabled);
         }
 
         notif_btn.setTag(this.book);
