@@ -121,10 +121,12 @@ public class UserAuthenticationPopUp {
             try {
                 generatedUserId.set(serverConnection.createGuestUser());
             } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
+                messageDisplayer.showToast(MainActivity.getResources()
+                        .getString(R.string.couldnt_connect_server));
                 return;
             } catch (SocketTimeoutException e) {
-                messageDisplayer.showToast("Couldn't create Guest user!");
+                messageDisplayer.showToast(MainActivity.getResources()
+                        .getString(R.string.couldnt_create_guest_user));
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);

@@ -53,7 +53,7 @@ public class LoginUserActivity extends AppCompatActivity {
                 String password = passwordInput.getText().toString();
 
                 if (username.length() == 0 || password.length() == 0) {
-                    messageDisplayer.showToast("Please fill all details");
+                    messageDisplayer.showToast(getResources().getString(R.string.fill_all_details));
                 } else {
                     // Get user if exists in the backend
                     Thread thread = new Thread(() -> {
@@ -62,10 +62,10 @@ public class LoginUserActivity extends AppCompatActivity {
                         try {
                             _userId = serverConnection.loginUser(username, password);
                         } catch (ConnectException e) {
-                            messageDisplayer.showToast("Couldn't connect to the server!");
+                            messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                             connectionError = true;
                         } catch (SocketTimeoutException e) {
-                            messageDisplayer.showToast("Couldn't create the library!");
+                            messageDisplayer.showToast(getResources().getString(R.string.couldnt_login));
                             connectionError = true;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
@@ -75,7 +75,7 @@ public class LoginUserActivity extends AppCompatActivity {
                             if (_userId == -1) {
                                 usernameInput.setText("");
                                 passwordInput.setText("");
-                                messageDisplayer.showToast("User does not exist");
+                                messageDisplayer.showToast(getResources().getString(R.string.user_does_not_exist));
                             } else {
                                 loggedIn = true;
                                 // Save device's User ID for future log outs

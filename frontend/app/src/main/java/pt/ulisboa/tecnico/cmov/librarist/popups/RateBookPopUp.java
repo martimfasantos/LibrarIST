@@ -128,15 +128,18 @@ public class RateBookPopUp {
                         serverConnection.rateBook(book.getId(), rating);
 
                     } catch (ConnectException e) {
-                        messageDisplayer.showToast("Couldn't connect to the server!");
+                        messageDisplayer.showToast(BookInfoActivity.getResources()
+                                .getString(R.string.couldnt_connect_server));
                         return;
                     } catch (SocketTimeoutException e) {
-                        messageDisplayer.showToast("Couldn't rate this book!");
+                        messageDisplayer.showToast(BookInfoActivity.getResources()
+                                .getString(R.string.couldnt_rate_book));
                         return;
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    messageDisplayer.showToast("Book rated!");
+                    messageDisplayer.showToast(BookInfoActivity.getResources()
+                            .getString(R.string.book_rated));
                 });
 
                 // Start the thread

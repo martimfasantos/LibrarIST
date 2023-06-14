@@ -295,16 +295,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 libraries.putAll(serverConnection.getLibrariesMarkers(coordinates, 15));
             } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
             } catch (SocketTimeoutException e) {
-                messageDisplayer.showToast("Couldn't load libraries!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_load_libraries));
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 
-            messageDisplayer.showToast("Loaded libraries markers!");
+            messageDisplayer.showToast(getResources().getString(R.string.loaded_libraries_markers));
         });
 
         // Start the thread
@@ -336,10 +336,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 serverConnection.loadLibrariesToCache();
             } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
             } catch (SocketTimeoutException e) {
-                messageDisplayer.showToast("Couldn't load libraries!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_load_libraries));
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -376,7 +376,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 String location = editText.getText().toString();
 
                 if (location.equals("")) {
-                    messageDisplayer.showToast("Please insert an address");
+                    messageDisplayer.showToast(getResources().getString(R.string.insert_address));
                     return;
                 }
 
@@ -390,9 +390,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         // Go to that location
                         goToLocation(new LatLng(address.getLatitude(), address.getLongitude()));
 
-                        messageDisplayer.showToast("Centered in" + address.getLocality());
+                        messageDisplayer.showToast(getResources().getString(R.string.centered_in) + address.getLocality());
                     } else {
-                        messageDisplayer.showToast("Please insert a valid address");
+                        messageDisplayer.showToast(getResources().getString(R.string.insert_valid_address));
                     }
 
                 } catch (IOException e) {
@@ -503,10 +503,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 generatedUserId.set(serverConnection.createGuestUser());
             } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
             } catch (SocketTimeoutException e) {
-                messageDisplayer.showToast("Couldn't create Guest user!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_create_guest_user));
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -534,10 +534,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 validUserId.set(serverConnection.validateUser(userId));
             } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
             } catch (SocketTimeoutException e) {
-                messageDisplayer.showToast("Couldn't verify user!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_verify_user));
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -602,7 +602,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                      // Preload caches and display libraries
                      loadCloseLibrariesToCache();
                 } else {
-                    messageDisplayer.showToast("Please turn on your Location...");
+                    messageDisplayer.showToast(getResources().getString(R.string.turn_on_location));
                 }
             }
         });

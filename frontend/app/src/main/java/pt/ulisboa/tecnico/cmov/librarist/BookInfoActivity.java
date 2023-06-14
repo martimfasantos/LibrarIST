@@ -137,10 +137,10 @@ public class BookInfoActivity extends AppCompatActivity {
                     try {
                         serverConnection.reportBook(book.getId());
                     } catch (ConnectException e) {
-                        messageDisplayer.showToast("Couldn't connect to the server!");
+                        messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                         return;
                     } catch (SocketTimeoutException e) {
-                        messageDisplayer.showToast("Error reporting book");
+                        messageDisplayer.showToast(getResources().getString(R.string.error_reporting_book));
                         return;
                     } catch (IOException e) {
                         throw new RuntimeException(e);
@@ -206,7 +206,8 @@ public class BookInfoActivity extends AppCompatActivity {
 
         // Place values in bar chart
         ArrayList<BarEntry> rateChartEntries = getRateChartEntries();
-        BarDataSet barDataSet = new BarDataSet(rateChartEntries, "Book rates");
+        BarDataSet barDataSet = new BarDataSet(rateChartEntries,
+                getResources().getString(R.string.book_rates));
         rateChart.setData(new BarData(barDataSet));
 
         // Personalize bar chart
@@ -269,10 +270,10 @@ public class BookInfoActivity extends AppCompatActivity {
             try {
                 this.book = serverConnection.getBook(bookId);
             } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
             } catch (SocketTimeoutException e) {
-                messageDisplayer.showToast("Couldn't get book!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_book));
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -331,16 +332,16 @@ public class BookInfoActivity extends AppCompatActivity {
                 libraries.addAll(serverConnection.getLibrariesWithBook(this.book));
                 Log.d("GET AVAILABLE LIBRARIES", libraries.toString());
             } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
             } catch (SocketTimeoutException e) {
-                messageDisplayer.showToast("Couldn't get libraries!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_libraries));
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 
-            messageDisplayer.showToast("Got all books!");
+            messageDisplayer.showToast(getResources().getString(R.string.got_all_books));
         });
 
         // Start the thread

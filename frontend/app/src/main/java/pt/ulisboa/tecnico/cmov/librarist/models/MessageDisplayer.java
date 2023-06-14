@@ -13,7 +13,7 @@ public class MessageDisplayer {
         this.context = context;
     }
 
-    public void showToast(final String message) {
+    public void showToast(String message) {
         runOnUiThread(() -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show());
     }
 
