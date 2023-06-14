@@ -110,12 +110,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Define user Id
+        updateUserId();
+
         // TODO use this in MainActivity to start the service for the first time
         // Start Notifications Service
         //startForegroundService(new Intent(this, NotificationService.class));
-
-        // Define user Id
-        updateUserId();
 
         // Construct a PlacesClient
         Places.initialize(getApplicationContext(), getString(R.string.maps_api_key));

@@ -43,7 +43,7 @@ import java.util.List;
 
 public class ServerConnection {
     // Server and port
-    public static final String endpoint = "http://192.92.147.54:5000";
+    public static final String endpoint = "https://gp-cmov2-cmu-project-1.vps.tecnico.ulisboa.pt:5000";
 
 
     /** -----------------------------------------------------------------------------

@@ -324,6 +324,16 @@ def ws(ws):
 if __name__ == "__main__":
      #app.run(host="0.0.0.0", port=5000)
     monkey.patch_all()
-    WSGIServer(('0.0.0.0', 5000), app).serve_forever()
+
+    # SSL context for the certificate
+    ssl_context = ('/etc/letsencrypt/live/gp-cmov2-cmu-project-1.vps.tecnico.ulisboa.pt/fullchain.pem',
+                   '/etc/letsencrypt/live/gp-cmov2-cmu-project-1.vps.tecnico.ulisboa.pt/privkey.pem')
+
+    # Start the server with SSL enabled
+    http_server = WSGIServer(('0.0.0.0', 5000), app, keyfile=ssl_context[1],
+                            certfile=ssl_context[0])
+    http_server.serve_forever()
+
+    #WSGIServer(('0.0.0.0', 5000), app).serve_forever()
     # http_server = WSGIServer(('0.0.0.0', 5000), app, handler_class=WebSocketHandler)
     # http_server.serve_forever()

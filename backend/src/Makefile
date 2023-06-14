@@ -4,6 +4,7 @@ PYTHON := python3
 MODELS := $(wildcard models/*.py)
 SERVER := server.py
 APP := app.py
+SUDO := sudo
 
 SUCCESS_COLOR := $(shell tput setaf 2)
 ERROR_COLOR := $(shell tput setaf 1)
