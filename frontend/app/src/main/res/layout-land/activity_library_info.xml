@@ -21,7 +21,7 @@
 
         <TextView
             android:id="@+id/library_name_title"
-            android:layout_width="250dp"
+            android:layout_width="245dp"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:layout_marginBottom="2dp"
@@ -34,10 +34,10 @@
 
         <ImageView
             android:id="@+id/library_report"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:src="@drawable/report"
-            android:layout_marginTop="27dp"
+            android:layout_marginTop="16dp"
             android:layout_centerHorizontal="true"
             android:layout_toEndOf="@id/library_name_title"/>
 

@@ -42,4 +42,8 @@ public class BookCache {
         booksCache.remove(bookId);
     }
 
+    public void clearCache() {
+        booksCache.evictAll();
+    }
+
 }

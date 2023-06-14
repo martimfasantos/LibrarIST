@@ -303,8 +303,10 @@ public class ServerConnection {
                 int imageResource;
                 if (favorite){
                     imageResource = R.drawable.marker_library_fav;
+                    Log.d("FAV", "FAV");
                 } else {
                     imageResource = R.drawable.marker_library;
+                    Log.d("FAV", "NOT FAV");
                 }
 
                 MarkerOptions markerOptions = new MarkerOptions()
@@ -317,6 +319,7 @@ public class ServerConnection {
             }
 
             return markers;
+
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }

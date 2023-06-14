@@ -626,6 +626,12 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Wait for thread to join
         _thread.join();
 
+        // If library is in cache, update locally as well
+        LibraryInfoActivity.this.isFavorited = true;
+        if (libraryCache.getLibrary(libraryId) != null){
+            libraryCache.getLibrary(libraryId).setFavorite(true);
+        }
+
         // Retrieve the marker you want to modify
         Marker marker = markerMap.get(libraryId);
         // Set the new icon for the marker
@@ -633,12 +639,13 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
             marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_library_fav));
         }
 
+        Log.d("SIZE OF MAP MARKERS", markerMap.entrySet().toString());
+
         // Update the Star Favorite button
         updateFavoriteButtonIcon();
 
         // Center map with the changed marker in this view
         centerCamera();
-
     }
 
     private void removeLibraryFromFavorites() throws InterruptedException {
@@ -668,7 +675,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
         // If library is in cache, update locally as well
         LibraryInfoActivity.this.isFavorited = false;
-        if(libraryCache.getLibrary(libraryId) != null){
+        if (libraryCache.getLibrary(libraryId) != null){
             libraryCache.getLibrary(libraryId).setFavorite(false);
         }
 

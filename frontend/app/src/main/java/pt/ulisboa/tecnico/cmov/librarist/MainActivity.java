@@ -70,7 +70,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public static boolean loggedIn = false;
     // User IDs
     public static int userId = -1;
-    public static int deviceId = -1;
     public static GoogleMap mMap;
 
     // TODO make this a cache !!!
@@ -320,11 +319,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         for (Map.Entry<Integer, MarkerOptions> entry : libraries.entrySet()) {
             Integer libId = entry.getKey();
             MarkerOptions markerOptions = entry.getValue();
-            // Add marker to the map
+
+            // Remove old marker (if it exists)
+            if (markerMap.containsKey(libId)){
+                Marker marker = markerMap.get(libId);
+                assert marker != null;
+                marker.remove();
+            }
+            // Add new marker to the map
             Marker marker = mMap.addMarker(markerOptions);
             assert marker != null;
             marker.setTag(libId);
-            // Add marker to the marker map
+
+            // Add marker to the markers map
             markerMap.put(libId, marker);
         }
     }
@@ -471,7 +478,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             sharedPreferences.edit()
                     .putBoolean("loggedIn", loggedIn)
                     .putInt("userId", userId)
-                    .putInt("deviceId", deviceId)
                     .apply();
         } else { // Try to get Ids from shared Preferences
             int _userId = sharedPreferences.getInt("userId", -1);
@@ -480,7 +486,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (_userId != -1 & validUser(_userId)) {
                 // Check if user ID exists in the system
                 userId = _userId;
-                deviceId = sharedPreferences.getInt("deviceId", -1);
                 loggedIn = sharedPreferences.getBoolean("loggedIn", true);
             } else {
                 // User ID doesn't exist, generate a new one
@@ -489,7 +494,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 sharedPreferences.edit()
                         .putBoolean("loggedIn", loggedIn)
                         .putInt("userId", userId)
-                        .putInt("deviceId", deviceId)
                         .apply();
             }
 
@@ -599,8 +603,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     // Create custom popups for the libraries
                     createCustomMarkerPopUps();
 
-                     // Preload caches and display libraries
-                     loadCloseLibrariesToCache();
+                    // Preload caches and display libraries
+                    loadCloseLibrariesToCache();
                 } else {
                     messageDisplayer.showToast(getResources().getString(R.string.turn_on_location));
                 }

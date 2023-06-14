@@ -71,10 +71,10 @@
     <string name="error_processing">Ocorreu um erro ao processar o pedido</string>
     <string name="couldnt_get_library">Não foi possível obter esta biblioteca!</string>
     <string name="couldnt_find_book">Não foi possível encontrar o livro!</string>
-    <string name="couldnt_check_in_book">Não foi possível registar o livro!</string>
-    <string name="book_check_in">Livro registado!</string>
-    <string name="new_book_check_in">Novo Livro registado!</string>
-    <string name="couldnt_check_in_new_book">Não foi possível registar um novo livro!</string>
+    <string name="couldnt_check_in_book">Não foi possível entregar o livro!</string>
+    <string name="book_check_in">Livro entregue!</string>
+    <string name="new_book_check_in">Novo Livro entregue!</string>
+    <string name="couldnt_check_in_new_book">Não foi possível entregar o novo livro!</string>
     <string name="couldnt_check_out_book">Não foi possível retirar o livro!</string>
     <string name="book_check_out">Livro retirado!</string>
     <string name="book_not_from_library">O livro não pertence a esta biblioteca!</string>

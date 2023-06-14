@@ -1,7 +1,10 @@
 package pt.ulisboa.tecnico.cmov.librarist.popups;
 
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.deviceId;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.loggedIn;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.mMap;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userId;
 
 import android.app.Activity;
@@ -76,12 +79,14 @@ public class UserAuthenticationPopUp {
             @Override
             public void onClick(View v) {
                 loggedIn = false;
-                userId = deviceId;
-                // Logged out from device's account, after registering it
-                // Generate another user Id for device
-                if (userId == -1) {
-                    userId = createGuestUser();
-                }
+                userId = createGuestUser();
+
+                // Delete current user information
+                clearCurrentUserInfo();
+
+                // To update view items and information
+                MainActivity.startActivity(new Intent(MainActivity, MainActivity.class));
+                MainActivity.finish();
 
                 alertDialog.dismiss(); // Dismiss the dialog
             }
@@ -107,6 +112,9 @@ public class UserAuthenticationPopUp {
             @Override
             public void onClick(View v) {
                 alertDialog.dismiss(); // Dismiss the dialog
+
+                // Delete current user information
+                clearCurrentUserInfo();
 
                 MainActivity.startActivity(new Intent(MainActivity, LoginUserActivity.class));
                 MainActivity.finish();
@@ -145,5 +153,15 @@ public class UserAuthenticationPopUp {
 
         Log.d("GUEST USER ID", String.valueOf(generatedUserId));
         return generatedUserId.get();
+    }
+
+
+    private void clearCurrentUserInfo(){
+        // Clear current map and markers
+        mMap.clear();
+        markerMap.clear();
+        // Clear caches
+        libraryCache.clearCache();
+        booksCache.clearCache();
     }
 }
