@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LibrarIST</string>
+    <string name="maps_api_key">"AIzaSyBSh4jYSrBpskY1-neF-hkzSb_AMeOF-y4"</string>
+    <string name="search_address">Procurar Endereço…</string>
+    <string name="books">Livros</string>
+    <string name="action_settings">Definições</string>
+    <string name="insert_library_name">Inserir Nome da Livraria…</string>
+    <string name="insert_book_title">Inserir Título do Livro…</string>
+    <string name="check_in_book">Registar Livro</string>
+    <string name="check_out_book">Retirar Livro</string>
+    <string name="library_name">Nome da Livraria</string>
+    <string name="available_books">Livros disponíveis</string>
+    <string name="find_in_map">Encontrar no mapa!</string>
+    <string name="go_to_location">Ir para localização</string>
+    <string name="back">REGRESSAR</string>
+    <string name="default_book">Livro Padrão</string>
+    <string name="create_library">CRIAR</string>
+    <string name="see_more">Ver mais</string>
+    <string name="book_notif_disabled">Notificar quando disponível</string>
+    <string name="book_notif_enabled">Não notificar</string>
+    <string name="notify_when_available">Notificar quando disponível</string>
+    <string name="camera">Câmera</string>
+    <string name="book_title">Título do Livro</string>
+    <string name="book_available_in_following_libraries">Disponível nas seguintes livrarias:</string>
+    <string name="default_library_name">Livraria Padrão</string>
+    <string name="default_library_distance">0.0Km</string>
+    <string name="books_currently_available">Livros disponíveis:</string>
+    <string name="library_address">Endereço da Livraria</string>
+    <string name="create_an_account">Criar uma conta</string>
+    <string name="already_have_an_account_log_in">Já tem uma conta? Entrar</string>
+    <string name="prompt_email">Endereço e-mail</string>
+    <string name="prompt_password">Palavra-passe</string>
+    <string name="invalid_username">Nome de usuário inválido</string>
+    <string name="login_failed">"Login falhou"</string>
+    <string name="continue_as_guest">Entrar como Convidado</string>
+    <string name="sorted_by_rating">Ordenados por: Avaliação</string>
+</resources>

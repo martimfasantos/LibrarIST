@@ -24,7 +24,7 @@
 
         <TextView
             android:id="@+id/book_info_title"
-            android:layout_width="310dp"
+            android:layout_width="290dp"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:layout_marginBottom="2dp"
@@ -40,8 +40,8 @@
             android:layout_width="22dp"
             android:layout_height="22dp"
             android:src="@drawable/report"
-            android:layout_marginTop="20dp"
-            android:layout_marginStart="2dp"
+            android:layout_marginTop="18dp"
+            android:layout_marginStart="12dp"
             android:layout_centerHorizontal="true"
             android:layout_toEndOf="@id/book_info_title"/>
 
@@ -79,10 +79,10 @@
             android:id="@+id/book_info_notif_message"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
+            android:layout_marginStart="5dp"
             android:text="@string/notify_when_available"
             android:layout_gravity="center_vertical"
-            android:textSize="20sp" />
+            android:textSize="18sp" />
 
         <Button
             android:id="@+id/rate_btn"
