@@ -122,9 +122,11 @@ public class CreateBookPopUp {
                 String bookTitle = editText.getText().toString();
 
                 if (bookTitle.isEmpty()) {
-                    messageDisplayer.showToast("Please insert a valid Book Title...");
+                    messageDisplayer.showToast(LibraryInfoActivity.getResources()
+                            .getString(R.string.valid_book_title));
                 } else if (currentBookCoverURI == null){
-                    messageDisplayer.showToast("Please upload a photo of the Book cover...");
+                    messageDisplayer.showToast(LibraryInfoActivity.getResources()
+                            .getString(R.string.upload_book_cover));
                 } else {
 
                     // Create library on the backend
@@ -132,16 +134,19 @@ public class CreateBookPopUp {
                         try {
                             serverConnection.checkInNewBook(bookTitle, convertUriToBytes(currentBookCoverURI), bookBarcode, libraryId);
                         } catch (ConnectException e) {
-                            messageDisplayer.showToast("Couldn't connect to the server!");
+                            messageDisplayer.showToast(LibraryInfoActivity.getResources()
+                                    .getString(R.string.couldnt_connect_server));
                             return;
                         } catch (SocketTimeoutException e) {
-                            messageDisplayer.showToast("Couldn't check in new book!");
+                            messageDisplayer.showToast(LibraryInfoActivity.getResources()
+                                    .getString(R.string.couldnt_check_in_new_book));
                             return;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
 
-                        messageDisplayer.showToast("New Book checked in!");
+                        messageDisplayer.showToast(LibraryInfoActivity.getResources()
+                                .getString(R.string.new_book_check_in));
                     });
 
                     // Start the thread
@@ -245,7 +250,8 @@ public class CreateBookPopUp {
             // Update the layout parameters of the image view
             uploadView.setLayoutParams(layoutParams);
         } else {
-            messageDisplayer.showToast("There was an error processing your photo!");
+            messageDisplayer.showToast(LibraryInfoActivity.getResources()
+                    .getString(R.string.error_processing_photo));
         }
     }
 

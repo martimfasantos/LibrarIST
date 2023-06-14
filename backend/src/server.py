@@ -90,7 +90,7 @@ class Server:
         img = Image.open(BytesIO(photo))
         img.save(photo_path, "JPEG")
 
-        self.libraries[lib_id] = Library(lib_id, name, location, photo_path, address)
+        self.libraries[lib_id] = Library(lib_id, name, location, address, photo_path)
         print("ID")
         print(lib_id)
         print(self.libraries)
@@ -110,7 +110,11 @@ class Server:
     def get_libraries_markers(self, lat: float, lon: float, radius: int, user_id: int):
         libraries_markers = []
         for lib in self.libraries.values():
-            if (haversine((lat, lon), lib.location, unit=Unit.KILOMETERS) <= radius):
+            if ( 
+                not lib.hidden and \
+                lib not in self.users[user_id].reported_libraries and \
+                haversine((lat, lon), lib.location, unit=Unit.KILOMETERS) <= radius 
+            ):
                 libraries_markers.append(self.library_marker_to_json(lib, user_id))
         return jsonify(libraries_markers), 200
 
@@ -132,12 +136,19 @@ class Server:
     def get_libraries_to_load_cache(self, lat: float, lon: float, radius: int, user_id: int):
         libraries, books = [], []
         for lib in self.libraries.values():
-            if haversine((lat, lon), lib.location, unit=Unit.KILOMETERS) <= radius:
-                libraries.append(self.library_to_json(lib, user_id))
+            if ( 
+                not lib.hidden and \
+                lib not in self.users[user_id].reported_libraries and \
+                haversine((lat, lon), lib.location, unit=Unit.KILOMETERS) <= radius 
+            ):
                 books_list = [self.books[book_id] for book_id in lib.available_books]
                 books_sorted = self.sort_books_by_average_rate(books_list)
                 books.extend(self.book_to_json(book, user_id) for book in books_sorted)
         return jsonify({"libraries": libraries, "books": books}), 200
+    
+    # Get library
+    def get_library(self, lib_id: int, user_id: int):
+        return jsonify(self.library_to_json(self.libraries[lib_id], user_id)), 200
                 
     # Covert library into json
     def library_to_json(self, library: Library, user_id: int):
@@ -171,12 +182,22 @@ class Server:
         print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
         return jsonify({}), 200
     
+    # Report library
+    def report_library(self, lib_id: int, user_id: int):
+        self.users[user_id].report_library(lib_id)
+        self.libraries[lib_id].add_report()
+        return jsonify({}), 200
+    
 
     # Get libraries with the given book available
     def get_libraries_with_book(self, book_id: int, user_id: int):
         libraries = []
         for library in self.libraries.values():
-            if book_id in library.available_books:
+            if ( 
+                not library.hidden and \
+                library not in self.users[user_id].reported_libraries and \
+                book_id in library.available_books
+            ):
                 libraries.append(self.library_to_json(library, user_id))
         return jsonify(libraries), 200
 
@@ -209,9 +230,12 @@ class Server:
     # Get all books
     def get_all_books(self, user_id: int):
         all_books = []
-        books_sorted = self.sort_books_by_average_rate(self.books.values())
+        books_sorted = self.sort_books_by_average_rate(
+            book for book in self.books.values() if not book.hidden)
+        
         for book in books_sorted:
-            all_books.append(self.book_to_json(book, user_id))
+            if book.id not in self.users[user_id].reported_books:
+                all_books.append(self.book_to_json(book, user_id))
 
         print([book_json["bookId"] for book_json in all_books])
         return jsonify(all_books), 200
@@ -285,7 +309,7 @@ class Server:
         return jsonify(filtered_books_json), 200
     
     # Rate a book
-    def rate_book(self, book_id, stars, user_id):
+    def rate_book(self, book_id: int, stars: int, user_id: int):
         user = self.users[user_id]
         book = self.books[book_id]
 
@@ -297,6 +321,12 @@ class Server:
         book.add_rate(stars)
 
         return jsonify({"rates": book.ratings}), 200
+    
+    # Report book
+    def report_book(self, book_id: int, user_id: int):
+        self.users[user_id].report_book(book_id)
+        self.books[book_id].add_report()
+        return jsonify({}), 200
     
     # Sort books by average rating
     def sort_books_by_average_rate(self, books):
@@ -347,9 +377,6 @@ class Server:
     def get_user_by_id(self, user_id):
         return json.dumps(self.users[user_id], default=vars)
     
-    def get_libraries(self):
-        return json.dumps(list(self.libraries.values()), default=vars)
-    
     def get_users(self):
         return json.dumps(list(self.users.values()), default=vars)
     
@@ -357,18 +384,31 @@ class Server:
     def populate(self):
 
         # Add libraries
-        l1 = Library(0, "Library 0", (38.931680, -9.256503), f'./images/populate/library0.jpg', "Malveira 0")
-        l2 = Library(1, "Library 1", (38.931680, -9.257503), f'./images/populate/library1.jpg', "Malveira 1")
-        self.libraries[0] = l1
-        self.libraries[1] = l2
+        l0 = Library(0, "Library 0", (38.931680, -9.256503), "Malveira 0", f'./images/populate/library0.jpg')
+        l1 = Library(1, "Library 1", (38.931680, -9.257503), "Malveira 1", f'./images/populate/library1.jpg')
+        l2 = Library(2, "Library 2", (37.42190712476596, -122.08428114652634), 
+                     "Near my location", f'./images/populate/library2.jpg')
+        l3 = Library(3, "Library 3", (37.42186052743562, -122.08372090011834),
+                     "Near my location", f'./images/populate/library3.jpg')
+
+        self.libraries[0] = l0
+        self.libraries[1] = l1
+        self.libraries[2] = l2
+        self.libraries[3] = l3
+        self.id_library_counter = 4
 
         # Add books
-        b1 = Book(0, "Book 0", f'./images/populate/book0.jpg', "book_0", 0)
-        b2 = Book(1, "Book 1", f'./images/populate/book1.jpg', "book_1", 1)
-        self.books[0] = b1
-        self.books[1] = b2
-        l1.add_book(0)
+        b0 = Book(0, "Book 0", f'./images/populate/book0.jpg', "book_0", 0)
+        b1 = Book(1, "Book 1", f'./images/populate/book1.jpg', "book_1", 1)
+        self.books[0] = b0
+        self.books[1] = b1
+        self.id_books_counter = 2
+        
+        l0.add_book(0)
+        l1.add_book(1)
+        l2.add_book(0)
         l2.add_book(1)
+        l3.add_book(0)
 
 
 

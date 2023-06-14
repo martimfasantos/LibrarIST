@@ -26,7 +26,7 @@ public class NotificationService extends Service {
 
     private static final int NOTIFICATION_ID = 1;
     private static final String CHANNEL_ID = "ForegroundServiceChannel";
-    private static final String SERVER = "ws://192.92.147.54:5000/ws";
+    private static final String SERVER = "wss://gp-cmov2-cmu-project-1.vps.tecnico.ulisboa.pt:5000/ws";
 
     private WebSocketClient webSocketClient;
 

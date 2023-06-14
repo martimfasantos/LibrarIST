@@ -43,7 +43,7 @@ import java.util.List;
 
 public class ServerConnection {
     // Server and port
-    public static final String endpoint = "http://192.92.147.54:5000";
+    public static final String endpoint = "https://gp-cmov2-cmu-project-1.vps.tecnico.ulisboa.pt:5000";
 
 
     /** -----------------------------------------------------------------------------
@@ -401,7 +401,13 @@ public class ServerConnection {
         if (connection.getResponseCode() == 200) {
             JsonArray responseJsonArray = getJsonArrayFromResponse(connection.getInputStream());
             assert responseJsonArray != null;
-            return getBookListFromJsonArray(responseJsonArray);
+
+            List<Book> books = getBookListFromJsonArray(responseJsonArray);
+            // Save loaded books in cache
+            booksCache.addBooks(books);
+
+            return books;
+
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
@@ -461,6 +467,23 @@ public class ServerConnection {
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
+    }
+
+    public void reportBook(int bookId) throws IOException {
+        String url = endpoint + "/books/" + bookId + "/report?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() != 200) {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+
+        // Remove book from the books cache
+        booksCache.removeBook(bookId);
+        Log.d("BOOKS CACHE", booksCache.getBooks().toString());
     }
 
     // Method called when checking in a new book -- WORKING!
@@ -681,6 +704,7 @@ public class ServerConnection {
         }
     }
 
+
     public void addLibraryToFavorites(int libraryId) throws IOException {
         String url = endpoint + "/libraries/" + libraryId + "/add_fav?userId=" + userId;
 
@@ -707,7 +731,21 @@ public class ServerConnection {
         }
     }
 
-    
+
+    public void reportLibrary(int libraryId) throws IOException {
+        String url = endpoint + "/libraries/" + libraryId + "/report?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() != 200) {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+
     public List<Book> listBooksFromLibrary(int libraryId) throws IOException {
         String url = endpoint + "/libraries/" + libraryId + "/books?userId=" + userId;
 

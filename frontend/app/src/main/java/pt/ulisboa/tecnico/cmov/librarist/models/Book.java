@@ -51,16 +51,13 @@ public class Book {
         int coverSize = cover.length;
         int barcodeSize = barcode.getBytes().length;
         int activeNotifSize = 1;  // Assuming Boolean takes 1 byte
+        int ratesSize = rates.size() * Integer.BYTES;  // Assuming each Integer takes 4 bytes
 
-        return idSize + titleSize + coverSize + barcodeSize + activeNotifSize;
+        return idSize + titleSize + coverSize +
+                barcodeSize + activeNotifSize + ratesSize;
     }
 
     public List<Integer> getRates() { return this.rates; }
-
-    public void rate(int rating) {
-        int curr_votes = rates.get(rating - 1);
-        rates.set(rating - 1, curr_votes + 1);
-    }
 
     public void setRates(List<Integer> rates) {
         this.rates = rates;

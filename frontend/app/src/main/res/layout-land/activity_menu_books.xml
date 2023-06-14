@@ -38,7 +38,6 @@
         android:layout_below="@id/top_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
         android:layout_gravity="center"
@@ -47,7 +46,7 @@
 
         <EditText
             android:id="@+id/book_title_input"
-            android:layout_width="335dp"
+            android:layout_width="350dp"
             android:layout_height="45dp"
             android:layout_gravity="center"
             android:hint="@string/insert_book_title"
@@ -71,8 +70,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/div_search_book"
-        android:layout_marginTop="5dp"
-        android:layout_marginStart="10dp"
+        android:layout_marginStart="20dp"
         android:text="@string/sorted_by_rating"
         android:textSize="12sp" />
 

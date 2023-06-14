@@ -1,6 +1,6 @@
 class Library:
 
-    def __init__(self, id, name, location, photo, address):
+    def __init__(self, id, name, location, address, photo):
         self.id = id
         self.name = name
         self.location = location
@@ -8,6 +8,8 @@ class Library:
         self.photo = photo               # this is the photo filename not the file itself
         self.available_books = []         # ids of the books that are in the library
         self.favorite_users = []          # ids of the users that favorited the library
+        self.nr_reports = 0
+        self.hidden = False
 
     def add_book(self, book_id):
         if (book_id not in self.available_books):
@@ -30,3 +32,9 @@ class Library:
     
     def is_book_available(self, book_id):
         return book_id in self.available_books
+    
+    def add_report(self):
+        self.nr_reports += 1
+        if self.nr_reports >= 2:
+            self.hidden = True
+        print("LIB " + str(self.id) + " REPORTS:" + str(self.nr_reports))

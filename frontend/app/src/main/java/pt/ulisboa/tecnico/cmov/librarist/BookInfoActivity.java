@@ -5,7 +5,6 @@ import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentLocation;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -13,36 +12,25 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
-import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.github.mikephil.charting.charts.BarChart;
-import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
-import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
-import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
-import com.google.android.gms.maps.model.LatLng;
-
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -96,6 +84,10 @@ public class BookInfoActivity extends AppCompatActivity {
         // Back Button
         setupBackButton();
 
+        // Report Button
+        setupReportButton();
+
+        // TODO only doing this locally!!!!
         // Notifications Button
         setupNotificationButton();
 
@@ -114,15 +106,6 @@ public class BookInfoActivity extends AppCompatActivity {
      *                                  BUTTONS FUNCTIONS
      -------------------------------------------------------------------------------- */
 
-    private void setupNotificationButton() {
-        ImageButton notifBtn = findViewById(R.id.book_info_notif_btn);
-        notifBtn.setOnClickListener(view -> {
-            Book book = (Book) view.getTag();
-            book.toggleNotifications();
-            setNotificationView(book.isActiveNotif());
-        });
-    }
-
     private void setupBackButton(){
         ImageView back_btn = findViewById(R.id.back_btn);
         back_btn.setOnClickListener(new View.OnClickListener() {
@@ -132,6 +115,53 @@ public class BookInfoActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void setupReportButton() {
+        ImageView report_btn = findViewById(R.id.book_report);
+        report_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Thread thread = new Thread(() -> {
+                    try {
+                        serverConnection.reportBook(book.getId());
+                    } catch (ConnectException e) {
+                        messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
+                        return;
+                    } catch (SocketTimeoutException e) {
+                        messageDisplayer.showToast(getResources().getString(R.string.error_reporting_book));
+                        return;
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Log.d("REPORT BOOK", String.valueOf(book.getId()));
+
+                    // Close current activity
+                    finish();
+                });
+
+                // Start the thread
+                thread.start();
+                // Wait for thread to join
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+    }
+
+
+    // TODO ONLY LOCALLY, NEED TO PROPAGATE TO SERVER TOO
+    private void setupNotificationButton() {
+        ImageButton notifBtn = findViewById(R.id.book_info_notif_btn);
+        notifBtn.setOnClickListener(view -> {
+            Book book = (Book) view.getTag();
+            book.toggleNotifications();
+            setNotificationView(book.isActiveNotif());
+        });
+    }
+
 
     // Used when creating each element of the list of the libraries
     private void setupLibraryCardButton(CardView cardView) {
@@ -150,18 +180,22 @@ public class BookInfoActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 currentRateBookPopUp = new RateBookPopUp(BookInfoActivity.this, book);
-
-
             }
         });
     }
+
+
+    /** -----------------------------------------------------------------------------
+     *                                  HISTOGRAM
+     -------------------------------------------------------------------------------- */
 
     private void setupRateChart() {
         BarChart rateChart = findViewById(R.id.book_info_rate_chart);
 
         // Place values in bar chart
         ArrayList<BarEntry> rateChartEntries = getRateChartEntries();
-        BarDataSet barDataSet = new BarDataSet(rateChartEntries, "Book rates");
+        BarDataSet barDataSet = new BarDataSet(rateChartEntries,
+                getResources().getString(R.string.book_rates));
         rateChart.setData(new BarData(barDataSet));
 
         // Personalize bar chart
@@ -196,6 +230,15 @@ public class BookInfoActivity extends AppCompatActivity {
         }
     }
 
+    private ArrayList<BarEntry> getRateChartEntries() {
+        ArrayList<BarEntry> barEntries = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            barEntries.add(new BarEntry(i+1, book.getRates().get(i)));
+        }
+        return barEntries;
+    }
+
+
     /** -----------------------------------------------------------------------------
      *                                  OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
@@ -220,10 +263,10 @@ public class BookInfoActivity extends AppCompatActivity {
             try {
                 this.book = serverConnection.getBook(bookId);
             } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
             } catch (SocketTimeoutException e) {
-                messageDisplayer.showToast("Couldn't get book!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_book));
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -279,16 +322,16 @@ public class BookInfoActivity extends AppCompatActivity {
                 libraries.addAll(serverConnection.getLibrariesWithBook(this.book));
                 Log.d("GET AVAILABLE LIBRARIES", libraries.toString());
             } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
             } catch (SocketTimeoutException e) {
-                messageDisplayer.showToast("Couldn't get libraries!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_libraries));
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 
-            messageDisplayer.showToast("Got all books!");
+            messageDisplayer.showToast(getResources().getString(R.string.got_all_books));
         });
 
         // Start the thread
@@ -340,7 +383,8 @@ public class BookInfoActivity extends AppCompatActivity {
                 CardView card = (CardView) parent.getChildAt(i);
                 TextView view = card.findViewById(R.id.book_available_library_distance);
                 String text = view.getText().toString();
-                double dist = Double.parseDouble(text.substring(0, text.length() - 2));
+                String cleanedText = text.replace(",", ".");
+                double dist = Double.parseDouble(cleanedText.substring(0, text.length() - 2));
                 if (distance > dist){
                     insertionIndex++;
                 } else {
@@ -356,13 +400,4 @@ public class BookInfoActivity extends AppCompatActivity {
                 .filter(lib -> lib.getBookIds().contains(book.getId()))
                 .collect(Collectors.toList());
     }
-
-    private ArrayList<BarEntry> getRateChartEntries() {
-        ArrayList<BarEntry> barEntries = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            barEntries.add(new BarEntry(i+1, book.getRates().get(i)));
-        }
-        return barEntries;
-    }
-
 }

@@ -56,9 +56,9 @@ public class RegisterUserActivity extends AppCompatActivity {
                 String confirmPassword = confirmPasswordInput.getText().toString();
 
                 if (username.length() == 0 || password.length() == 0 || confirmPassword.length() == 0) {
-                    messageDisplayer.showToast("Please fill all details");
+                    messageDisplayer.showToast(getResources().getString(R.string.fill_all_details));
                 } else if (!confirmPassword.equals(password)) {
-                    messageDisplayer.showToast("Passwords do not match");
+                    messageDisplayer.showToast(getResources().getString(R.string.passwords_do_not_match));
                 } else {
                     // Get user if exists in the backend
                     Thread thread = new Thread(() -> {
@@ -68,10 +68,10 @@ public class RegisterUserActivity extends AppCompatActivity {
                             // TODO error! ALWAYS -1 HERE
                             _userId = serverConnection.registerUser(userId, username, password);
                         } catch (ConnectException e) {
-                            messageDisplayer.showToast("Couldn't connect to the server!");
+                            messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                             connectionError = true;
                         } catch (SocketTimeoutException e) {
-                            messageDisplayer.showToast("Couldn't register the user!");
+                            messageDisplayer.showToast(getResources().getString(R.string.couldnt_register_user));
                             connectionError = true;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
@@ -83,13 +83,13 @@ public class RegisterUserActivity extends AppCompatActivity {
                                 usernameInput.setText("");
                                 passwordInput.setText("");
                                 confirmPasswordInput.setText("");
-                                messageDisplayer.showToast("User already exists");
+                                messageDisplayer.showToast(getResources().getString(R.string.user_already_exists));
                             } else {
                                 if (_userId != userId){
                                     usernameInput.setText("");
                                     passwordInput.setText("");
                                     confirmPasswordInput.setText("");
-                                    messageDisplayer.showToast("Error creating user");
+                                    messageDisplayer.showToast(getResources().getString(R.string.error_creating_user));
                                 // User Register successfully
                                 } else {
                                     loggedIn = true;

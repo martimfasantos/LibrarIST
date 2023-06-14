@@ -142,16 +142,19 @@ public class CreateLibraryPopUp {
                 String libraryName = editText.getText().toString();
 
                 if (libraryName.isEmpty()) {
-                    messageDisplayer.showToast("Please insert a valid Library Name...");
+                    messageDisplayer.showToast(MainActivity.getResources()
+                            .getString(R.string.insert_valid_address));
                 } else if (currentLibraryPhotoURI == null){
-                    messageDisplayer.showToast("Please upload a Library Photo...");
+                    messageDisplayer.showToast(MainActivity.getResources()
+                            .getString(R.string.insert_upload_library_photo));
                 } else {
 
                     // Get Address from Location
                     String libraryAddress = getAddressFromLocation(latLng);
 
                     if (libraryAddress.isEmpty()){
-                        messageDisplayer.showToast("An error occurred, please try again!");
+                        messageDisplayer.showToast(MainActivity.getResources()
+                                .getString(R.string.error_ocurred));
                         alertDialog.dismiss();
                     }
 
@@ -161,10 +164,12 @@ public class CreateLibraryPopUp {
                         try {
                             serverConnection.createLibrary(libraryName, new LatLng(latLng.latitude, latLng.longitude), libraryAddress, convertUriToBytes(currentLibraryPhotoURI));
                         } catch (ConnectException e) {
-                            messageDisplayer.showToast("Couldn't connect to the server!");
+                            messageDisplayer.showToast(MainActivity.getResources()
+                                    .getString(R.string.couldnt_connect_server));
                             connectionError = true;
                         } catch (SocketTimeoutException e) {
-                            messageDisplayer.showToast("Couldn't create the library!");
+                            messageDisplayer.showToast(MainActivity.getResources()
+                                    .getString(R.string.couldnt_create_library));
                             connectionError = true;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
@@ -290,7 +295,8 @@ public class CreateLibraryPopUp {
             // Update the layout parameters of the image view
             uploadView.setLayoutParams(layoutParams);
         } else {
-            messageDisplayer.showToast("There was an error processing your photo!");
+            messageDisplayer.showToast(MainActivity.getResources()
+                    .getString(R.string.error_processing_photo));
         }
     }
 

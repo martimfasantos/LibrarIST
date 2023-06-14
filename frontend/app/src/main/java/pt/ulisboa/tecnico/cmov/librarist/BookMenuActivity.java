@@ -98,6 +98,13 @@ public class BookMenuActivity extends AppCompatActivity {
      *                                  OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Update view with changes
+        listAllBooks();
+    }
+
     private void listAllBooks() {
 
         List<Book> allBooks;
@@ -124,16 +131,16 @@ public class BookMenuActivity extends AppCompatActivity {
                 allBooks.addAll(serverConnection.getAllBooks());
                 Log.d("GET ALL BOOKS", allBooks.toString());
             } catch (ConnectException e) {
-                messageDisplayer.showToast("Couldn't connect to the server!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
             } catch (SocketTimeoutException e) {
-                messageDisplayer.showToast("Couldn't get books!");
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_books));
                 return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 
-            messageDisplayer.showToast("Got all books!");
+            messageDisplayer.showToast(getResources().getString(R.string.got_all_books));
         });
 
         // Start the thread
@@ -187,9 +194,9 @@ public class BookMenuActivity extends AppCompatActivity {
                     }
                     Log.d("FILTER BOOKS", "TITLE " + titleFilter);
                 } catch (ConnectException e) {
-                    messageDisplayer.showToast("Couldn't connect to the server!");
+                    messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 } catch (SocketTimeoutException e) {
-                    messageDisplayer.showToast("Couldn't filter books!");
+                    messageDisplayer.showToast(getResources().getString(R.string.couldnt_filter_books));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
