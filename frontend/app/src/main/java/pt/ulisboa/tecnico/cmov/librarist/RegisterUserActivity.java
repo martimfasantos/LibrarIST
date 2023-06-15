@@ -1,6 +1,5 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.deviceId;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.loggedIn;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userId;
 

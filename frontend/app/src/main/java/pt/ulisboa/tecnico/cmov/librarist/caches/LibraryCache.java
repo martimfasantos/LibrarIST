@@ -58,4 +58,8 @@ public class LibraryCache {
         }
         return books;
     }
+
+    public void clearCache() {
+        librariesCache.evictAll();
+    }
 }

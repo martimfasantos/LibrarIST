@@ -20,8 +20,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="Default title"
-            android:textSize="25sp"
-            android:background="@color/almost_white"/>
+            android:textSize="25sp" />
 
         <LinearLayout
             android:id="@+id/rating_book_star_group"

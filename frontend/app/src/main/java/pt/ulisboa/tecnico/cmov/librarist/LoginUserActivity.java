@@ -2,7 +2,6 @@ package pt.ulisboa.tecnico.cmov.librarist;
 
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.loggedIn;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userId;
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.deviceId;
 
 
 import android.content.Intent;
@@ -78,8 +77,6 @@ public class LoginUserActivity extends AppCompatActivity {
                                 messageDisplayer.showToast(getResources().getString(R.string.user_does_not_exist));
                             } else {
                                 loggedIn = true;
-                                // Save device's User ID for future log outs
-                                deviceId = userId;
                                 // Change user ID
                                 userId = _userId;
 
@@ -120,7 +117,6 @@ public class LoginUserActivity extends AppCompatActivity {
         continueAsGuest_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                userId = deviceId;
                 // Start new activity
                 startActivity(new Intent(LoginUserActivity.this, MainActivity.class));
                 finish();
