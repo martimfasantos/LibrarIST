@@ -18,6 +18,7 @@ class Server:
         self.id_users_counter = 1
         self.id_library_counter = 0
         self.id_books_counter = 0
+        self.page_size = 8
 
         # dictionaries to store objects
         self.books: Dict[int, Book] = {}
@@ -240,6 +241,24 @@ class Server:
         print([book_json["bookId"] for book_json in all_books])
         return jsonify(all_books), 200
     
+    # Get books by page
+    def get_books_by_page(self, page, user_id):
+        all_books_not_reported, books_in_page_json, books_in_page = [], [], []
+
+        books_sorted = self.sort_books_by_average_rate(
+            book for book in self.books.values() if not book.hidden)
+        
+        for book in books_sorted:
+            if book.id not in self.users[user_id].reported_books:
+                all_books_not_reported.append(book)
+        
+        books_in_page = books_sorted[self.page_size * page: self.page_size + self.page_size * page]
+        for book in books_in_page:
+            books_in_page_json.append(self.book_to_json(book, user_id))
+
+        return jsonify(books_in_page_json), 200        
+
+    
     # TODO : receive also the user id
     def check_in_book(self, barcode: str, lib_id: int):
         book_id = self.get_book_id_from_barcode(barcode)
@@ -400,12 +419,40 @@ class Server:
         # Add books
         b0 = Book(0, "Book 0", f'./images/populate/book0.jpg', "book_0", 0)
         b1 = Book(1, "Book 1", f'./images/populate/book1.jpg', "book_1", 1)
+        b2 = Book(2, "Book 2", f'./images/populate/book0.jpg', "book_2", 2)
+        b3 = Book(3, "Book 3", f'./images/populate/book0.jpg', "book_3", 3)
+        b4 = Book(4, "Book 4", f'./images/populate/book0.jpg', "book_4", 4)
+        b5 = Book(5, "Book 5", f'./images/populate/book0.jpg', "book_5", 5)
+        b6 = Book(6, "Book 6", f'./images/populate/book0.jpg', "book_6", 6)
+        b7 = Book(7, "Book 7", f'./images/populate/book0.jpg', "book_7", 7)
+        b8 = Book(8, "Book 8", f'./images/populate/book0.jpg', "book_8", 8)
+        b9 = Book(9, "Book 9", f'./images/populate/book0.jpg', "book_9", 9)
+        b10 = Book(10, "Book 10", f'./images/populate/book0.jpg', "book_10", 10)
         self.books[0] = b0
         self.books[1] = b1
-        self.id_books_counter = 2
+        self.books[2] = b2
+        self.books[3] = b3
+        self.books[4] = b4
+        self.books[5] = b5
+        self.books[6] = b6
+        self.books[7] = b7
+        self.books[8] = b8
+        self.books[9] = b9
+        self.books[10] = b10
+
+        self.id_books_counter = 10
         
         l0.add_book(0)
         l1.add_book(1)
+        l1.add_book(2)
+        l1.add_book(3)
+        l1.add_book(4)
+        l1.add_book(5)
+        l1.add_book(6)
+        l1.add_book(7)
+        l1.add_book(8)
+        l1.add_book(9)
+        l1.add_book(10)
         l2.add_book(0)
         l2.add_book(1)
         l3.add_book(0)

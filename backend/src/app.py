@@ -138,6 +138,7 @@ def add_favorite_library_to_user(lib_id):
 def remove_favorite_library_from_user(lib_id):
     return server.remove_favorite_lib(lib_id, int(request.args.get("userId")))
 
+
 # Report library
 # path:
 #   - libId: int - library to report
@@ -146,6 +147,7 @@ def remove_favorite_library_from_user(lib_id):
 @app.route("/libraries/<int:lib_id>/report", methods=['POST'])
 def report_library(lib_id):
     return server.report_library(lib_id, int(request.args.get("userId")))
+
 
 # User checkin book
 # path:
@@ -212,6 +214,7 @@ def rate_book(book_id):
     rating = request_data["rating"]
     return server.rate_book(book_id, rating, int(request.args.get("userId")))
 
+
 # Report book
 # path:
 #   - book_id: int - book being reported
@@ -243,6 +246,16 @@ def get_book():
 @app.route("/books", methods=['GET'])
 def get_all_books():
     return server.get_all_books(int(request.args.get("userId")))
+
+
+# Get books by page
+# path:
+#   - page: int
+# query:
+#   - userId: int
+@app.route("/books/pages/<int:page>", methods=['GET'])
+def get_books_by_page(page):
+    return server.get_books_by_page(page, int(request.args.get("userId")))
 
 
 # Get books for a given library
@@ -324,7 +337,7 @@ def ws(ws):
 if __name__ == "__main__":
      #app.run(host="0.0.0.0", port=5000)
     monkey.patch_all()
-
+        
     # SSL context for the certificate
     ssl_context = ('/etc/letsencrypt/live/gp-cmov2-cmu-project-1.vps.tecnico.ulisboa.pt/fullchain.pem',
                    '/etc/letsencrypt/live/gp-cmov2-cmu-project-1.vps.tecnico.ulisboa.pt/privkey.pem')
