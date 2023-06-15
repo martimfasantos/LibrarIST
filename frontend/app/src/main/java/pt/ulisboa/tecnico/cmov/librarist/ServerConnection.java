@@ -413,6 +413,29 @@ public class ServerConnection {
         }
     }
 
+    public List<Book> getBooksByPage(int booksPage) throws IOException {
+        String url = endpoint + "/books/pages/" + booksPage + "?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonArray responseJsonArray = getJsonArrayFromResponse(connection.getInputStream());
+            assert responseJsonArray != null;
+
+            List<Book> books = getBookListFromJsonArray(responseJsonArray);
+            // Save loaded books in cache
+            booksCache.addBooks(books);
+
+            return books;
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
     public int findBook(String barcode) throws IOException {
         String url = endpoint + "/books/find?barcode=" + barcode;
 

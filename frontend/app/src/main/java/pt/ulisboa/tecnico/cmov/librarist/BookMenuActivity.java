@@ -14,8 +14,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.widget.NestedScrollView;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 
 import java.io.IOException;
@@ -27,12 +31,16 @@ import java.util.stream.Collectors;
 
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
+import pt.ulisboa.tecnico.cmov.librarist.recyclerView.BookItem;
+import pt.ulisboa.tecnico.cmov.librarist.recyclerView.BookMenuAdapter;
 
 public class BookMenuActivity extends AppCompatActivity {
 
     private final ServerConnection serverConnection = new ServerConnection();
-
     private final MessageDisplayer messageDisplayer = new MessageDisplayer(this);
+
+    private final List<Book> booksInCurrentPages = new ArrayList<>();
+    private int booksPage = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,8 +48,7 @@ public class BookMenuActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_menu_books);
 
-        // List all books
-        listAllBooks();
+        setupBooksRv();
 
         // Set up onclick method for the search button
         setupSearchButton();
@@ -93,43 +100,66 @@ public class BookMenuActivity extends AppCompatActivity {
         });
     }
 
+    private void setupBooksRv() {
+        RecyclerView booksMenuRV = findViewById(R.id.recycler_view_books_list);
+        NestedScrollView booksMenuNSV = findViewById(R.id.book_menu_NSV);
+
+        callUpdateBooksInCurrentPages();
+        setupAdapter(booksMenuRV);
+
+        // Define a layout manager for the recycler view
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this,
+                LinearLayoutManager.VERTICAL, false);
+        booksMenuRV.setLayoutManager(linearLayoutManager);
+
+        // When the user reaches the bottom of the nested scroll view load more books
+        booksMenuNSV.setOnScrollChangeListener(new NestedScrollView.OnScrollChangeListener() {
+            @Override
+            public void onScrollChange(@NonNull NestedScrollView v, int scrollX, int scrollY,
+                                       int oldScrollX, int oldScrollY) {
+                if (scrollY == v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight()) {
+                    booksPage++;
+                    callUpdateBooksInCurrentPages();
+                    setupAdapter(booksMenuRV);
+                }
+            }
+        });
+    }
+
+    private void setupAdapter(RecyclerView booksMenuRv) {
+        List<BookItem> bookItemList = booksInCurrentPages.stream()
+                .map(book -> new BookItem(book.getTitle(), book.getId()))
+                .collect(Collectors.toList());
+        BookMenuAdapter bookMenuAdapter = new BookMenuAdapter(this, bookItemList);
+        booksMenuRv.setAdapter(bookMenuAdapter);
+    }
+
 
     /** -----------------------------------------------------------------------------
      *                                  OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Update view with changes
-        listAllBooks();
-    }
+    private void callUpdateBooksInCurrentPages() {
 
-    private void listAllBooks() {
-
-        List<Book> allBooks;
         // TODO if there is internet
         if (true){
             // Get all books from the server
-            allBooks = new ArrayList<>(getAllBooks());
+            updateBooksInCurrentPages();
         } else {
             // If there is NO internet available
-            allBooks = new ArrayList<>(booksCache.getBooks());
+            booksInCurrentPages.addAll(booksCache.getBooks());
         }
-
-        // Add books to the view
-        addBookItemsToView(allBooks);
     }
 
-    private List<Book> getAllBooks() {
-        Log.d("GET ALL BOOKS", "GET ALL BOOKS");
+    private void updateBooksInCurrentPages() {
+        Log.d("GET BOOKS BY PAGE", "GET BOOKS BY PAGE");
 
-        // Get all books ever registered in the system
-        final List<Book> allBooks = new ArrayList<>();
+        // Get all books in following page and save in the books lists
         Thread thread = new Thread(() -> {
             try {
-                allBooks.addAll(serverConnection.getAllBooks());
-                Log.d("GET ALL BOOKS", allBooks.toString());
+                List<Book> rsp = serverConnection.getBooksByPage(booksPage);
+                booksInCurrentPages.addAll(rsp);
+                Log.d("GET BOOKS BY PAGE", rsp.toString());
             } catch (ConnectException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
@@ -151,8 +181,6 @@ public class BookMenuActivity extends AppCompatActivity {
         } catch (InterruptedException e){
             throw new RuntimeException(e);
         }
-
-        return allBooks;
     }
 
     private void addBookItemsToView(List<Book> books) {
