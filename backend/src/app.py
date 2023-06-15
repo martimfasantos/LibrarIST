@@ -9,6 +9,7 @@ from gevent import monkey
 from gevent.pywsgi import WSGIServer
 
 latest_book_title = None 
+latest_library = None
 websocket_connections = []
 interested_connections = []
 
@@ -67,21 +68,30 @@ def login_user():
 @app.route("/libraries/markers", methods=['GET'])
 def get_libraries_markers():
 
-    global latest_book_title
+    global latest_book_title, interested_connections, websocket_connections, latest_library
 
     print("Current websockets: ", websocket_connections)
+    print("Current interested connections before adding: ", interested_connections)
 
-    for connection in websocket_connections:
-        interested_connections.append(connection)
+
+
+    # for connection in websocket_connections:
+    #     interested_connections.append(connection)
+
+    for user  in server.users.values():
+        if(user.sockets != []):
+            print("User sockets not null:", user.sockets)
+            for socket in user.sockets:
+                interested_connections.append(socket)
 
     print("Current interested connections: ", interested_connections)
 
     latest_book_title = "Pachinko"
+    latest_library = "IST-Central"
 
 
     return server.get_libraries_markers(float(request.args.get("lat")), float(request.args.get("lon")),
                                         int(request.args.get("radius")), int(request.args.get("userId")))
-
 
 # List libraries in a given radius
 # path:
@@ -158,6 +168,25 @@ def check_in_book(lib_id):
     request_data = request.json
     barcode = request_data["barcode"]
     lib_id = request_data["libId"]
+
+    #Broadcast New Book Message!
+    global interested_connections, latest_book_title, latest_library
+
+    bookId = server.get_book_id_from_barcode(barcode)
+    book = server.books.get(bookId)
+    library = server.libraries.get(lib_id)
+
+    if book.hidden == False:
+        for user_id in book.users_to_notify:
+            user = server.users.get(user_id)
+            if(bookId not in user.reported_books):
+                for socket in user.sockets:
+                    interested_connections.append(socket)
+
+        latest_book_title = book.title
+        latest_library = library.name
+
+
     return server.check_in_book(barcode, lib_id)
 
 # TODO : receive also the user id
@@ -293,32 +322,38 @@ def filter_books_by_title():
 ##################   SOCKETS  ##################
 
 
-@sockets.route('/ws')
-def ws(ws):
+# @sockets.route('/ws/<int:user_id>/<string:user_password>')
+# def ws(ws, user_id, user_password):
+
+@sockets.route('/ws/<int:user_id>')
+def ws(ws, user_id):  
   print("Tried to connect to socket")
-  global websocket_connections, latest_book_title
+  global websocket_connections, latest_book_title, interested_connections, latest_library
+
+  for user in server.users.values():
+        if user.id == user_id: # and user.password == "":
+            print("Entered loop")
+            user.add_socket(ws)
+            print("User sockets??", user.sockets)
+        # if user.id == user_id and user.password == user_password:
+        #     user.add_socket(ws)
+
   websocket_connections.append(ws)
 
   while True:
     try:
-        if latest_book_title != None:
+        if latest_book_title != None and latest_library != None:
             for connection in websocket_connections:
                 if connection in interested_connections:
-                    connection.send(json.dumps({"title": latest_book_title}))
+                    connection.send(json.dumps({"title": latest_book_title, "library_name": latest_library}))
             latest_book_title = None
+            latest_library = None
+            interested_connections = []
 
     except Exception as e:
         print(f"Error sending notification to client: {str(e)}")
     
     time.sleep(10)
-      
-
-# def websocket_broadcast(messageJson, interestedConnections):
-#   for ws in interestedConnections:
-#     try:
-#       ws.send(messageJson)
-#     except ConnectionClosed:
-#       interestedConnections.remove(ws)
 
 
 if __name__ == "__main__":
