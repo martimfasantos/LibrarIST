@@ -8,7 +8,12 @@ class User:
         self.book_ratings = {}
         self.reported_libraries = []
         self.reported_books = []
+        self.sockets = []
 
+    
+    def add_socket(self, socket):
+        if (socket not in self.sockets):
+            self.sockets.append(socket)
 
     def add_library(self, lib_id):
         if (lib_id not in self.favorite_libraries):
