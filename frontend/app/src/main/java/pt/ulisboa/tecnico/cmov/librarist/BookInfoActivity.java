@@ -161,9 +161,27 @@ public class BookInfoActivity extends AppCompatActivity {
     private void setupNotificationButton() {
         ImageButton notifBtn = findViewById(R.id.book_info_notif_btn);
         notifBtn.setOnClickListener(view -> {
+
             Book book = (Book) view.getTag();
             book.toggleNotifications();
             setNotificationView(book.isActiveNotif());
+
+            String connection  = getConnectionType(this);
+            if (!connection.equals("NONE")) {
+                try {
+                    if (book.isActiveNotif()) {
+                        serverConnection.addUserToBookNotifications(book.getId());
+                    } else {
+                        serverConnection.removeUserFromBookNotifications(book.getId());
+                    }
+                } catch (ConnectException e) {
+                    messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
+                } catch (SocketTimeoutException e) {
+                    messageDisplayer.showToast("Could not toggle notifications");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         });
     }
 
