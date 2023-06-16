@@ -84,7 +84,7 @@ public class BookInfoActivity extends AppCompatActivity {
             bookCover.setImageResource(R.drawable.image_placeholder);
         }
 
-        setNotificationView(this.book.isActiveNotif());
+        setNotificationView(book.isActiveNotif());
 
         // Back Button
         setupBackButton();
@@ -230,6 +230,7 @@ public class BookInfoActivity extends AppCompatActivity {
 
         if ((getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
                 == Configuration.UI_MODE_NIGHT_YES) {
+            rateChart.getDescription().setTextColor(Color.WHITE);
             barDataSet.setValueTextColor(Color.WHITE);
             xAxis.setTextColor(Color.WHITE);
         }

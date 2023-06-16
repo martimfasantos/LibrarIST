@@ -20,8 +20,7 @@ public class MarkerCache {
         this.markerCache = new LruCache<Integer, Marker>(cacheSize) {
             @Override
             protected int sizeOf(Integer key, Marker marker) {
-                int markerSize = getObjectSize(marker);
-                return markerSize;
+                return getObjectSize(marker);
             }
         };
     }
@@ -40,7 +39,7 @@ public class MarkerCache {
         }
     }
 
-    public void addMarker(Marker marker, int libId){
+    public void addMarker(int libId, Marker marker){
         markerCache.put(libId, marker);
     }
 

@@ -193,7 +193,7 @@ public class CreateLibraryPopUp {
                                     if (library.getName().equals(libraryName)
                                             & library.getAddress().equals(libraryAddress)) {
                                         marker.setTag(library.getId());
-                                        markerCache.addMarker(marker, library.getId());
+                                        markerCache.addMarker(library.getId(), marker);
                                     }
                                 }
 

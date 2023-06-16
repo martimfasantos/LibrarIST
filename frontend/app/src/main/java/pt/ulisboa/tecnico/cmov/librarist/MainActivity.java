@@ -79,9 +79,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public static int userId = -1;
     public static GoogleMap mMap;
 
-    // TODO make this a cache !!!
-    //public static HashMap<Integer, Marker> markerMap = new HashMap<>();
-
     // The entry point to the Fused Location Provider.
     private FusedLocationProviderClient fusedLocationProviderClient;
     public static boolean locationPermissionGranted = false;
@@ -132,10 +129,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // TODO use this in MainActivity to start the service for the first time
         // Start Notifications Service
 
-        if(notificationsPermission == true) {
-            if (isForegroundServiceRunning() == false) {
+        if (notificationsPermission) {
+            if (!isForegroundServiceRunning()) {
                 //startForegroundService(new Intent(this, NotificationService.class));
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationsPermission == true) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     // API level is 33 or higher
                     startForegroundService(new Intent(this, NotificationService.class));
                 } else {
@@ -384,7 +381,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             marker.setTag(libId);
 
             // Add marker to the markers cache
-            markerCache.addMarker(marker, libId);
+            markerCache.addMarker(libId, marker);
 
             //Log.d("MARKER BEFORE REMOVING", Objects.requireNonNull(marker.getTitle()));
         }
@@ -462,7 +459,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         // Go to that location
                         goToLocation(new LatLng(address.getLatitude(), address.getLongitude()));
 
-                        messageDisplayer.showToast(getResources().getString(R.string.centered_in) + address.getLocality());
+                        messageDisplayer.showToast(getResources().getString(R.string.centered_in) + " " + address.getLocality());
                     } else {
                         messageDisplayer.showToast(getResources().getString(R.string.insert_valid_address));
                     }
