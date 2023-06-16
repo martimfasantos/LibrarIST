@@ -1,5 +1,8 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userId;
+//import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userPassword;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -35,7 +38,19 @@ public class NotificationService extends Service {
         super.onCreate();
 
         // Create and configure the WebSocket client
-        URI serverUri = URI.create(SERVER);
+        //Log.d("USER PASSWORD", userPassword);
+        Log.d("USER ID", String.valueOf(userId));
+        //Log.d("SERVER PATH",SERVER + "/"+ userId + "/" + userPassword);
+
+        /*URI serverUri;
+        if (userPassword == null) {
+            serverUri = URI.create(SERVER + "/" + userId);
+        } else {
+            serverUri = URI.create(SERVER + "/" + userId + "/" + userPassword);
+        }*/
+
+        URI serverUri = URI.create(SERVER + "/"+ userId);
+
         webSocketClient = new WebSocketClient(serverUri) {
             @Override
             public void onOpen(ServerHandshake handshakeData) {
@@ -49,8 +64,9 @@ public class NotificationService extends Service {
                     try {
                         JSONObject json = new JSONObject(message);
                         String title = json.getString("title");
-                        Log.d("WEBSOCKET", "Received title: " + title);
-                        displayNotification(title);
+                        String libraryName = json.getString("library_name");
+                        Log.d("WEBSOCKET", "Received title: " + title + "at library " + libraryName);
+                        displayNotification(title, libraryName);
                     } catch (Exception e) {
                         e.printStackTrace();
                         throw new RuntimeException("Bad Message in Socket!" + e);
@@ -116,12 +132,18 @@ public class NotificationService extends Service {
                 .build();
     }
 
-    private void displayNotification(String message) {
+    private void displayNotification(String title, String libraryNamae) {
         // Create and display the notification with the received message
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("New Book Available")
-                .setContentText("Book " + message + " is now available at your fav library!")
+                .setContentText("Book " + title + " is now available at " + libraryNamae + " library!")
                 .setSmallIcon(R.drawable.notification_icon);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
+        } else {
+            builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        }
 
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.notify(NOTIFICATION_ID, builder.build());

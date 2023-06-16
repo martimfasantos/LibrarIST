@@ -499,9 +499,38 @@ public class ServerConnection {
         }
     }
 
-
+    
     public List<Book> getBooksFromLibrary(int libraryId) throws IOException {
         String url = endpoint + "/libraries/" + libraryId + "/books?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonArray responseJsonArray = getJsonArrayFromResponse(connection.getInputStream());
+            assert responseJsonArray != null;
+
+            List<Book> books = getBookListFromJsonArray(responseJsonArray);
+
+            for (Book book: books) {
+                // If cache already has the item, use the new information with the stored cover
+                if (booksCache.containsBook(book.getId())){
+                    book.setCover(booksCache.getBook(book.getId()).getCover());
+                }
+                booksCache.addBook(book);
+            }
+
+            return books;
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    public List<Book> getBooksByPage(int booksPage) throws IOException {
+        String url = endpoint + "/books/pages/" + booksPage + "?userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
@@ -681,8 +710,6 @@ public class ServerConnection {
 
         String jsonString = jsonObject.toString();
 
-        Log.d("CHECKIN", "CRIEI JSON");
-
         DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
         outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
         outputStream.flush();
@@ -750,8 +777,6 @@ public class ServerConnection {
 
         String jsonString = jsonObject.toString();
 
-        Log.d("CHECKIN", "CRIEI JSON");
-
         DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
         outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
         outputStream.flush();
@@ -815,8 +840,6 @@ public class ServerConnection {
         jsonObject.addProperty("barcode", barcode);
 
         String jsonString = jsonObject.toString();
-
-        Log.d("CHECKOUT", "CRIEI JSON");
 
         DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
         outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));

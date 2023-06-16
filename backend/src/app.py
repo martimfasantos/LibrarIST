@@ -9,6 +9,7 @@ from gevent import monkey
 from gevent.pywsgi import WSGIServer
 
 latest_book_title = None 
+latest_library = None
 websocket_connections = []
 interested_connections = []
 
@@ -67,21 +68,31 @@ def login_user():
 @app.route("/libraries/markers", methods=['GET'])
 def get_libraries_markers():
 
-    global latest_book_title
+    global latest_book_title, interested_connections, websocket_connections, latest_library
 
     print("Current websockets: ", websocket_connections)
+    print("Current interested connections before adding: ", interested_connections)
 
-    for connection in websocket_connections:
-        interested_connections.append(connection)
+
+
+    # for connection in websocket_connections:
+    #     interested_connections.append(connection)
+
+    for user  in server.users.values():
+        if(user.sockets != []):
+            print("User sockets not null:", user.sockets)
+            for socket in user.sockets:
+                if(socket not in interested_connections):
+                    interested_connections.append(socket)
 
     print("Current interested connections: ", interested_connections)
 
     latest_book_title = "Pachinko"
+    latest_library = "IST-Central"
 
 
     return server.get_libraries_markers(float(request.args.get("lat")), float(request.args.get("lon")),
                                         int(request.args.get("radius")), int(request.args.get("userId")))
-
 
 # List libraries in a given radius
 # path:
@@ -153,6 +164,7 @@ def add_favorite_library_to_user(lib_id):
 def remove_favorite_library_from_user(lib_id):
     return server.remove_favorite_lib(lib_id, int(request.args.get("userId")))
 
+
 # Report library
 # path:
 #   - libId: int - library to report
@@ -161,6 +173,7 @@ def remove_favorite_library_from_user(lib_id):
 @app.route("/libraries/<int:lib_id>/report", methods=['POST'])
 def report_library(lib_id):
     return server.report_library(lib_id, int(request.args.get("userId")))
+
 
 # User checkin book
 # path:
@@ -173,6 +186,26 @@ def check_in_book(lib_id):
     request_data = request.json
     barcode = request_data["barcode"]
     lib_id = request_data["libId"]
+
+    #Broadcast New Book Message!
+    global interested_connections, latest_book_title, latest_library
+
+    bookId = server.get_book_id_from_barcode(barcode)
+    book = server.books.get(bookId)
+    library = server.libraries.get(lib_id)
+
+    if book.hidden == False:
+        for user_id in book.users_to_notify:
+            user = server.users.get(user_id)
+            if(bookId not in user.reported_books):
+                for socket in user.sockets:
+                    if(socket not in interested_connections):
+                        interested_connections.append(socket)
+
+        latest_book_title = book.title
+        latest_library = library.name
+
+
     return server.check_in_book(barcode, lib_id)
 
 # TODO : receive also the user id
@@ -227,6 +260,7 @@ def rate_book(book_id):
     rating = request_data["rating"]
     return server.rate_book(book_id, rating, int(request.args.get("userId")))
 
+
 # Report book
 # path:
 #   - book_id: int - book being reported
@@ -271,6 +305,16 @@ def get_book_cover(book_id):
 @app.route("/books", methods=['GET'])
 def get_all_books():
     return server.get_all_books(int(request.args.get("userId")))
+
+
+# Get books by page
+# path:
+#   - page: int
+# query:
+#   - userId: int
+@app.route("/books/pages/<int:page>", methods=['GET'])
+def get_books_by_page(page):
+    return server.get_books_by_page(page, int(request.args.get("userId")))
 
 
 # Get available books for a given library
@@ -327,38 +371,52 @@ def filter_books_by_title():
 ##################   SOCKETS  ##################
 
 
-@sockets.route('/ws')
-def ws(ws):
+# @sockets.route('/ws/<int:user_id>/<string:user_password>')
+# def ws(ws, user_id, user_password):
+
+@sockets.route('/ws/<int:user_id>')
+def ws(ws, user_id):  
   print("Tried to connect to socket")
-  global websocket_connections, latest_book_title
-  websocket_connections.append(ws)
+  global websocket_connections, latest_book_title, interested_connections, latest_library
+
+  for user in server.users.values():
+        if user.id == user_id: # and user.password == "":
+            print("Entered loop")
+            user.add_socket(ws)
+            print("User sockets??", user.sockets)
+        # if user.id == user_id and user.password == user_password:
+        #     user.add_socket(ws)
+
+  if ws not in websocket_connections:
+    websocket_connections.append(ws)
 
   while True:
     try:
-        if latest_book_title != None:
+        if latest_book_title != None and latest_library != None:
             for connection in websocket_connections:
                 if connection in interested_connections:
-                    connection.send(json.dumps({"title": latest_book_title}))
+                    try:
+                        connection.send(json.dumps({"title": latest_book_title, "library_name": latest_library}))
+                    except Exception as e:
+                        print(f"Error sending notification to this socket: {str(e)}")
+                        print(f"Trying next socket....")
+                        continue  # Skip to the next iteration if the connection is closed
+
+
             latest_book_title = None
+            latest_library = None
+            interested_connections = []
 
     except Exception as e:
-        print(f"Error sending notification to client: {str(e)}")
+        print(f"Error - Could not send notifications to any connection: {str(e)}")
     
     time.sleep(10)
-      
-
-# def websocket_broadcast(messageJson, interestedConnections):
-#   for ws in interestedConnections:
-#     try:
-#       ws.send(messageJson)
-#     except ConnectionClosed:
-#       interestedConnections.remove(ws)
 
 
 if __name__ == "__main__":
      #app.run(host="0.0.0.0", port=5000)
     monkey.patch_all()
-
+        
     # SSL context for the certificate
     ssl_context = ('/etc/letsencrypt/live/gp-cmov2-cmu-project-1.vps.tecnico.ulisboa.pt/fullchain.pem',
                    '/etc/letsencrypt/live/gp-cmov2-cmu-project-1.vps.tecnico.ulisboa.pt/privkey.pem')

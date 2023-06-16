@@ -505,7 +505,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
 
         if (capabilities != null) {
-            Log.d("INTERNET", "NOT NULL");
             if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
                 Log.d("INTERNET", "WIFI");
                 return "WIFI";
