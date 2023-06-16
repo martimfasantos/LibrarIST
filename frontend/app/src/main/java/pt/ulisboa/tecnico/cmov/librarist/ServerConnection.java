@@ -909,6 +909,33 @@ public class ServerConnection {
     }
 
 
+    public void addUserToBookNotifications(int bookId) throws IOException {
+        String url = endpoint + "/books/" + bookId + "/notifications/on?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() != 200) {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    public void removeUserFromBookNotifications(int bookId) throws IOException {
+        String url = endpoint + "/books/" + bookId + "/notifications/off?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() != 200) {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+
     public void addLibraryToFavorites(int libraryId) throws IOException {
         String url = endpoint + "/libraries/" + libraryId + "/add_fav?userId=" + userId;
 
