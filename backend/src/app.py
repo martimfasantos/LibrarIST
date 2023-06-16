@@ -131,6 +131,21 @@ def create_library():
 def get_library():
     return server.get_library(int(request.args.get("libId")), int(request.args.get("userId")))
 
+# Get library by id without the photo
+# query:
+#   - libId: int
+#   - userId: int
+@app.route("/libraries/get/no_photo", methods=['GET'])
+def get_library_no_photo():
+    return server.get_library_no_photo(int(request.args.get("libId")), int(request.args.get("userId")))
+
+# Get library photo by id
+# query:
+#   - libId: int
+@app.route("/libraries/<int:lib_id>/photo", methods=['GET'])
+def get_library_photo(lib_id):
+    return server.get_library_photo(lib_id)
+
 
 # Add library to user's favorites
 # path:
@@ -271,6 +286,19 @@ def find_book_from_library(lib_id):
 def get_book():
     return server.get_book(int(request.args.get("bookId")), int(request.args.get("userId")))
 
+# Get a book with a given id without cover
+# body:
+#   - book_id: int
+@app.route("/books/get/no_cover", methods=['GET'])
+def get_book_no_cover():
+    return server.get_book_no_cover(int(request.args.get("bookId")), int(request.args.get("userId")))
+
+# Get library photo by id
+# query:
+#   - libId: int
+@app.route("/libraries/<int:book_id>/cover", methods=['GET'])
+def get_book_cover(book_id):
+    return server.get_book_cover(book_id)
 
 # Get all the books
 # body: none
@@ -289,20 +317,26 @@ def get_books_by_page(page):
     return server.get_books_by_page(page, int(request.args.get("userId")))
 
 
-# Get books for a given library
+# Get available books for a given library
 # query:
 #   - libraryId: int
 @app.route("/libraries/<int:lib_id>/books", methods=['GET'])
-def list_all_books_from_library(lib_id):
-    return server.list_all_books_from_library(lib_id, int(request.args.get("userId")))
+def get_books_available_in_library(lib_id):
+    return server.get_books_available_in_library(lib_id, int(request.args.get("userId")))
 
 
 # Get libraries with given book available
-# query:
+# path:
 #   - bookId: int
+# query:
+#   - lat: float
+#   - lon: float
+#   - radius: int
+#   - userId: int
 @app.route("/books/<int:book_id>/libraries", methods=['GET'])
 def get_libraries_with_book(book_id):
-    return server.get_libraries_with_book(book_id, int(request.args.get("userId")))
+    return server.get_libraries_with_book(book_id, float(request.args.get("lat")), float(request.args.get("lon")),
+                                        int(request.args.get("radius")), int(request.args.get("userId")))
 
 
 # Add user to book notifications
@@ -365,7 +399,7 @@ def ws(ws, user_id):
         # if user.id == user_id and user.password == user_password:
         #     user.add_socket(ws)
 
-  if(ws not in websocket_connections):
+  if ws not in websocket_connections:
     websocket_connections.append(ws)
 
   while True:

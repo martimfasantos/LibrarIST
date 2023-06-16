@@ -47,6 +47,7 @@
     <string name="error_creating_user">Erro ao criar usuário</string>
     <string name="couldnt_verify_user">Não foi possível verificar o usuário!</string>
     <string name="turn_on_location">Por favor, ative sua localização…</string>
+    <string name="turn_on_internet">Por favor, ligue a Internet…</string>
     <string name="loaded_libraries_markers">Marcadores de bibliotecas carregados!</string>
     <string name="couldnt_load_libraries">Não foi possível carregar as bibliotecas</string>
     <string name="fill_all_details">Por favor, preencha todos os detalhes</string>

@@ -17,8 +17,8 @@ import pt.ulisboa.tecnico.cmov.librarist.R;
 
 public class BookMenuAdapter extends RecyclerView.Adapter<BookMenuAdapter.ViewHolder> {
 
-    private Context context;
-    private List<BookItem> bookItemList;
+    private final Context context;
+    private final List<BookItem> bookItemList;
 
     // creating a constructor class.
     public BookMenuAdapter(Context context, List<BookItem> bookItemList) {

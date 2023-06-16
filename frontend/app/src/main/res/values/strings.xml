@@ -46,6 +46,7 @@
     <string name="error_creating_user">Error creating user</string>
     <string name="couldnt_verify_user">Couldn\'t verify user!</string>
     <string name="turn_on_location">Please turn on your Location…</string>
+    <string name="turn_on_internet">Please, turn on the Internet…</string>
     <string name="loaded_libraries_markers">Loaded libraries markers!</string>
     <string name="couldnt_load_libraries">Couldn\'t load libraries</string>
     <string name="fill_all_details">Please fill all details</string>

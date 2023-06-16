@@ -169,8 +169,6 @@ public class BookMenuActivity extends AppCompatActivity {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
-            messageDisplayer.showToast(getResources().getString(R.string.got_all_books));
         });
 
         // Start the thread

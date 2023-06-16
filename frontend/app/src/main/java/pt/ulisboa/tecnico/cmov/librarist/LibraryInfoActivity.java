@@ -1,6 +1,7 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.getConnectionType;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.locationPermissionGranted;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.mMap;
@@ -49,6 +50,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import pt.ulisboa.tecnico.cmov.librarist.popups.CreateBookPopUp;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
@@ -57,15 +59,7 @@ import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 
 public class LibraryInfoActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private int libraryId;
-    private String libraryName;
-
-    private LatLng libraryLatLng;
-    private String libraryAddress;
-
-    private byte[] libraryPhoto;
-
-    private boolean isFavorited;
+    private Library library;
 
     private GoogleMap libraryMap;
 
@@ -94,7 +88,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
     private void setupViewWithLibraryInfo(){
         // Set text from intent into Library Name Title text view
         TextView nameView = findViewById(R.id.library_name_title);
-        nameView.setText(libraryName);
+        nameView.setText(library.getName());
 
         // Construct a PlacesClient (for map)
         Places.initialize(getApplicationContext(), getString(R.string.maps_api_key));
@@ -106,7 +100,13 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
         // Change image to library's photo
         ImageView imageView = findViewById(R.id.library_photo);
-        imageView.setImageDrawable(new BitmapDrawable(getResources(), BitmapFactory.decodeByteArray(libraryPhoto, 0, libraryPhoto.length)));
+
+        if (library.getPhoto() != null){
+            imageView.setImageDrawable(new BitmapDrawable(getResources(),
+                    BitmapFactory.decodeByteArray(library.getPhoto(), 0, library.getPhoto().length)));
+        } else {
+            imageView.setImageResource(R.drawable.image_placeholder);
+        }
 
         // Back Button
         setupBackButton();
@@ -162,7 +162,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         try {
-                            checkOutBook(result.getContents(), libraryId);
+                            checkOutBook(result.getContents(), library.getId());
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -234,13 +234,13 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
         // Create a CameraPosition with desired properties
         CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(libraryLatLng)
+                .target(library.getLatLng())
                 .zoom(DEFAULT_ZOOM)
                 .build();
 
         // Set image resource for the library marker
         int imageResource;
-        if (isFavorited){
+        if (library.isFavorite()){
             imageResource = R.drawable.marker_library_fav;
         } else {
             imageResource = R.drawable.marker_library;
@@ -249,7 +249,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Add a marker in desired location and move the camera smoothly
         libraryMap.clear();
         libraryMap.addMarker(new MarkerOptions()
-                .position(libraryLatLng)
+                .position(library.getLatLng())
                 .icon(BitmapDescriptorFactory.fromResource(imageResource)));
         // Animate the camera movement
         libraryMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
@@ -285,7 +285,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
             public void onClick(View view) {
                 Thread thread = new Thread(() -> {
                     try {
-                        serverConnection.reportLibrary(libraryId);
+                        serverConnection.reportLibrary(library.getId());
                     } catch (ConnectException e) {
                         messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                         return;
@@ -295,10 +295,10 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    Log.d("REPORT BOOK", String.valueOf(libraryId));
+                    Log.d("REPORT BOOK", String.valueOf(library.getId()));
 
                     // Remove book from the libraries cache
-                    libraryCache.removeLibrary(libraryId);
+                    libraryCache.removeLibrary(library.getId());
 
                     // Close current activity
                     finish();
@@ -314,10 +314,10 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 }
 
                 // Remove marker from map
-                Marker marker = markerMap.get(libraryId);
+                Marker marker = markerMap.get(library.getId());
                 assert marker != null;
                 marker.remove();
-                markerMap.remove(libraryId);
+                markerMap.remove(library.getId());
             }
         });
     }
@@ -405,59 +405,64 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         listAvailableBooks();
     }
 
-    private void parseIntent(){
+    private void parseIntent() {
 
         // Get the message from the intent
         Intent intent = getIntent();
-        this.libraryId = intent.getIntExtra("libId", -1);
+        int libraryId = intent.getIntExtra("libId", -1);
 
-        Library lib = libraryCache.getLibrary(libraryId);
+        String connection  = getConnectionType(this);
+        if (connection.equals("NONE")) {
+            // Try to get library from cache
+            Library lib = libraryCache.getLibrary(libraryId);
 
-        // If the library is in cache
-        if (lib != null){
-            this.libraryName = lib.getName();
-            this.libraryLatLng = lib.getLatLng();
-            this.libraryAddress = lib.getAddress();
-            this.libraryPhoto = lib.getPhoto();
-            this.isFavorited = lib.isFavorite();
-
-            if (this.libraryName.isEmpty() || this.libraryAddress.isEmpty()){
+            // If library is not in cache
+            if (lib == null){
+                messageDisplayer.showToast(getResources().getString(R.string.turn_on_internet));
+                finish();
+            // If information is incomplete
+            } else if (lib.getName().isEmpty() || lib.getAddress().isEmpty()){
                 messageDisplayer.showToast(getResources().getString(R.string.error_processing));
                 finish();
+            // if the library is in cache
+            } else {
+                this.library = lib;
             }
+        // Get updated library info (internet available)
+        } else {
+            getLibraryInfo(libraryId, connection);
+        }
+    }
 
-        } else { // Library need to be retrieved from the server
-            Thread thread = new Thread(() -> {
-                try {
-                    serverConnection.getLibrary(libraryId);
-                } catch (ConnectException e) {
-                    messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
-                    return;
-                } catch (SocketTimeoutException e) {
-                    messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_library));
-                    return;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+    private void getLibraryInfo(int libraryId, String connection){
+        Log.d("GET LIBRARY", "GET LIBRARY");
 
-                // Book should now be in cache
-                Library _lib = libraryCache.getLibrary(libraryId);
-
-                this.libraryName = _lib.getName();
-                this.libraryLatLng = _lib.getLatLng();
-                this.libraryAddress = _lib.getAddress();
-                this.libraryPhoto = _lib.getPhoto();
-                this.isFavorited = _lib.isFavorite();
-            });
-
-            // Start the thread
-            thread.start();
+        // Get library information from the server
+        Thread thread = new Thread(() -> {
             try {
-                // Wait for the thread to complete
-                thread.join();
-            } catch (InterruptedException e) {
+                if (connection.equals("WIFI")){
+                    this.library = serverConnection.getLibrary(libraryId);
+                } else if (connection.equals("MOBILE DATA")) {
+                    this.library = serverConnection.getLibraryNoPhoto(libraryId);
+                } else {
+                    messageDisplayer.showToast(getResources().getString(R.string.turn_on_internet));
+                }
+            } catch (ConnectException e) {
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
+            } catch (SocketTimeoutException e) {
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_library));
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        });
+
+        // Start the thread
+        thread.start();
+        try {
+            // Wait for the thread to complete
+            thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -488,10 +493,8 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 Log.d("CHECKIN", "BOOK ID " + bookId.get());
             } catch (ConnectException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
-                return;
             } catch (SocketTimeoutException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_find_book));
-                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -506,18 +509,17 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
         // New book in the system
         if (bookId.get() == -1) {
-            currentCreateBookPopUp = new CreateBookPopUp(LibraryInfoActivity.this, barcode, libraryId);
+            currentCreateBookPopUp = new CreateBookPopUp(
+                    LibraryInfoActivity.this, barcode, library.getId());
         } else {
             Thread _thread = new Thread(() -> {
                 try {
-                    serverConnection.checkInBook(barcode, libraryId);
+                    serverConnection.checkInBook(barcode, library.getId());
                     Log.d("CHECKIN", "BOOK ID " + bookId.get());
                 } catch (ConnectException e) {
                     messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
-                    return;
                 } catch (SocketTimeoutException e) {
                     messageDisplayer.showToast(getResources().getString(R.string.couldnt_check_in_book));
-                    return;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -547,10 +549,8 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 Log.d("CHECKOUT", "BOOK ID " + bookId.get());
             } catch (ConnectException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
-                return;
             } catch (SocketTimeoutException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_find_book));
-                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -600,8 +600,8 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Add library to favorites in the backend
         Thread _thread = new Thread(() -> {
             try {
-                serverConnection.addLibraryToFavorites(libraryId);
-                Log.d("ADD TO FAVORITES", "LIBRARY " + libraryId);
+                serverConnection.addLibraryToFavorites(library.getId());
+                Log.d("ADD TO FAVORITES", "LIBRARY " + library.getId());
             } catch (ConnectException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
@@ -612,10 +612,10 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 throw new RuntimeException(e);
             }
 
-            // If library is in cache, update locally as well
-            LibraryInfoActivity.this.isFavorited = true;
-            if(libraryCache.getLibrary(libraryId) != null){
-                libraryCache.getLibrary(libraryId).setFavorite(true);
+            this.library.setFavorite(true);
+            // If library is in cache, update as well
+            if(libraryCache.getLibrary(library.getId()) != null){
+                libraryCache.getLibrary(library.getId()).setFavorite(true);
             }
 
             messageDisplayer.showToast(getResources().getString(R.string.library_added_favorites));
@@ -627,13 +627,13 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         _thread.join();
 
         // If library is in cache, update locally as well
-        LibraryInfoActivity.this.isFavorited = true;
-        if (libraryCache.getLibrary(libraryId) != null){
-            libraryCache.getLibrary(libraryId).setFavorite(true);
+        this.library.setFavorite(true);
+        if (libraryCache.getLibrary(library.getId()) != null){
+            libraryCache.getLibrary(library.getId()).setFavorite(true);
         }
 
         // Retrieve the marker you want to modify
-        Marker marker = markerMap.get(libraryId);
+        Marker marker = markerMap.get(library.getId());
         // Set the new icon for the marker
         if (marker != null) {
             marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_library_fav));
@@ -653,8 +653,8 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Add library to favorites in the backend
         Thread _thread = new Thread(() -> {
             try {
-                serverConnection.removeLibraryFromFavorites(libraryId);
-                Log.d("REMOVE FROM FAVORITES", "LIBRARY " + libraryId);
+                serverConnection.removeLibraryFromFavorites(library.getId());
+                Log.d("REMOVE FROM FAVORITES", "LIBRARY " + library.getId());
             } catch (ConnectException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 return;
@@ -673,14 +673,14 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Wait for thread to join
         _thread.join();
 
-        // If library is in cache, update locally as well
-        LibraryInfoActivity.this.isFavorited = false;
-        if (libraryCache.getLibrary(libraryId) != null){
-            libraryCache.getLibrary(libraryId).setFavorite(false);
+        this.library.setFavorite(false);
+        // If library is in cache, update as well
+        if (libraryCache.getLibrary(library.getId()) != null){
+            libraryCache.getLibrary(library.getId()).setFavorite(false);
         }
 
         // Retrieve the marker you want to modify
-        Marker marker = markerMap.get(libraryId);
+        Marker marker = markerMap.get(library.getId());
         // Set the new icon for the marker
         if (marker != null) {
             marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_library));
@@ -696,7 +696,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
     private void updateFavoriteButtonIcon(){
         ImageView favoriteButton = findViewById(R.id.favorite_library);
-        if (isFavorited){
+        if (library.isFavorite()){
             favoriteButton.setImageResource(R.drawable.star_selected);
             favoriteButton.setTag("selected");
 
@@ -707,17 +707,56 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
     }
 
     public void listAvailableBooks() {
-        // Get library's books that where loaded to cache when the library was loaded
-        Library lib = libraryCache.getLibrary(libraryId);
-        List<Integer> bookIds = lib.getBookIds();
-        List<Book> books = new ArrayList<>();
-        for (int id : bookIds) {
-            if (booksCache.getBook(id) != null) {
-                books.add(booksCache.getBook(id));
-            }
+
+        String connection = getConnectionType(this);
+
+        List<Book> books;
+        if (connection.equals("NONE")){
+            // If there is NO internet available get from cache
+            books = getAvailableBooksFromCache();
+        } else {
+            books = new ArrayList<>(getAvailableBooks());
         }
+
         // Add books to the view
         addBookItemsToView(books);
+    }
+
+    private List<Book> getAvailableBooks() {
+        Log.d("GET AVAILABLE BOOKS", "GET BOOKS");
+
+        // Get all books ever registered in the system
+        final List<Book> books = new ArrayList<>();
+        Thread thread = new Thread(() -> {
+            try {
+                books.addAll(serverConnection.getBooksFromLibrary(library.getId()));
+                Log.d("GET AVAILABLE BOOKS", books.toString());
+            } catch (ConnectException e) {
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
+            } catch (SocketTimeoutException e) {
+                messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_books));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Start the thread
+        thread.start();
+        // Wait for thread to join
+        try{
+            thread.join();
+        } catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        return books;
+    }
+
+    private List<Book> getAvailableBooksFromCache() {
+        return booksCache.getBooks().stream()
+                .filter(book -> libraryCache.getLibrary(library.getId())
+                        .getBookIds().contains(book.getId()))
+                .collect(Collectors.toList());
     }
 
     private void addBookItemsToView(List<Book> books) {
