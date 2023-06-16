@@ -2,7 +2,8 @@ package pt.ulisboa.tecnico.cmov.librarist.popups;
 
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.mMap;
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerCache;
+//import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -192,7 +193,7 @@ public class CreateLibraryPopUp {
                                     if (library.getName().equals(libraryName)
                                             & library.getAddress().equals(libraryAddress)) {
                                         marker.setTag(library.getId());
-                                        markerMap.put(library.getId(), marker);
+                                        markerCache.addMarker(marker, library.getId());
                                     }
                                 }
 

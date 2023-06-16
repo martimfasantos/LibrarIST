@@ -4,7 +4,8 @@ import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.loggedIn;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.mMap;
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerCache;
+//import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userId;
 
 import android.app.Activity;
@@ -159,9 +160,10 @@ public class UserAuthenticationPopUp {
     private void clearCurrentUserInfo(){
         // Clear current map and markers
         mMap.clear();
-        markerMap.clear();
+        //markerMap.clear();
         // Clear caches
         libraryCache.clearCache();
         booksCache.clearCache();
+        markerCache.clearCache();
     }
 }

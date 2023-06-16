@@ -5,9 +5,13 @@ import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.getConnectionType;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.locationPermissionGranted;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.mMap;
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
+//import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.DEFAULT_ZOOM;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerCache;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.notificationsPermission;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 
@@ -16,11 +20,14 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.app.ActivityCompat;
 
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -73,6 +80,9 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
     private final MessageDisplayer messageDisplayer = new MessageDisplayer(this);
 
 
+    private static final int PERMISSIONS_REQUEST_POST_NOTIFICATIONS = 2;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,6 +95,20 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         setupViewWithLibraryInfo();
 
         Log.d("VEZES", "OLA");
+    }
+
+
+    private boolean isForegroundServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> runningProcesses = manager.getRunningAppProcesses();
+        if (runningProcesses != null) {
+            for (ActivityManager.RunningAppProcessInfo processInfo : runningProcesses) {
+                if (processInfo.processName.equals("LibrarIST")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void setupViewWithLibraryInfo(){
@@ -319,12 +343,42 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 }
 
                 // Remove marker from map
-                Marker marker = markerMap.get(library.getId());
+                Marker marker = markerCache.getMarker(library.getId());
                 assert marker != null;
                 marker.remove();
-                markerMap.remove(library.getId());
+                markerCache.removeMarker(library.getId());
             }
         });
+    }
+
+    private void requestNotificationPermission() {
+        /*
+         * Request notification permission, so that the app can post notifications.
+         * The result of the permission request is handled by a callback,
+         * onRequestPermissionsResult.
+         */
+        ActivityCompat.requestPermissions(LibraryInfoActivity.this,
+                new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                PERMISSIONS_REQUEST_POST_NOTIFICATIONS);
+
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode == PERMISSIONS_REQUEST_POST_NOTIFICATIONS) {// If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                notificationsPermission = true;
+                if(isForegroundServiceRunning()==false){
+                    // Start Notifications Service
+                    startForegroundService(new Intent(this, NotificationService.class));
+                }
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
     }
 
     private void setupAddRemFavButton(){
@@ -336,11 +390,31 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 ImageView favoriteButton = findViewById(R.id.favorite_library);
                 boolean selected = favoriteButton.getTag().equals("selected");
 
-                if (!selected){
-                    try {
-                        addLibraryToFavorites();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                //TODO FIX THIS + ASK FOR PERMISSIONS
+                if (!selected) {
+                    Log.d("NOTIFICATION PERMISSION", String.valueOf(notificationsPermission));
+                    if (notificationsPermission == true) {
+                        try {
+                            addLibraryToFavorites();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            // API level is 33 or higher
+                            Log.d("NOTIFICATION PERMISSION", "ENTROU API HIGHER THAN 33");
+                            notificationsPermission = true;
+                            //requestNotificationPermission();
+                        } else {
+                            // API level is lower than 33
+                            notificationsPermission = true;
+                            Log.d("NOTIFICATION PERMISSION", "ENTROU API LOWER THAN 33");
+                            try {
+                                addLibraryToFavorites();
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
                     }
                 } else { // if it was already selected
                     try {
@@ -354,6 +428,8 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Update the Star Favorite button
         updateFavoriteButtonIcon();
     }
+
+
 
     private void setupCheckInButton(){
         CardView check_in_book_btn = findViewById(R.id.library_check_in_book_btn);
@@ -631,13 +707,13 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         }
 
         // Retrieve the marker you want to modify
-        Marker marker = markerMap.get(library.getId());
+        Marker marker = markerCache.getMarker(library.getId());
         // Set the new icon for the marker
         if (marker != null) {
             marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_library_fav));
         }
 
-        Log.d("SIZE OF MAP MARKERS", markerMap.entrySet().toString());
+        //Log.d("SIZE OF MAP MARKERS", markerCache);
 
         // Update the Star Favorite button
         updateFavoriteButtonIcon();
@@ -678,7 +754,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         }
 
         // Retrieve the marker you want to modify
-        Marker marker = markerMap.get(library.getId());
+        Marker marker = markerCache.getMarker(library.getId());
         // Set the new icon for the marker
         if (marker != null) {
             marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_library));

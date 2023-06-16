@@ -1,6 +1,6 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
-import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
+//import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userId;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;

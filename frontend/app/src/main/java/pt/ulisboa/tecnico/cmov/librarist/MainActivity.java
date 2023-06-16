@@ -1,6 +1,7 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 
@@ -54,11 +55,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import pt.ulisboa.tecnico.cmov.librarist.caches.BookCache;
 import pt.ulisboa.tecnico.cmov.librarist.caches.LibraryCache;
+import pt.ulisboa.tecnico.cmov.librarist.caches.MarkerCache;
 import pt.ulisboa.tecnico.cmov.librarist.popups.CreateLibraryPopUp;
 import pt.ulisboa.tecnico.cmov.librarist.models.MessageDisplayer;
 import pt.ulisboa.tecnico.cmov.librarist.popups.UserAuthenticationPopUp;
@@ -77,12 +80,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public static GoogleMap mMap;
 
     // TODO make this a cache !!!
-    public static HashMap<Integer, Marker> markerMap = new HashMap<>();
+    //public static HashMap<Integer, Marker> markerMap = new HashMap<>();
 
     // The entry point to the Fused Location Provider.
     private FusedLocationProviderClient fusedLocationProviderClient;
     public static boolean locationPermissionGranted = false;
     // A default location (Lisbon, Portugal) and default zoom to use when location permission is not granted.
+
+    public static boolean notificationsPermission = false;
     private final LatLng defaultLocation = new LatLng(38.736946, -9.142685);
     public static final int DEFAULT_ZOOM = 18;
 
@@ -99,6 +104,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public static LibraryCache libraryCache = new LibraryCache(cacheSize/2);
     public static BookCache booksCache = new BookCache(cacheSize/2);
+
+    public static MarkerCache markerCache = new MarkerCache(10 * 1024*1024);
 
     // Connection to the server
     private final ServerConnection serverConnection = new ServerConnection();
@@ -121,6 +128,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Define user Id
         updateUserId();
+
+        // TODO use this in MainActivity to start the service for the first time
+        // Start Notifications Service
+
+        if(notificationsPermission == true) {
+            if (isForegroundServiceRunning() == false) {
+                //startForegroundService(new Intent(this, NotificationService.class));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationsPermission == true) {
+                    // API level is 33 or higher
+                    startForegroundService(new Intent(this, NotificationService.class));
+                } else {
+                    // API level is lower than 33
+                    startForegroundService(new Intent(this, NotificationService.class));
+                    notificationsPermission = true;
+                }
+            }
+        }
 
         // Construct a PlacesClient
         Places.initialize(getApplicationContext(), getString(R.string.maps_api_key));
@@ -346,33 +370,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             MarkerOptions markerOptions = entry.getValue();
 
             // Remove old marker (if it exists)
-            if (markerMap.containsKey(libId)){
-                Marker marker = markerMap.get(libId);
-                assert marker != null;
-                marker.remove();
-            }
-            // Add new marker to the map
-            Marker marker = mMap.addMarker(markerOptions);
+            Marker marker = markerCache.getMarker(libId);
 
+            //Log.d("MARKER BEFORE REMOVING", Objects.requireNonNull(marker.getTitle()));
+
+            if (marker != null) {
+                markerCache.removeMarker(libId);
+                //Log.d("MARKER AFTER REMOVING", Objects.requireNonNull(marker.getTitle()));
+            }
+            // Add new marker to the cache
+            marker = mMap.addMarker(markerOptions);
             assert marker != null;
             marker.setTag(libId);
 
-            // Add marker to the markers map
-            markerMap.put(libId, marker);
+            // Add marker to the markers cache
+            markerCache.addMarker(marker, libId);
 
-            // Open marker window if library is close (within 100m)
-            float[] result = new float[10];
-            Location.distanceBetween(currentLocation.getLatitude(), currentLocation.getLongitude(),
-                    marker.getPosition().latitude, marker.getPosition().longitude, result);
-            float distance = result[0];
-            if (distance < closestMarkerDist){
-                closestMarker = marker;
-                closestMarkerDist = distance;
-            }
-        }
-
-        if (closestMarker != null){
-            closestMarker.showInfoWindow();
+            //Log.d("MARKER BEFORE REMOVING", Objects.requireNonNull(marker.getTitle()));
         }
     }
 
@@ -404,6 +418,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             Log.d("LOAD INITIAL", "Library Cache Empty: " + (libraryCache.getLibraries().size() == 0));
             Log.d("LOAD INITIAL", "Books Cache Empty: " + (booksCache.getBooks().size() == 0));
+            Log.d("LOAD INITIAL", "Markers Cache Empty: " + (markerCache.getMarkers().size() == 0));
             // messageDisplayer.showToast("Library loaded to cache!");
         });
 
@@ -751,5 +766,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             outState.putParcelable(KEY_LOCATION, currentLocation);
         }
         super.onSaveInstanceState(outState);
+    }
+
+
+    //Check if our notificarion service is already running!
+    private boolean isForegroundServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> runningProcesses = manager.getRunningAppProcesses();
+        if (runningProcesses != null) {
+            for (ActivityManager.RunningAppProcessInfo processInfo : runningProcesses) {
+                if (processInfo.processName.equals("LibrarIST")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
