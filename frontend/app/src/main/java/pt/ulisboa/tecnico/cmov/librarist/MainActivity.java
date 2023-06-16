@@ -104,7 +104,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final ServerConnection serverConnection = new ServerConnection();
     // Current visible library pop up
     private CreateLibraryPopUp currentCreateLibraryPopUp;
-    private UserAuthenticationPopUp currentAuthenticationPopUp;
 
     private final MessageDisplayer messageDisplayer = new MessageDisplayer(this);
 
@@ -183,12 +182,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Get the initial camera target
         currentCameraCenter = mMap.getCameraPosition().target;
 
+        // Center Map
+        setupCenterInCurrentPosition();
+
         // Create OnClick listener to allow creation of new markers by clicking an empty place in the map
         setupOnClickMap();
 
         // Create custom popups for the libraries
         createCustomMarkerPopUps();
-
     }
 
     @Override
@@ -279,11 +280,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             } else {
                 // If permission is not granted, move camera to the default Location
                 mMap.moveCamera(CameraUpdateFactory
-                        .newLatLngZoom(defaultLocation, DEFAULT_ZOOM - 5));
+                        .newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
             }
         } catch (SecurityException e) {
             Log.e("Exception: %s", e.getMessage(), e);
         }
+    }
+
+    private void setupCenterInCurrentPosition(){
+        // Set an OnClickListener for the "My Location" button
+        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+            @Override
+            public boolean onMyLocationButtonClick() {
+                if (currentLocation != null){
+                    loadCloseMarkers(currentLocation);
+                }
+                return false;
+            }
+        });
     }
 
     private void setupOnClickMap() {
@@ -355,14 +369,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 closestMarker = marker;
                 closestMarkerDist = distance;
             }
-
-            Log.d("DISTANCES", String.valueOf(distance));
         }
 
         if (closestMarker != null){
             closestMarker.showInfoWindow();
         }
     }
+
+
+    private void loadCloseMarkers(Location location) {
+        // Load library markers
+        getLibrariesMarkers(new LatLng(location.getLatitude(), location.getLongitude()));
+
+        // Create custom popups for the libraries
+        createCustomMarkerPopUps();
+    }
+
 
     private void loadCloseLibrariesToCache() {
 
@@ -455,7 +477,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View view) {
                 Log.d("VALID USER ID", String.valueOf(userId));
-                currentAuthenticationPopUp = new UserAuthenticationPopUp(MainActivity.this);
+                new UserAuthenticationPopUp(MainActivity.this);
             }
         });
     }
@@ -653,11 +675,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             .newLatLngZoom(new LatLng(currentLocation.getLatitude(),
                                     currentLocation.getLongitude()), DEFAULT_ZOOM));
 
-                    // Load library markers
-                    getLibrariesMarkers(new LatLng(location.getLatitude(), location.getLongitude()));
-
-                    // Create custom popups for the libraries
-                    createCustomMarkerPopUps();
+                    // Load close markers and libraries
+                    loadCloseMarkers(location);
+//                    // Load library markers
+//                    getLibrariesMarkers(new LatLng(location.getLatitude(), location.getLongitude()));
+//
+//                    // Create custom popups for the libraries
+//                    createCustomMarkerPopUps();
 
                     // Preload caches and display libraries
                     loadCloseLibrariesToCache();
