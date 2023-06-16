@@ -274,14 +274,11 @@ class Server:
     
     # Get books by page
     def get_books_by_page(self, page, user_id):
-        all_books_not_reported, books_in_page_json, books_in_page = [], [], []
+        books_in_page_json, books_in_page = [], []
 
         books_sorted = self.sort_books_by_average_rate(
-            book for book in self.books.values() if not book.hidden)
-        
-        for book in books_sorted:
-            if book.id not in self.users[user_id].reported_books:
-                all_books_not_reported.append(book)
+            book for book in self.books.values() \
+                if not book.hidden and book.id not in self.users[user_id].reported_books)
         
         books_in_page = books_sorted[self.page_size * page: self.page_size + self.page_size * page]
         for book in books_in_page:
@@ -374,6 +371,22 @@ class Server:
         filtered_books_json = []
         for book in sorted_filtered_books:
             filtered_books_json.append(self.book_to_json(book, user_id))
+        return jsonify(filtered_books_json), 200
+    
+    # Filter book by title by page
+    def filter_books_by_title_by_page(self, filter_title, page, user_id):
+        filtered_books_json = []
+        
+        books = self.sort_books_by_average_rate(
+            book for book in self.books.values() \
+                if not book.hidden and book.id not in self.users[user_id].reported_books)
+
+        sorted_filtered_books = list(filter(lambda book: book.title.upper().find(filter_title.upper()) != -1, books))
+        books_in_page = sorted_filtered_books[self.page_size * page: self.page_size + self.page_size * page]
+
+        for book in books_in_page:
+            filtered_books_json.append(self.book_to_json(book, user_id))
+
         return jsonify(filtered_books_json), 200
     
     # Rate a book

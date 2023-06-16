@@ -372,6 +372,7 @@ public class ServerConnection {
 
             // Parse libraries markers
             HashMap<Integer, MarkerOptions> markers = new HashMap<>();
+            assert responseJsonArray != null;
             for (JsonElement element : responseJsonArray){
                 // Get library marker object
                 JsonObject libraryMarker = element.getAsJsonObject();
@@ -423,6 +424,7 @@ public class ServerConnection {
             JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
 
             // Parse libraries
+            assert responseJson != null;
             JsonArray librariesJsonArray = responseJson.getAsJsonArray("libraries");
 
             for (JsonElement element : librariesJsonArray){
@@ -947,10 +949,11 @@ public class ServerConnection {
         }
     }
 
+    
+    public List<Book> filterBooksByTitleByPage(String bookTitle, int booksPage) throws IOException {
 
-    public List<Book> filterBooksByTitle(String bookTitle) throws IOException {
-
-        String url = endpoint + "/books/filter" + "?title=" + bookTitle + "&userId=" + userId;
+        String url = endpoint + "/books/filter/pages" + "?title=" + bookTitle +
+                "&page=" + booksPage + "&userId=" + userId;
 
         // Create a connection to the backend API
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
