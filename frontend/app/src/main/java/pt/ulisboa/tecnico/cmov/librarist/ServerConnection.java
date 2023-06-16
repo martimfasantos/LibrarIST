@@ -743,9 +743,10 @@ public class ServerConnection {
             }
 
             Book newBook = new Book(bookId, title, cover, barcode, activNotif, rates);
+            // Add book to the caches
             libraryCache.getLibrary(libraryId).addBook(bookId);
             booksCache.addBook(newBook);
-            Log.d("CHECKIN", "ADDED BOOK TO CACHE");
+            Log.d("CHECKIN", "ADDED BOOK TO CACHES");
 
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
@@ -942,37 +943,6 @@ public class ServerConnection {
         connection.setRequestProperty("Content-Type", "application/json");
 
         if (connection.getResponseCode() != 200) {
-            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
-        }
-    }
-
-
-    public List<Book> listBooksFromLibrary(int libraryId) throws IOException {
-        String url = endpoint + "/libraries/" + libraryId + "/books?userId=" + userId;
-
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
-        connection.setRequestMethod("GET");
-
-        // Create a JSON object
-        JsonObject query = new JsonObject();
-        query.addProperty("id", libraryId);
-
-        String jsonString = query.toString();
-
-        DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
-        outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
-        outputStream.flush();
-        outputStream.close();
-
-        if (connection.getResponseCode() == 200) {
-            JsonArray jsonArray = getJsonArrayFromResponse(connection.getInputStream());
-            assert jsonArray != null;
-            List<Book> books = getBookListFromJsonArray(jsonArray);
-            booksCache.addBooks(books);
-            return books;
-
-        } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
     }

@@ -186,29 +186,29 @@ def check_in_book(lib_id):
     request_data = request.json
     barcode = request_data["barcode"]
     lib_id = request_data["libId"]
+    
+    response, status = server.check_in_book(barcode, lib_id, int(request.args.get("userId")))
 
-    #Broadcast New Book Message!
-    global interested_connections, latest_book_title, latest_library
+    if status == 200:
+        # Broadcast New Book Message!
+        global interested_connections, latest_book_title, latest_library
 
-    bookId = server.get_book_id_from_barcode(barcode)
-    book = server.books.get(bookId)
-    library = server.libraries.get(lib_id)
+        bookId = server.get_book_id_from_barcode(barcode)
+        book = server.books.get(bookId)
+        library = server.libraries.get(lib_id)
 
-    if book.hidden == False:
-        for user_id in book.users_to_notify:
-            user = server.users.get(user_id)
-            if(bookId not in user.reported_books):
-                for socket in user.sockets:
-                    if(socket not in interested_connections):
-                        interested_connections.append(socket)
+        if book.hidden == False:
+            for user_id in book.users_to_notify:
+                user = server.users.get(user_id)
+                if bookId not in user.reported_books:
+                    for socket in user.sockets:
+                        if socket not in interested_connections:
+                            interested_connections.append(socket)
 
-        latest_book_title = book.title
-        latest_library = library.name
+            latest_book_title = book.title
+            latest_library = library.name
 
-
-    return server.check_in_book(barcode, lib_id)
-
-# TODO : receive also the user id
+    return response, status
 
 
 # User checkin new book

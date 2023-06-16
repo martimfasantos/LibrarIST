@@ -83,6 +83,8 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
         // Setup View
         setupViewWithLibraryInfo();
+
+        Log.d("VEZES", "OLA");
     }
 
     private void setupViewWithLibraryInfo(){
@@ -125,10 +127,13 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
         // Check-out book Button
         setupCheckOutButton();
+    }
 
-        // List available books
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Update view with changes
         listAvailableBooks();
-
     }
 
     private void setupBarCodeLaunchers(){
@@ -397,13 +402,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
     /** -----------------------------------------------------------------------------
      *                                OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Update view with changes
-        listAvailableBooks();
-    }
 
     private void parseIntent() {
 
@@ -720,6 +718,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
         // Add books to the view
         addBookItemsToView(books);
+
     }
 
     private List<Book> getAvailableBooks() {
