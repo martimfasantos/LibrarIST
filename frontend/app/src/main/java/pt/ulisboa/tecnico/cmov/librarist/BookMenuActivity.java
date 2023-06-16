@@ -38,6 +38,7 @@ public class BookMenuActivity extends AppCompatActivity {
 
     private final ServerConnection serverConnection = new ServerConnection();
     private final MessageDisplayer messageDisplayer = new MessageDisplayer(this);
+    private RecyclerView booksMenuRv;
 
     private final List<Book> booksInCurrentPages = new ArrayList<>();
     private int booksPage = 0;
@@ -59,6 +60,15 @@ public class BookMenuActivity extends AppCompatActivity {
         setupBackButton();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        booksInCurrentPages.clear();
+        booksPage = 0;
+        isFiltering = false;
+        callUpdateBooksInCurrentPages();
+        setupAdapter(booksMenuRv);
+    }
 
     /** -----------------------------------------------------------------------------
      *                                  BUTTONS FUNCTIONS
@@ -96,27 +106,17 @@ public class BookMenuActivity extends AppCompatActivity {
 
     }
 
-    // Used when creating each element of the list of the libraries
-    private void setupBookCardButton(CardView cardView) {
-        cardView.setOnClickListener(v -> {
-            int bookId = (int) v.getTag();
-            Intent intent = new Intent(BookMenuActivity.this, BookInfoActivity.class);
-            intent.putExtra("bookId", bookId);
-            startActivity(intent);
-        });
-    }
-
     private void setupBooksRv() {
-        RecyclerView booksMenuRV = findViewById(R.id.recycler_view_books_list);
+        booksMenuRv = findViewById(R.id.recycler_view_books_list);
         NestedScrollView booksMenuNSV = findViewById(R.id.book_menu_NSV);
 
         callUpdateBooksInCurrentPages();
-        setupAdapter(booksMenuRV);
+        setupAdapter(booksMenuRv);
 
         // Define a layout manager for the recycler view
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this,
                 LinearLayoutManager.VERTICAL, false);
-        booksMenuRV.setLayoutManager(linearLayoutManager);
+        booksMenuRv.setLayoutManager(linearLayoutManager);
 
         // When the user reaches the bottom of the nested scroll view load more books
         booksMenuNSV.setOnScrollChangeListener(new NestedScrollView.OnScrollChangeListener() {
@@ -130,7 +130,7 @@ public class BookMenuActivity extends AppCompatActivity {
                     } else {
                         callUpdateBooksInCurrentPages();
                     }
-                    setupAdapter(booksMenuRV);
+                    setupAdapter(booksMenuRv);
                 }
             }
         });

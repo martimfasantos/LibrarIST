@@ -289,12 +289,11 @@ class Server:
         return jsonify(books_in_page_json), 200        
 
     
-    # TODO : receive also the user id
-    def check_in_book(self, barcode: str, lib_id: int):
+    def check_in_book(self, barcode: str, lib_id: int, user_id: int):
         book_id = self.get_book_id_from_barcode(barcode)
         self.libraries[lib_id].add_book(book_id)
 
-        return self.get_book(book_id)
+        return self.get_book(book_id, user_id)
     
     # User checkin book at a library
     def check_in_new_book(
@@ -412,6 +411,7 @@ class Server:
     def report_book(self, book_id: int, user_id: int):
         self.users[user_id].report_book(book_id)
         self.books[book_id].add_report()
+        self.books[book_id].remove_user_to_notify(user_id)
         return jsonify({}), 200
     
     # Sort books by average rating
