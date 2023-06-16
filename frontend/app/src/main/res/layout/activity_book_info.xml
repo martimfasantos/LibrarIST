@@ -24,7 +24,7 @@
 
         <TextView
             android:id="@+id/book_info_title"
-            android:layout_width="300dp"
+            android:layout_width="295dp"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:layout_marginBottom="2dp"
@@ -41,7 +41,7 @@
             android:layout_height="30dp"
             android:src="@drawable/report"
             android:layout_marginTop="12dp"
-            android:layout_marginStart="5dp"
+            android:layout_marginStart="8dp"
             android:layout_centerHorizontal="true"
             android:layout_toEndOf="@id/book_info_title"/>
 
@@ -84,7 +84,7 @@
             android:text="@string/rate_book_btn"
             android:textSize="15sp"
             android:layout_gravity="center"
-            android:layout_marginStart="30dp"/>
+            android:layout_marginStart="40dp"/>
 
     </LinearLayout>
 

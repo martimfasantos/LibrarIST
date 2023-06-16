@@ -507,7 +507,7 @@ class Server:
         self.books[9] = b9
         self.books[10] = b10
 
-        self.id_books_counter = 10
+        self.id_books_counter = 11
         
         l0.add_book(0)
         l1.add_book(1)

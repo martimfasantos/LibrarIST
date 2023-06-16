@@ -154,6 +154,7 @@ public class BookMenuActivity extends AppCompatActivity {
 
         String connection  = getConnectionType(this);
         if (connection.equals("NONE")){
+            booksInCurrentPages.clear();
             booksInCurrentPages.addAll(booksCache.getBooks());
         } else {
             updateBooksInCurrentPages();
@@ -171,10 +172,8 @@ public class BookMenuActivity extends AppCompatActivity {
                 Log.d("GET BOOKS BY PAGE", rsp.toString());
             } catch (ConnectException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
-                return;
             } catch (SocketTimeoutException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_books));
-                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -195,6 +194,7 @@ public class BookMenuActivity extends AppCompatActivity {
         String connection  = getConnectionType(this);
 
         if (connection.equals("NONE")) {
+            booksInCurrentPages.clear();
             if (titleFilter.isEmpty()) {
                 isFiltering = false;
                 titleFilter = "";

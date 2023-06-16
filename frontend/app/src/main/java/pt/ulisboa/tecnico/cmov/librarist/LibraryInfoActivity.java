@@ -93,8 +93,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
 
         // Setup View
         setupViewWithLibraryInfo();
-
-        Log.d("VEZES", "OLA");
     }
 
 
@@ -241,8 +239,8 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Set map theme
         setMapTheme();
 
-        // Center map in this library
-        centerCamera();
+        // Update Map with the information
+        updateMapView();
 
         // Turn on the My Location layer and the related control on the map.
         updateLocationUI();
@@ -259,7 +257,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         }
     }
 
-    private void centerCamera() {
+    private void updateMapView() {
 
         // Create a CameraPosition with desired properties
         CameraPosition cameraPosition = new CameraPosition.Builder()
@@ -564,7 +562,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         Thread thread = new Thread(() -> {
             try {
                 bookId.set(serverConnection.findBook(barcode));
-                Log.d("CHECKIN", "BOOK ID " + bookId.get());
             } catch (ConnectException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
             } catch (SocketTimeoutException e) {
@@ -589,7 +586,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
             Thread _thread = new Thread(() -> {
                 try {
                     serverConnection.checkInBook(barcode, library.getId());
-                    Log.d("CHECKIN", "BOOK ID " + bookId.get());
+                    Log.d("CHECK IN", "BOOK ID " + bookId.get());
                 } catch (ConnectException e) {
                     messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                 } catch (SocketTimeoutException e) {
@@ -620,7 +617,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         Thread thread = new Thread(() -> {
             try {
                 bookId.set(serverConnection.findBookInLibrary(barcode, libraryId));
-                Log.d("CHECKOUT", "BOOK ID " + bookId.get());
             } catch (ConnectException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
             } catch (SocketTimeoutException e) {
@@ -645,7 +641,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
             Thread _thread = new Thread(() -> {
                 try {
                     serverConnection.checkOutBook(barcode, libraryId);
-                    Log.d("CHECKOUT", "BOOK ID " + bookId.get());
+                    Log.d("CHECK OUT", "BOOK ID " + bookId.get());
                 } catch (ConnectException e) {
                     messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
                     return;
@@ -713,13 +709,11 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
             marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_library_fav));
         }
 
-        //Log.d("SIZE OF MAP MARKERS", markerCache);
-
         // Update the Star Favorite button
         updateFavoriteButtonIcon();
 
-        // Center map with the changed marker in this view
-        centerCamera();
+        // Update map with new information
+        updateMapView();
     }
 
     private void removeLibraryFromFavorites() throws InterruptedException {
@@ -763,8 +757,8 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Update the Star Favorite button
         updateFavoriteButtonIcon();
 
-        // Center map with the changed marker in this view
-        centerCamera();
+        // Update map with new information
+        updateMapView();
 
     }
 
