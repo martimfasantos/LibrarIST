@@ -67,9 +67,8 @@ public class Library {
     }
 
     public void removeBook(int bookId){
-        if (bookIds.contains(bookId)){
-            bookIds.remove(bookId);
-        }
+        Integer bookIdObject = Integer.valueOf(bookId);
+        bookIds.remove(bookIdObject);
     }
 
     public int getSizeInBytes() {
