@@ -42,6 +42,14 @@ public class BookCache {
         booksCache.remove(bookId);
     }
 
+    public void addBookCover(int bookId, byte[] cover){
+        booksCache.get(bookId).setCover(cover); // also updates the item in the cache
+    }
+
+    public boolean containsBook(int bookId){
+        return booksCache.snapshot().containsKey(bookId);
+    }
+
     public void clearCache() {
         booksCache.evictAll();
     }

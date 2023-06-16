@@ -11,7 +11,13 @@ import pt.ulisboa.tecnico.cmov.librarist.caches.LibraryCache;
 import pt.ulisboa.tecnico.cmov.librarist.models.Book;
 import pt.ulisboa.tecnico.cmov.librarist.models.Library;
 
+import android.app.Activity;
+import android.content.Context;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -192,7 +198,7 @@ public class ServerConnection {
         }
     }
 
-    public void getLibrary(int libraryId) throws IOException {
+    public Library getLibrary(int libraryId) throws IOException {
         String url = endpoint + "/libraries/get?libId=" + libraryId + "&userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
@@ -203,7 +209,7 @@ public class ServerConnection {
         if (connection.getResponseCode() == 200) {
             JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
 
-            // Get book properties
+            // Get library properties
             assert responseJson != null;
             int libId = responseJson.get("libId").getAsInt();
             if(libId != libraryId){
@@ -223,8 +229,77 @@ public class ServerConnection {
                 bookIds.add(bookIdElement.getAsInt());
             }
 
-            libraryCache.addLibrary(new Library(libId, name, new LatLng(latitude, longitude),
-                    address, photo, bookIds, favorite));
+            Library library = new Library(libId, name, new LatLng(latitude, longitude),
+                    address, photo, bookIds, favorite);
+            // Add library to cache
+            libraryCache.addLibrary(library);
+
+            return library;
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    public Library getLibraryNoPhoto(int libraryId) throws IOException {
+        String url = endpoint + "/libraries/get/no_photo?libId=" + libraryId + "&userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Get library properties (without the photo)
+            assert responseJson != null;
+            int libId = responseJson.get("libId").getAsInt();
+            if(libId != libraryId){
+                Log.d("GET LIBRARY NO PHOTO", "DIFFERENT LIB IDS");
+            }
+            String name = responseJson.get("name").getAsString();
+            double latitude = responseJson.get("latitude").getAsDouble();
+            double longitude = responseJson.get("longitude").getAsDouble();
+            String address = responseJson.get("address").getAsString();
+            boolean favorite = responseJson.get("isFavorite").getAsBoolean();
+
+            // Process bookIds
+            JsonArray bookIdsArray = responseJson.getAsJsonArray("bookIds");
+            List<Integer> bookIds = new ArrayList<>();
+            for (JsonElement bookIdElement : bookIdsArray) {
+                bookIds.add(bookIdElement.getAsInt());
+            }
+
+            Library library = new Library(libId, name, new LatLng(latitude, longitude),
+                    address, null, bookIds, favorite);
+            // Add library to cache
+            libraryCache.addLibrary(library);
+
+            return library;
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    public void getLibraryPhoto(int libraryId) throws IOException {
+        String url = endpoint + "/libraries/" + libraryId + "/photo";
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Get photo for the library
+            assert responseJson != null;
+            byte[] photo = Base64.getDecoder().decode(responseJson.get("photo").getAsString());
+
+            // Update the item in cache
+            libraryCache.addLibraryPhoto(libraryId, photo);
 
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
@@ -232,8 +307,10 @@ public class ServerConnection {
 
     }
 
-    public List<Library> getLibrariesWithBook(Book book) throws IOException {
-        String url = endpoint + "/books/" + book.getId() + "/libraries?userId=" + userId;
+    public List<Library> getLibrariesWithBook(int bookId, int radius) throws IOException {
+        String url = endpoint + "/books/" + bookId + "/libraries?lat=" + currentLocation.getLatitude()
+                + "&lon=" + currentLocation.getLongitude() + "&radius=" + radius
+                + "&userId=" + userId;
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
@@ -253,7 +330,6 @@ public class ServerConnection {
                 double latitude = libraryObject.get("latitude").getAsDouble();
                 double longitude = libraryObject.get("longitude").getAsDouble();
                 String address = libraryObject.get("address").getAsString();
-                byte[] photo = Base64.getDecoder().decode(libraryObject.get("photo").getAsString());
                 boolean favorite = libraryObject.get("isFavorite").getAsBoolean();
 
                 // Process bookIds
@@ -263,11 +339,18 @@ public class ServerConnection {
                     bookIds.add(bookIdElement.getAsInt());
                 }
 
-                libraries.add(new Library(libId, name, new LatLng(latitude, longitude),
-                        address, photo, bookIds, favorite));
+                Library library = new Library(libId, name, new LatLng(latitude, longitude),
+                        address, null, bookIds, favorite);
+
+                // If cache already has the item, use the new information with the stored photo
+                if (libraryCache.containsLibrary(libId)){
+                    library.setPhoto(libraryCache.getLibrary(libId).getPhoto());
+                }
+                libraryCache.addLibrary(library);
+                libraries.add(library);
             }
 
-            Log.d("LIST ALL", libraries.toString());
+            Log.d("GOT LIBRARIES FROM SERVER", libraries.toString());
             return libraries;
 
         } else {
@@ -418,6 +501,36 @@ public class ServerConnection {
         }
     }
 
+    
+    public List<Book> getBooksFromLibrary(int libraryId) throws IOException {
+        String url = endpoint + "/libraries/" + libraryId + "/books?userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonArray responseJsonArray = getJsonArrayFromResponse(connection.getInputStream());
+            assert responseJsonArray != null;
+
+            List<Book> books = getBookListFromJsonArray(responseJsonArray);
+
+            for (Book book: books) {
+                // If cache already has the item, use the new information with the stored cover
+                if (booksCache.containsBook(book.getId())){
+                    book.setCover(booksCache.getBook(book.getId()).getCover());
+                }
+                booksCache.addBook(book);
+            }
+
+            return books;
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
     public List<Book> getBooksByPage(int booksPage) throws IOException {
         String url = endpoint + "/books/pages/" + booksPage + "?userId=" + userId;
 
@@ -431,8 +544,14 @@ public class ServerConnection {
             assert responseJsonArray != null;
 
             List<Book> books = getBookListFromJsonArray(responseJsonArray);
-            // Save loaded books in cache
-            booksCache.addBooks(books);
+
+            for (Book book: books) {
+                // If cache already has the item, use the new information with the stored cover
+                if (booksCache.containsBook(book.getId())){
+                    book.setCover(booksCache.getBook(book.getId()).getCover());
+                }
+                booksCache.addBook(book);
+            }
 
             return books;
 
@@ -487,7 +606,7 @@ public class ServerConnection {
                 rates.add(bookIdElement.getAsInt());
             }
 
-            Book bookResponse = new Book(bookId, title,cover, barcode, activNotif, rates);
+            Book bookResponse = new Book(bookId, title, cover, barcode, activNotif, rates);
             booksCache.addBook(bookResponse);
 
             return bookResponse;
@@ -495,6 +614,68 @@ public class ServerConnection {
         } else {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
+    }
+
+    public Book getBookNoCover(int bookId) throws IOException {
+        String url = endpoint + "/books/get/no_cover?bookId=" + bookId + "&userId=" + userId;
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Get book properties
+            assert responseJson != null;
+            int _bookId = responseJson.get("bookId").getAsInt();
+            if(_bookId != bookId){
+                Log.d("GET BOOK", "DIFFERENT BOOK IDS");
+            }
+            String title = responseJson.get("title").getAsString();
+            String barcode = responseJson.get("barcode").getAsString();
+            boolean activNotif = responseJson.get("activNotif").getAsBoolean();
+
+            // Process rates
+            JsonArray ratesArray = responseJson.get("rates").getAsJsonArray();
+            List<Integer> rates = new ArrayList<>();
+            for (JsonElement bookIdElement : ratesArray) {
+                rates.add(bookIdElement.getAsInt());
+            }
+
+            Book bookResponse = new Book(bookId, title, null, barcode, activNotif, rates);
+            booksCache.addBook(bookResponse);
+
+            return bookResponse;
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+    }
+
+    public void getBookCover(int bookId) throws IOException {
+        String url = endpoint + "/book/" + bookId + "/photo";
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(5000); // Set a timeout of 5 seconds
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        if (connection.getResponseCode() == 200) {
+            JsonObject responseJson = getJsonObjectFromResponse(connection.getInputStream());
+
+            // Get photo for the library
+            assert responseJson != null;
+            byte[] cover = Base64.getDecoder().decode(responseJson.get("cover").getAsString());
+
+            // Update the item in cache
+            booksCache.addBookCover(bookId, cover);
+
+        } else {
+            throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
+        }
+
     }
 
     public void reportBook(int bookId) throws IOException {
@@ -530,8 +711,6 @@ public class ServerConnection {
         jsonObject.addProperty("libId", libraryId);
 
         String jsonString = jsonObject.toString();
-
-        Log.d("CHECKIN", "CRIEI JSON");
 
         DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
         outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
@@ -600,8 +779,6 @@ public class ServerConnection {
 
         String jsonString = jsonObject.toString();
 
-        Log.d("CHECKIN", "CRIEI JSON");
-
         DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
         outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
         outputStream.flush();
@@ -665,8 +842,6 @@ public class ServerConnection {
         jsonObject.addProperty("barcode", barcode);
 
         String jsonString = jsonObject.toString();
-
-        Log.d("CHECKOUT", "CRIEI JSON");
 
         DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
         outputStream.write(jsonString.getBytes(StandardCharsets.UTF_8));
@@ -823,62 +998,6 @@ public class ServerConnection {
         throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
     }
 
-    /*
-    public void startWebSocket() {
-        if (webSocketClient != null) {
-            webSocketClient.close();
-        }
-
-        try {
-            webSocketClient = new WSClient(new URI(wsEndpoint), new HashMap<>());
-            webSocketClient.connect();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public class WSClient extends WebSocketClient {
-        public WSClient(URI serverUri, Map<String, String> httpHeaders) {
-            super(serverUri, httpHeaders);
-        }
-
-        @Override
-        public void onOpen(ServerHandshake handshakedata) {
-            Log.i("WebSocket", "Opened");
-        }
-
-        @Override
-        public void onMessage(String message) {
-            Log.i("WebSocket", "Message: " + message);
-
-            if (message != null) {
-                try {
-                    JsonReader jsonReader = new JsonReader(new StringReader(message));
-                    jsonReader.setLenient(true);
-                    boolean state = jsonReader.nextBoolean();
-                    runOnUiThread(() -> {
-                        ((Switch) findViewById(R.id.state_switch)).setChecked(state);
-                    });
-                } catch (IOException e) {
-                    throw new RuntimeException("Malformed message on websocket", e);
-                }
-            }
-        }
-
-        @Override
-        public void onClose(int code, String reason, boolean remote) {
-            if (this != webSocketClient) return;
-            Log.i("WebSocket", (remote ? "Remotely " : "Locally ") + "Closed " + reason);
-        }
-
-        @Override
-        public void onError(Exception ex) {
-            if (this != webSocketClient) return;
-            Log.i("WebSocket", "Error " + ex.getMessage());
-        }
-    }
-   */
-
 
     /** -----------------------------------------------------------------------------
      *                                 AUXILIARY FUNCTIONS
@@ -939,7 +1058,7 @@ public class ServerConnection {
 
             books.add(new Book(obj.get("bookId").getAsInt(),
                     obj.get("title").getAsString(),
-                    Base64.getDecoder().decode(obj.get("cover").getAsString()),
+                    (obj.get("cover") != null) ? Base64.getDecoder().decode(obj.get("cover").getAsString()) : null,
                     obj.get("barcode").getAsString(),
                     obj.get("activNotif").getAsBoolean(),
                     rates));

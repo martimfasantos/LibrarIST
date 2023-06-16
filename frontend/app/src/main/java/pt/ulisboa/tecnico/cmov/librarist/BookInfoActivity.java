@@ -2,6 +2,7 @@ package pt.ulisboa.tecnico.cmov.librarist;
 
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.currentLocation;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.getConnectionType;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.annotation.SuppressLint;
@@ -75,9 +76,13 @@ public class BookInfoActivity extends AppCompatActivity {
         bookTitle.setText(this.book.getTitle());
 
         ImageView bookCover = findViewById(R.id.book_info_cover_img);
-        Bitmap bmp = BitmapFactory.decodeByteArray(book.getCover(), 0, book.getCover().length);
-        bookCover.setImageBitmap(Bitmap.createScaledBitmap(bmp, 170,
-                170, false));
+        if (book.getCover() != null){
+            Bitmap bmp = BitmapFactory.decodeByteArray(book.getCover(), 0, book.getCover().length);
+            bookCover.setImageBitmap(Bitmap.createScaledBitmap(bmp, 170,
+                    170, false));
+        } else {
+            bookCover.setImageResource(R.drawable.image_placeholder);
+        }
 
         setNotificationView(this.book.isActiveNotif());
 
@@ -247,27 +252,42 @@ public class BookInfoActivity extends AppCompatActivity {
         Intent intent = getIntent();
         int bookId = intent.getIntExtra("bookId", -1);
 
-        // TODO check internet
-        if (true) {
-            getBookInfo(bookId);
+        String connection  = getConnectionType(this);
+        if (connection.equals("NONE")) {
+            // Try to get book from cache
+            Book book = booksCache.getBook(bookId);
+
+            // If book it is not in cache
+            if (book == null){
+                messageDisplayer.showToast(getResources().getString(R.string.turn_on_internet));
+                finish();
+            // if the library is in cache
+            } else {
+                this.book = book;
+            }
+        // Get updated book info (internet available)
         } else {
-            this.book = booksCache.getBook(bookId);
+            getBookInfo(bookId, connection);
         }
     }
 
-    private void getBookInfo(int bookId) {
+    private void getBookInfo(int bookId, String connection) {
         Log.d("GET BOOK", "GET BOOK");
 
         // Get book information from the server
         Thread thread = new Thread(() -> {
             try {
-                this.book = serverConnection.getBook(bookId);
+                if (connection.equals("WIFI")){
+                    this.book = serverConnection.getBook(bookId);
+                } else if (connection.equals("MOBILE DATA")) {
+                    this.book = serverConnection.getBookNoCover(bookId);
+                } else {
+                    messageDisplayer.showToast(getResources().getString(R.string.turn_on_internet));
+                }
             } catch (ConnectException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
-                return;
             } catch (SocketTimeoutException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_book));
-                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -299,39 +319,35 @@ public class BookInfoActivity extends AppCompatActivity {
     private void listAvailableLibraries() {
 
         List<Library> libraries;
-        // TODO if there is internet
-        if (true){
-            // Get all books from the server
-            libraries = new ArrayList<>(getAvailableLibraries());
-        } else {
+        String connection  = getConnectionType(this);
+        if (connection.equals("NONE")){
             // If there is NO internet available get from cache
-            libraries = filterLibrariesWithBookAvailable();
+            libraries = getLibrariesWithBookAvailableFromCache();
+        } else {
+            // Get all libraries from the server
+            libraries = new ArrayList<>(getLibrariesWithBookAvailable());
         }
 
         // Add books to the view
         addLibraryItemsToView(libraries);
     }
 
-    private List<Library> getAvailableLibraries() {
+    private List<Library> getLibrariesWithBookAvailable() {
         Log.d("GET AVAILABLE LIBRARIES", "GET LIBRARIES");
 
         // Get all books ever registered in the system
         final List<Library> libraries = new ArrayList<>();
         Thread thread = new Thread(() -> {
             try {
-                libraries.addAll(serverConnection.getLibrariesWithBook(this.book));
+                libraries.addAll(serverConnection.getLibrariesWithBook(book.getId(), 10));
                 Log.d("GET AVAILABLE LIBRARIES", libraries.toString());
             } catch (ConnectException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
-                return;
             } catch (SocketTimeoutException e) {
                 messageDisplayer.showToast(getResources().getString(R.string.couldnt_get_libraries));
-                return;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
-            messageDisplayer.showToast(getResources().getString(R.string.got_all_books));
         });
 
         // Start the thread
@@ -344,6 +360,12 @@ public class BookInfoActivity extends AppCompatActivity {
         }
 
         return libraries;
+    }
+
+    private List<Library> getLibrariesWithBookAvailableFromCache() {
+        return libraryCache.getLibraries().stream()
+                .filter(lib -> lib.getBookIds().contains(book.getId()))
+                .collect(Collectors.toList());
     }
 
     @SuppressLint("DefaultLocale")
@@ -395,9 +417,4 @@ public class BookInfoActivity extends AppCompatActivity {
         });
     }
 
-    private List<Library> filterLibrariesWithBookAvailable() {
-        return libraryCache.getLibraries().stream()
-                .filter(lib -> lib.getBookIds().contains(book.getId()))
-                .collect(Collectors.toList());
-    }
 }
