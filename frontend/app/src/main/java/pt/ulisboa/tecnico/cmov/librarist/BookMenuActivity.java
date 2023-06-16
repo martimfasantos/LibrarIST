@@ -154,6 +154,7 @@ public class BookMenuActivity extends AppCompatActivity {
 
         String connection  = getConnectionType(this);
         if (connection.equals("NONE")){
+            booksInCurrentPages.clear();
             booksInCurrentPages.addAll(booksCache.getBooks());
         } else {
             updateBooksInCurrentPages();
@@ -193,6 +194,7 @@ public class BookMenuActivity extends AppCompatActivity {
         String connection  = getConnectionType(this);
 
         if (connection.equals("NONE")) {
+            booksInCurrentPages.clear();
             if (titleFilter.isEmpty()) {
                 isFiltering = false;
                 titleFilter = "";

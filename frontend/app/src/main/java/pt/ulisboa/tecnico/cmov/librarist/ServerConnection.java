@@ -1,6 +1,5 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
-//import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.markerMap;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.userId;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
@@ -920,6 +919,9 @@ public class ServerConnection {
         if (connection.getResponseCode() != 200) {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
+
+        // Update value in cache
+        booksCache.getBook(bookId).toggleNotifications();
     }
 
     public void removeUserFromBookNotifications(int bookId) throws IOException {
@@ -933,6 +935,9 @@ public class ServerConnection {
         if (connection.getResponseCode() != 200) {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
+
+        // Update value in cache
+        booksCache.getBook(bookId).toggleNotifications();
     }
 
 
@@ -946,7 +951,11 @@ public class ServerConnection {
 
          if (connection.getResponseCode() != 200) {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
-        }
+         }
+
+        // Update value in cache
+        libraryCache.getLibrary(libraryId).setFavorite(true);
+
     }
 
     public void removeLibraryFromFavorites(int libraryId) throws IOException {
@@ -960,6 +969,9 @@ public class ServerConnection {
         if (connection.getResponseCode() != 200) {
             throw new RuntimeException("Unexpected response: " + connection.getResponseMessage());
         }
+
+        // Update value in cache
+        libraryCache.getLibrary(libraryId).setFavorite(false);
     }
 
 

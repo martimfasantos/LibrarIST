@@ -52,7 +52,6 @@ import pt.ulisboa.tecnico.cmov.librarist.popups.RateBookPopUp;
 public class BookInfoActivity extends AppCompatActivity {
 
     private Book book;
-    private RateBookPopUp currentRateBookPopUp;
 
     private final ServerConnection serverConnection = new ServerConnection();
 
@@ -92,7 +91,6 @@ public class BookInfoActivity extends AppCompatActivity {
         // Report Button
         setupReportButton();
 
-        // TODO only doing this locally!!!!
         // Notifications Button
         setupNotificationButton();
 
@@ -156,32 +154,42 @@ public class BookInfoActivity extends AppCompatActivity {
         });
     }
 
-
-    // TODO ONLY LOCALLY, NEED TO PROPAGATE TO SERVER TOO
     private void setupNotificationButton() {
         ImageButton notifBtn = findViewById(R.id.book_info_notif_btn);
         notifBtn.setOnClickListener(view -> {
 
-            Book book = (Book) view.getTag();
-            book.toggleNotifications();
-            setNotificationView(book.isActiveNotif());
-
-            String connection  = getConnectionType(this);
-            if (!connection.equals("NONE")) {
-                try {
-                    if (book.isActiveNotif()) {
-                        serverConnection.addUserToBookNotifications(book.getId());
-                    } else {
-                        serverConnection.removeUserFromBookNotifications(book.getId());
+            Thread thread = new Thread(() -> {
+                String connection = getConnectionType(this);
+                if (!connection.equals("NONE")) {
+                    try {
+                        if (!book.isActiveNotif()) {
+                            serverConnection.addUserToBookNotifications(book.getId());
+                        } else {
+                            serverConnection.removeUserFromBookNotifications(book.getId());
+                        }
+                    } catch (ConnectException e) {
+                        messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
+                    } catch (SocketTimeoutException e) {
+                        messageDisplayer.showToast("Could not toggle notifications");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
-                } catch (ConnectException e) {
-                    messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
-                } catch (SocketTimeoutException e) {
-                    messageDisplayer.showToast("Could not toggle notifications");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
                 }
+
+                // Update view
+                Log.d("NOTIF", String.valueOf(book.isActiveNotif()));
+                setNotificationView(book.isActiveNotif());
+            });
+
+            // Start the thread
+            thread.start();
+            // Wait for thread to join
+            try{
+                thread.join();
+            } catch (InterruptedException e){
+                throw new RuntimeException(e);
             }
+
         });
     }
 
@@ -190,7 +198,6 @@ public class BookInfoActivity extends AppCompatActivity {
     private void setupLibraryCardButton(CardView cardView) {
         cardView.setOnClickListener(v -> {
             int libId = Integer.parseInt(v.getTag().toString());
-
             Intent intent = new Intent(BookInfoActivity.this, LibraryInfoActivity.class);
             intent.putExtra("libId", libId);
             startActivity(intent);
@@ -202,7 +209,7 @@ public class BookInfoActivity extends AppCompatActivity {
         rate_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                currentRateBookPopUp = new RateBookPopUp(BookInfoActivity.this, book);
+                new RateBookPopUp(BookInfoActivity.this, book);
             }
         });
     }
@@ -331,8 +338,6 @@ public class BookInfoActivity extends AppCompatActivity {
         } else {
             notif_btn.setImageResource(R.drawable.bell_notif_off);
         }
-
-        notif_btn.setTag(this.book);
     }
 
     private void listAvailableLibraries() {
