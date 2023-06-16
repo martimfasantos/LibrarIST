@@ -82,7 +82,8 @@ def get_libraries_markers():
         if(user.sockets != []):
             print("User sockets not null:", user.sockets)
             for socket in user.sockets:
-                interested_connections.append(socket)
+                if(socket not in interested_connections):
+                    interested_connections.append(socket)
 
     print("Current interested connections: ", interested_connections)
 
@@ -183,7 +184,8 @@ def check_in_book(lib_id):
             user = server.users.get(user_id)
             if(bookId not in user.reported_books):
                 for socket in user.sockets:
-                    interested_connections.append(socket)
+                    if(socket not in interested_connections):
+                        interested_connections.append(socket)
 
         latest_book_title = book.title
         latest_library = library.name
@@ -351,20 +353,28 @@ def ws(ws, user_id):
         # if user.id == user_id and user.password == user_password:
         #     user.add_socket(ws)
 
-  websocket_connections.append(ws)
+  if(ws not in websocket_connections):
+    websocket_connections.append(ws)
 
   while True:
     try:
         if latest_book_title != None and latest_library != None:
             for connection in websocket_connections:
                 if connection in interested_connections:
-                    connection.send(json.dumps({"title": latest_book_title, "library_name": latest_library}))
+                    try:
+                        connection.send(json.dumps({"title": latest_book_title, "library_name": latest_library}))
+                    except Exception as e:
+                        print(f"Error sending notification to this socket: {str(e)}")
+                        print(f"Trying next socket....")
+                        continue  # Skip to the next iteration if the connection is closed
+
+
             latest_book_title = None
             latest_library = None
             interested_connections = []
 
     except Exception as e:
-        print(f"Error sending notification to client: {str(e)}")
+        print(f"Error - Could not send notifications to any connection: {str(e)}")
     
     time.sleep(10)
 
