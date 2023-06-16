@@ -132,11 +132,11 @@ public class NotificationService extends Service {
                 .build();
     }
 
-    private void displayNotification(String title, String libraryNamae) {
+    private void displayNotification(String title, String libraryName) {
         // Create and display the notification with the received message
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("New Book Available")
-                .setContentText("Book " + title + " is now available at " + libraryNamae + " library!")
+                .setContentText("Book " + title + " is now available at " + libraryName)
                 .setSmallIcon(R.drawable.notification_icon);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
