@@ -84,5 +84,9 @@
     <string name="library_added_favorites">Biblioteca adicionada aos favoritos!</string>
     <string name="couldnt_rem_favorite_lib">Não foi possível remover a biblioteca dos favoritos!</string>
     <string name="library_rem_favorites">Biblioteca removida dos favoritos!</string>
+    <string name="notifications_activated">Notificações ligadas para LibrarIST</string>
+    <string name="new_book_available">Novo livro disponível</string>
+    <string name="book">O livro </string>
+    <string name="is_now_available_at"> já está disponível em </string>
 
 </resources>

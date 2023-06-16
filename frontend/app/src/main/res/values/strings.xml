@@ -83,5 +83,9 @@
     <string name="library_added_favorites">Library added to favorites!</string>
     <string name="couldnt_rem_favorite_lib">Couldn\'t remove library from favorites!</string>
     <string name="library_rem_favorites">Library removed from favorites!</string>
+    <string name="notifications_activated">Notifications on for LibrarIST</string>
+    <string name="new_book_available">New book available</string>
+    <string name="book">Book </string>
+    <string name="is_now_available_at"> is now available at </string>
 
 </resources>

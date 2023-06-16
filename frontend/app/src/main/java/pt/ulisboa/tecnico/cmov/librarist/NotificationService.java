@@ -126,8 +126,8 @@ public class NotificationService extends Service {
 
     private Notification createNotification() {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Foreground Service")
-                .setContentText("WebSocket connection is active")
+                .setContentTitle(getResources().getString(R.string.notifications_activated))
+                .setContentText(getResources().getString(R.string.notifications_activated))
                 .setSmallIcon(R.drawable.notification_icon)
                 .build();
     }
@@ -135,8 +135,9 @@ public class NotificationService extends Service {
     private void displayNotification(String title, String libraryName) {
         // Create and display the notification with the received message
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("New Book Available")
-                .setContentText("Book " + title + " is now available at " + libraryName + " library!")
+                .setContentTitle(getResources().getString(R.string.new_book_available))
+                .setContentText(getResources().getString(R.string.book) + " " + title +
+                        getResources().getString(R.string.is_now_available_at) + " " + libraryName)
                 .setSmallIcon(R.drawable.notification_icon);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

@@ -74,14 +74,7 @@ public class BookInfoActivity extends AppCompatActivity {
         TextView bookTitle = findViewById(R.id.book_info_title);
         bookTitle.setText(this.book.getTitle());
 
-        ImageView bookCover = findViewById(R.id.book_info_cover_img);
-        if (book.getCover() != null){
-            Bitmap bmp = BitmapFactory.decodeByteArray(book.getCover(), 0, book.getCover().length);
-            bookCover.setImageBitmap(Bitmap.createScaledBitmap(bmp, 170,
-                    170, false));
-        } else {
-            bookCover.setImageResource(R.drawable.image_placeholder);
-        }
+        setupBookCover();
 
         setNotificationView(book.isActiveNotif());
 
@@ -210,6 +203,54 @@ public class BookInfoActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 new RateBookPopUp(BookInfoActivity.this, book);
+            }
+        });
+    }
+
+    private void setupBookCover() {
+        ImageView bookCover = findViewById(R.id.book_info_cover_img);
+        if (book.getCover() != null){
+            Bitmap bmp = BitmapFactory.decodeByteArray(book.getCover(), 0, book.getCover().length);
+            bookCover.setImageBitmap(Bitmap.createScaledBitmap(bmp, 170,
+                    170, false));
+        } else {
+            bookCover.setImageResource(R.drawable.image_placeholder);
+        }
+        bookCover.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (book.getCover() == null) {
+                    Thread thread = new Thread(() -> {
+                        try {
+                            serverConnection.getBookCover(book.getId());
+                        } catch (ConnectException e) {
+                            messageDisplayer.showToast(getResources().getString(R.string.couldnt_connect_server));
+                            return;
+                        } catch (SocketTimeoutException e) {
+                            messageDisplayer.showToast("Error getting the book cover");
+                            return;
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        Log.d("REPORT BOOK", String.valueOf(book.getId()));
+
+                        // Close current activity
+                        finish();
+                    });
+
+                    // Start the thread
+                    thread.start();
+                    // Wait for thread to join
+                    try {
+                        thread.join();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    Bitmap bmp = BitmapFactory.decodeByteArray(book.getCover(), 0, book.getCover().length);
+                    bookCover.setImageBitmap(Bitmap.createScaledBitmap(bmp, 170,
+                            170, false));
+                }
             }
         });
     }
