@@ -31,7 +31,6 @@ class User:
         self.reported_libraries.append(lib_id)
         print("USER " + str(self.id) + " REPORTED LIB: " + str(lib_id))
 
-
     def report_book(self, book_id):
         self.reported_books.append(book_id)
         print("USER " + str(self.id) + " REPORTED BOOK: " + str(book_id))

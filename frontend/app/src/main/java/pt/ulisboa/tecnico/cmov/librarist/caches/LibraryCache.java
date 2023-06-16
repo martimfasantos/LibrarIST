@@ -39,6 +39,10 @@ public class LibraryCache {
         return new ArrayList<>(this.librariesCache.snapshot().values());
     }
 
+    public void addLibraryPhoto(int libraryId, byte[] photo){
+        librariesCache.get(libraryId).setPhoto(photo); // also updates the item in the cache
+    }
+
     public List<Book> getBooksFromLibrary(int libraryID, BookCache bookCache){
         // Find Library
         Library library = null;
@@ -57,6 +61,10 @@ public class LibraryCache {
             books.add(book);
         }
         return books;
+    }
+
+    public boolean containsLibrary(int libraryId){
+        return librariesCache.snapshot().containsKey(libraryId);
     }
 
     public void clearCache() {

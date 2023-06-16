@@ -1,5 +1,6 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 
@@ -14,6 +15,9 @@ import android.content.res.Configuration;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -109,12 +113,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // No internet connection
+        if (getConnectionType(this).equals("NONE")) {
+            messageDisplayer.showToast(getResources().getString(R.string.turn_on_internet));
+            finish();
+            return;
+        }
+
         // Define user Id
         updateUserId();
-
-        // TODO use this in MainActivity to start the service for the first time
-        // Start Notifications Service
-        //startForegroundService(new Intent(this, NotificationService.class));
 
         // Construct a PlacesClient
         Places.initialize(getApplicationContext(), getString(R.string.maps_api_key));
@@ -315,6 +322,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             throw new RuntimeException(e);
         }
 
+        // Save closest marker to open info window
+        Marker closestMarker = null;
+        float closestMarkerDist = 100;
+
         // Display markers in the map
         for (Map.Entry<Integer, MarkerOptions> entry : libraries.entrySet()) {
             Integer libId = entry.getKey();
@@ -328,11 +339,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             // Add new marker to the map
             Marker marker = mMap.addMarker(markerOptions);
+
             assert marker != null;
             marker.setTag(libId);
 
             // Add marker to the markers map
             markerMap.put(libId, marker);
+
+            // Open marker window if library is close (within 100m)
+            float[] result = new float[10];
+            Location.distanceBetween(currentLocation.getLatitude(), currentLocation.getLongitude(),
+                    marker.getPosition().latitude, marker.getPosition().longitude, result);
+            float distance = result[0];
+            if (distance < closestMarkerDist){
+                closestMarker = marker;
+                closestMarkerDist = distance;
+            }
+
+            Log.d("DISTANCES", String.valueOf(distance));
+        }
+
+        if (closestMarker != null){
+            closestMarker.showInfoWindow();
         }
     }
 
@@ -467,6 +495,33 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     /** -----------------------------------------------------------------------------
+     *                               CONNECTION MANAGEMENT
+     -------------------------------------------------------------------------------- */
+
+    public static String getConnectionType(Activity activity) {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
+        Network network = connectivityManager.getActiveNetwork();
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
+
+        if (capabilities != null) {
+            Log.d("INTERNET", "NOT NULL");
+            if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                Log.d("INTERNET", "WIFI");
+                return "WIFI";
+            } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                Log.d("INTERNET", "MOBILE DATA");
+                return "MOBILE DATA";
+            }
+            Log.d("INTERNET", "NONE");
+            return "NONE";
+        }
+        Log.d("INTERNET", "NONE");
+        return "NONE";
+    }
+
+
+    /** -----------------------------------------------------------------------------
      *                                  OTHER FUNCTIONS
      -------------------------------------------------------------------------------- */
 
@@ -482,8 +537,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         } else { // Try to get Ids from shared Preferences
             int _userId = sharedPreferences.getInt("userId", -1);
             Log.d("USER ID", String.valueOf(userId));
+            if (getConnectionType(this).equals("NONE")){
+                userId = _userId;
+                Log.d("CRASH", "CRASH1");
             // If there is already a user ID associated with the device
-            if (_userId != -1 & validUser(_userId)) {
+            } else if (_userId != -1 & validUser(_userId)) {
                 // Check if user ID exists in the system
                 userId = _userId;
                 loggedIn = sharedPreferences.getBoolean("loggedIn", true);

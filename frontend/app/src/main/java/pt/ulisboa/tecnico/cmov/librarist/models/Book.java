@@ -6,7 +6,7 @@ public class Book {
 
     private final int id;
     private final String title;
-    private final byte[] cover;
+    private byte[] cover;
     private final String barcode;
     private Boolean activeNotif;
     private List<Integer> rates;
@@ -33,6 +33,10 @@ public class Book {
         return cover;
     }
 
+    public void setCover(byte [] cover) {
+        this.cover = cover;
+    }
+
     public String getBarcode() {
         return barcode;
     }
@@ -48,7 +52,7 @@ public class Book {
     public int getSizeInBytes() {
         int idSize = Integer.BYTES;  // Size of an integer in bytes
         int titleSize = title.getBytes().length;
-        int coverSize = cover.length;
+        int coverSize = (cover != null) ? cover.length : 0;
         int barcodeSize = barcode.getBytes().length;
         int activeNotifSize = 1;  // Assuming Boolean takes 1 byte
         int ratesSize = rates.size() * Integer.BYTES;  // Assuming each Integer takes 4 bytes

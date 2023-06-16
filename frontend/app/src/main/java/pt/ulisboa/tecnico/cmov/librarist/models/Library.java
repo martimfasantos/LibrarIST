@@ -13,7 +13,7 @@ public class Library {
     private final LatLng latLng;
     private final String address;
 
-    private final byte[] photo;
+    private byte[] photo;
 
     private final List<Integer> bookIds;
 
@@ -52,6 +52,10 @@ public class Library {
 
     public byte[] getPhoto() { return photo; }
 
+    public void setPhoto(byte [] photo) {
+        this.photo = photo;
+    }
+
     public boolean isFavorite() {
         return isFavorite;
     }
@@ -77,7 +81,7 @@ public class Library {
         int nameSize = name.getBytes().length;
         int latLngSize = 16; // Assuming LatLng object takes 16 bytes
         int addressSize = address.getBytes().length;
-        int photoSize = photo.length;
+        int photoSize = (photo != null) ? photo.length : 0;
         int bookIdsSize = bookIds.size() * Integer.BYTES;
         int favoriteSize = 1; // Assuming boolean takes 1 byte
 

@@ -138,7 +138,7 @@ class Server:
         for lib in self.libraries.values():
             if ( 
                 not lib.hidden and \
-                lib not in self.users[user_id].reported_libraries and \
+                lib.id not in self.users[user_id].reported_libraries and \
                 haversine((lat, lon), lib.location, unit=Unit.KILOMETERS) <= radius 
             ):
                 books_list = [self.books[book_id] for book_id in lib.available_books]
@@ -149,6 +149,20 @@ class Server:
     # Get library
     def get_library(self, lib_id: int, user_id: int):
         return jsonify(self.library_to_json(self.libraries[lib_id], user_id)), 200
+    
+    # Get library without photo
+    def get_library_no_photo(self, lib_id: int, user_id: int):
+        library_json = self.library_to_json(self.libraries[lib_id], user_id)
+        del library_json["photo"]
+        print(library_json)
+        return jsonify(library_json), 200
+    
+    # Get library photo
+    def get_library_photo(self, lib_id: int):
+        photo = self.libraries[lib_id].photo
+        with open(photo, "rb") as file:
+            photo_data = file.read()
+        return jsonify({"photo": base64.b64encode(photo_data).decode("utf-8")}), 200
                 
     # Covert library into json
     def library_to_json(self, library: Library, user_id: int):
@@ -190,15 +204,18 @@ class Server:
     
 
     # Get libraries with the given book available
-    def get_libraries_with_book(self, book_id: int, user_id: int):
+    def get_libraries_with_book(self,  book_id: int, lat: float, lon: float, radius: int, user_id: int):
         libraries = []
         for library in self.libraries.values():
             if ( 
                 not library.hidden and \
-                library not in self.users[user_id].reported_libraries and \
-                book_id in library.available_books
+                library.id not in self.users[user_id].reported_libraries and \
+                book_id in library.available_books and \
+                haversine((lat, lon), library.location, unit=Unit.KILOMETERS) <= radius 
             ):
-                libraries.append(self.library_to_json(library, user_id))
+                library_json = self.library_to_json(library, user_id)
+                del library_json["photo"]
+                libraries.append(library_json)
         return jsonify(libraries), 200
 
     # Find book id from barcode
@@ -226,6 +243,20 @@ class Server:
     # Get book with book id
     def get_book(self, book_id: int, user_id: int):
         return jsonify(self.book_to_json(self.books[book_id], user_id)), 200
+    
+    # Get library without photo
+    def get_book_no_cover(self, book_id: int, user_id: int):
+        book_json = self.book_to_json(self.books[book_id], user_id)
+        del book_json["cover"]
+        print(book_json)
+        return jsonify(book_json), 200
+    
+    # Get library photo
+    def get_book_cover(self, book_id: int):
+        cover = self.books[book_id].cover
+        with open(cover, "rb") as file:
+            cover_data = file.read()
+        return jsonify({"cover": base64.b64encode(cover_data).decode("utf-8")}), 200
     
     # Get all books
     def get_all_books(self, user_id: int):
@@ -280,7 +311,26 @@ class Server:
 
     # Get book id from barcode for a given library
     def get_book_from_library(self, barcode: str, lib_id: int):
-        return jsonify({"bookId": self.get_book_id_from_barcode_in_library(barcode, lib_id)}), 200   
+        return jsonify({"bookId": self.get_book_id_from_barcode_in_library(barcode, lib_id)}), 200
+
+    def get_books_available_in_library(self, lib_id: int, user_id: int):
+        books = []
+        for book_id in self.libraries[lib_id].available_books:
+            if ( 
+                not self.books[book_id].hidden and \
+                self.books[book_id].id not in self.users[user_id].reported_libraries
+            ):
+                books.append(self.books[book_id])
+        books_sorted = self.sort_books_by_average_rate(books)
+        
+        available_books = []
+        for book in books_sorted:
+            book_json = self.book_to_json(book, user_id)
+            del book_json["cover"]
+            available_books.append(book_json)
+            print(book.id)
+
+        return jsonify(available_books), 200
 
     # User checkin book at a library
     def check_out_book(self, barcode: str, lib_id: int):
