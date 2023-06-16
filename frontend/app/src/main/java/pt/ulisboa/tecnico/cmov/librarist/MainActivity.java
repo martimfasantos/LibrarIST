@@ -535,7 +535,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .apply();
         } else { // Try to get Ids from shared Preferences
             int _userId = sharedPreferences.getInt("userId", -1);
-            Log.d("USER ID", String.valueOf(userId));
             if (getConnectionType(this).equals("NONE")){
                 userId = _userId;
                 Log.d("CRASH", "CRASH1");
@@ -553,8 +552,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         .putInt("userId", userId)
                         .apply();
             }
-
         }
+        Log.d("USER ID", String.valueOf(userId));
     }
 
     private int createGuestUser() {

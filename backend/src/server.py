@@ -282,17 +282,18 @@ class Server:
         
         books_in_page = books_sorted[self.page_size * page: self.page_size + self.page_size * page]
         for book in books_in_page:
-            books_in_page_json.append(self.book_to_json(book, user_id))
+            book_json = self.book_to_json(book, user_id)
+            del book_json["cover"]
+            books_in_page_json.append(book_json)
 
         return jsonify(books_in_page_json), 200        
 
     
-    # TODO : receive also the user id
-    def check_in_book(self, barcode: str, lib_id: int):
+    def check_in_book(self, barcode: str, lib_id: int, user_id: int):
         book_id = self.get_book_id_from_barcode(barcode)
         self.libraries[lib_id].add_book(book_id)
 
-        return self.get_book(book_id)
+        return self.get_book(book_id, user_id)
     
     # User checkin book at a library
     def check_in_new_book(
@@ -377,7 +378,7 @@ class Server:
     # Filter book by title by page
     def filter_books_by_title_by_page(self, filter_title, page, user_id):
         filtered_books_json = []
-        
+
         books = self.sort_books_by_average_rate(
             book for book in self.books.values() \
                 if not book.hidden and book.id not in self.users[user_id].reported_books)
@@ -386,7 +387,9 @@ class Server:
         books_in_page = sorted_filtered_books[self.page_size * page: self.page_size + self.page_size * page]
 
         for book in books_in_page:
-            filtered_books_json.append(self.book_to_json(book, user_id))
+            book_json = self.book_to_json(book, user_id)
+            del book_json["cover"]
+            filtered_books_json.append(book_json)
 
         return jsonify(filtered_books_json), 200
     
@@ -408,6 +411,7 @@ class Server:
     def report_book(self, book_id: int, user_id: int):
         self.users[user_id].report_book(book_id)
         self.books[book_id].add_report()
+        self.books[book_id].remove_user_to_notify(user_id)
         return jsonify({}), 200
     
     # Sort books by average rating
