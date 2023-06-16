@@ -1,6 +1,7 @@
 package pt.ulisboa.tecnico.cmov.librarist;
 
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.booksCache;
+import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.getConnectionType;
 import static pt.ulisboa.tecnico.cmov.librarist.MainActivity.libraryCache;
 
 import android.content.Intent;
@@ -151,13 +152,11 @@ public class BookMenuActivity extends AppCompatActivity {
 
     private void callUpdateBooksInCurrentPages() {
 
-        // TODO if there is internet
-        if (true){
-            // Get all books from the server
-            updateBooksInCurrentPages();
-        } else {
-            // If there is NO internet available
+        String connection  = getConnectionType(this);
+        if (connection.equals("NONE")){
             booksInCurrentPages.addAll(booksCache.getBooks());
+        } else {
+            updateBooksInCurrentPages();
         }
     }
 
@@ -193,9 +192,19 @@ public class BookMenuActivity extends AppCompatActivity {
 
     private List<Book> filterBooksByTitle(String filter) {
         final List<Book> filteredBooks = new ArrayList<>();
+        String connection  = getConnectionType(this);
 
-        // TODO if there is internet
-        if (true){
+        if (connection.equals("NONE")) {
+            if (titleFilter.isEmpty()) {
+                isFiltering = false;
+                titleFilter = "";
+                filteredBooks.addAll(booksCache.getBooks());
+            } else {
+                filteredBooks.addAll(booksCache.getBooks().stream()
+                        .filter(book -> book.getTitle().contains(titleFilter))
+                        .collect(Collectors.toList()));
+            }
+        } else {
             Thread thread = new Thread(() -> {
                 try {
                     if (filter.isEmpty()) {
@@ -222,18 +231,6 @@ public class BookMenuActivity extends AppCompatActivity {
                 thread.join();
             } catch (InterruptedException e){
                 throw new RuntimeException(e);
-            }
-
-        } else {
-            // If there is NO internet available
-            if (titleFilter.isEmpty()) {
-                isFiltering = false;
-                titleFilter = "";
-                filteredBooks.addAll(booksCache.getBooks());
-            } else {
-                filteredBooks.addAll(booksCache.getBooks().stream()
-                        .filter(book -> book.getTitle().contains(titleFilter))
-                        .collect(Collectors.toList()));
             }
         }
         return filteredBooks;
