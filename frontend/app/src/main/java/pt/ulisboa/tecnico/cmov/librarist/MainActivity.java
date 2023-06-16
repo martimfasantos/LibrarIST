@@ -2,6 +2,7 @@ package pt.ulisboa.tecnico.cmov.librarist;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 
@@ -126,21 +127,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Define user Id
         updateUserId();
 
-        // TODO use this in MainActivity to start the service for the first time
-        // Start Notifications Service
-
-        if (notificationsPermission) {
-            if (!isForegroundServiceRunning()) {
-                //startForegroundService(new Intent(this, NotificationService.class));
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    // API level is 33 or higher
-                    startForegroundService(new Intent(this, NotificationService.class));
-                } else {
-                    // API level is lower than 33
-                    startForegroundService(new Intent(this, NotificationService.class));
-                    notificationsPermission = true;
-                }
-            }
+        if (areNotificationsEnabled(getApplicationContext())){
+            Log.d("OLA", "OLA");
+            notificationsPermission = true;
         }
 
         // Construct a PlacesClient
@@ -778,5 +767,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
         return false;
+    }
+
+    private boolean areNotificationsEnabled(Context context) {
+        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+        return notificationManager.areNotificationsEnabled();
     }
 }

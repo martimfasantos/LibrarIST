@@ -194,12 +194,17 @@ def check_in_book(lib_id):
         global interested_connections, latest_book_title, latest_library
 
         bookId = server.get_book_id_from_barcode(barcode)
-        book = server.books.get(bookId)
-        library = server.libraries.get(lib_id)
+        book = server.books[bookId]
+        library = server.libraries[lib_id]
 
-        if book.hidden == False:
+        print("Book: ", book.title)
+
+        if not book.hidden:
+            print("AQUI1")
+            print(book.users_to_notify)
             for user_id in book.users_to_notify:
-                user = server.users.get(user_id)
+                print("AQUI2")
+                user = server.users[user_id]
                 if bookId not in user.reported_books:
                     for socket in user.sockets:
                         if socket not in interested_connections:

@@ -14,6 +14,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.app.NotificationManager;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
@@ -101,6 +102,7 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         List<ActivityManager.RunningAppProcessInfo> runningProcesses = manager.getRunningAppProcesses();
         if (runningProcesses != null) {
             for (ActivityManager.RunningAppProcessInfo processInfo : runningProcesses) {
+                Log.d("NOME", processInfo.processName);
                 if (processInfo.processName.equals("LibrarIST")) {
                     return true;
                 }
@@ -368,11 +370,13 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                                            @NonNull int[] grantResults) {
         if (requestCode == PERMISSIONS_REQUEST_POST_NOTIFICATIONS) {// If request is cancelled, the result arrays are empty.
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                notificationsPermission = true;
-                if(isForegroundServiceRunning()==false){
-                    // Start Notifications Service
+                if (!notificationsPermission){
                     startForegroundService(new Intent(this, NotificationService.class));
                 }
+                notificationsPermission = true;
+//                if(!isForegroundServiceRunning()){
+//                    // Start Notifications Service
+//                }
             }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -388,30 +392,22 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 ImageView favoriteButton = findViewById(R.id.favorite_library);
                 boolean selected = favoriteButton.getTag().equals("selected");
 
-                //TODO FIX THIS + ASK FOR PERMISSIONS
                 if (!selected) {
+                    try {
+                        addLibraryToFavorites();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                     Log.d("NOTIFICATION PERMISSION", String.valueOf(notificationsPermission));
-                    if (notificationsPermission == true) {
-                        try {
-                            addLibraryToFavorites();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    } else {
+                    if (!notificationsPermission){
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             // API level is 33 or higher
                             Log.d("NOTIFICATION PERMISSION", "ENTROU API HIGHER THAN 33");
-                            notificationsPermission = true;
-                            //requestNotificationPermission();
+                            requestNotificationPermission();
                         } else {
                             // API level is lower than 33
                             notificationsPermission = true;
                             Log.d("NOTIFICATION PERMISSION", "ENTROU API LOWER THAN 33");
-                            try {
-                                addLibraryToFavorites();
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
                         }
                     }
                 } else { // if it was already selected
@@ -426,8 +422,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         // Update the Star Favorite button
         updateFavoriteButtonIcon();
     }
-
-
 
     private void setupCheckInButton(){
         CardView check_in_book_btn = findViewById(R.id.library_check_in_book_btn);
@@ -682,12 +676,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
                 throw new RuntimeException(e);
             }
 
-            this.library.setFavorite(true);
-            // If library is in cache, update as well
-            if(libraryCache.getLibrary(library.getId()) != null){
-                libraryCache.getLibrary(library.getId()).setFavorite(true);
-            }
-
             messageDisplayer.showToast(getResources().getString(R.string.library_added_favorites));
         });
 
@@ -695,12 +683,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         _thread.start();
         // Wait for thread to join
         _thread.join();
-
-        // If library is in cache, update locally as well
-        this.library.setFavorite(true);
-        if (libraryCache.getLibrary(library.getId()) != null){
-            libraryCache.getLibrary(library.getId()).setFavorite(true);
-        }
 
         // Retrieve the marker you want to modify
         Marker marker = markerCache.getMarker(library.getId());
@@ -740,12 +722,6 @@ public class LibraryInfoActivity extends AppCompatActivity implements OnMapReady
         _thread.start();
         // Wait for thread to join
         _thread.join();
-
-        this.library.setFavorite(false);
-        // If library is in cache, update as well
-        if (libraryCache.getLibrary(library.getId()) != null){
-            libraryCache.getLibrary(library.getId()).setFavorite(false);
-        }
 
         // Retrieve the marker you want to modify
         Marker marker = markerCache.getMarker(library.getId());

@@ -292,6 +292,7 @@ class Server:
     def check_in_book(self, barcode: str, lib_id: int, user_id: int):
         book_id = self.get_book_id_from_barcode(barcode)
         self.libraries[lib_id].add_book(book_id)
+        print(self.books[book_id].users_to_notify)
 
         return self.get_book(book_id, user_id)
     
