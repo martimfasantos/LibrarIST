@@ -41,6 +41,8 @@ public class BookMenuActivity extends AppCompatActivity {
 
     private final List<Book> booksInCurrentPages = new ArrayList<>();
     private int booksPage = 0;
+    private boolean isFiltering = false;
+    private String titleFilter = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,11 +69,15 @@ public class BookMenuActivity extends AppCompatActivity {
         searchBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                isFiltering = true;
                 TextView textFilter = (TextView) findViewById(R.id.book_title_input);
-                String filter = (String) textFilter.getText().toString();
+                titleFilter = (String) textFilter.getText().toString();
+                RecyclerView booksMenuRV = findViewById(R.id.recycler_view_books_list);
                 try {
-                    List<Book> filteredBooks = filterBooksByTitle(filter);
-                    addBookItemsToView(filteredBooks);
+                    booksInCurrentPages.clear();
+                    booksPage = 0;
+                    booksInCurrentPages.addAll(filterBooksByTitle(titleFilter));
+                    setupAdapter(booksMenuRV);
                 }  catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -119,7 +125,11 @@ public class BookMenuActivity extends AppCompatActivity {
                                        int oldScrollX, int oldScrollY) {
                 if (scrollY == v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight()) {
                     booksPage++;
-                    callUpdateBooksInCurrentPages();
+                    if (isFiltering) {
+                        booksInCurrentPages.addAll(filterBooksByTitle(titleFilter));
+                    } else {
+                        callUpdateBooksInCurrentPages();
+                    }
                     setupAdapter(booksMenuRV);
                 }
             }
@@ -183,42 +193,19 @@ public class BookMenuActivity extends AppCompatActivity {
         }
     }
 
-    private void addBookItemsToView(List<Book> books) {
-        LinearLayout parent = findViewById(R.id.div_books_list);
-        parent.removeAllViews();
-        LayoutInflater inflater = getLayoutInflater();
-
-        books.forEach(book -> {
-            // Create new element for the book
-            CardView child = (CardView) inflater.inflate(R.layout.book_menu_item, null);
-
-            LinearLayout bookDiv = (LinearLayout) child.getChildAt(0);
-
-            // Set text to the book title
-            TextView cardText = (TextView) bookDiv.getChildAt(1);
-            cardText.setText(book.getTitle());
-            // Set tag to save the id
-            child.setTag(book.getId());
-
-            // Clickable Card
-            setupBookCardButton(child);
-
-            parent.addView(child);
-        });
-        Log.d("LIST ALL BOOKS", "ADDED TO VIEW");
-    }
-
-    private List<Book> filterBooksByTitle(String titleFilter) throws InterruptedException{
+    private List<Book> filterBooksByTitle(String filter) {
         final List<Book> filteredBooks = new ArrayList<>();
 
         // TODO if there is internet
         if (true){
             Thread thread = new Thread(() -> {
                 try {
-                    if (titleFilter.isEmpty()) {
-                        filteredBooks.addAll(serverConnection.getAllBooks());
+                    if (filter.isEmpty()) {
+                        isFiltering = false;
+                        titleFilter = "";
+                        filteredBooks.addAll(serverConnection.getBooksByPage(booksPage));
                     } else {
-                        filteredBooks.addAll(serverConnection.filterBooksByTitle(titleFilter));
+                        filteredBooks.addAll(serverConnection.filterBooksByTitleByPage(titleFilter, booksPage));
                     }
                     Log.d("FILTER BOOKS", "TITLE " + titleFilter);
                 } catch (ConnectException e) {
@@ -241,9 +228,15 @@ public class BookMenuActivity extends AppCompatActivity {
 
         } else {
             // If there is NO internet available
-            filteredBooks.addAll(booksCache.getBooks().stream()
-                    .filter(book -> book.getTitle().contains(titleFilter))
-                    .collect(Collectors.toList()));
+            if (titleFilter.isEmpty()) {
+                isFiltering = false;
+                titleFilter = "";
+                filteredBooks.addAll(booksCache.getBooks());
+            } else {
+                filteredBooks.addAll(booksCache.getBooks().stream()
+                        .filter(book -> book.getTitle().contains(titleFilter))
+                        .collect(Collectors.toList()));
+            }
         }
         return filteredBooks;
     }
