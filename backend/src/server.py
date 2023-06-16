@@ -327,6 +327,19 @@ class Server:
             filtered_books_json.append(self.book_to_json(book, user_id))
         return jsonify(filtered_books_json), 200
     
+    # Filter book by title by page
+    def filter_books_by_title_by_page(self, filter_title, page, user_id):
+        filtered_books_json = []
+
+        books = list(self.books.values())
+        sorted_filtered_books = list(filter(lambda book: book.title.upper().find(filter_title.upper()) != -1, books))
+        books_in_page = sorted_filtered_books[self.page_size * page: self.page_size + self.page_size * page]
+
+        for book in books_in_page:
+            filtered_books_json.append(self.book_to_json(book, user_id))
+
+        return jsonify(filtered_books_json), 200
+    
     # Rate a book
     def rate_book(self, book_id: int, stars: int, user_id: int):
         user = self.users[user_id]

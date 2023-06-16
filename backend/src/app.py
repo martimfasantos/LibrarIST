@@ -333,6 +333,18 @@ def filter_books_by_title():
     return server.filter_books_by_title(request.args.get("title"), int(request.args.get("userId")))
 
 
+# Get books filtered by title in page
+# query:
+#   - title: string - text from which to filter
+#   - page: int - number of page to get the books
+#   - userId: int - user to which the books will be filtered
+@app.route("/books/filter/pages", methods=['GET'])
+def filter_books_by_title_by_page():
+    return server.filter_books_by_title_by_page(request.args.get("title"), 
+                                        int(request.args.get("page")),
+                                        int(request.args.get("userId")))
+
+
     
 ##################   SOCKETS  ##################
 
