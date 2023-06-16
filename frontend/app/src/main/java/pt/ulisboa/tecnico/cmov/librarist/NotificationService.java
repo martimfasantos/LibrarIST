@@ -136,7 +136,7 @@ public class NotificationService extends Service {
         // Create and display the notification with the received message
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(getResources().getString(R.string.new_book_available))
-                .setContentText(getResources().getString(R.string.book) + " " + title +
+                .setContentText(getResources().getString(R.string.book) + " " + title + " " +
                         getResources().getString(R.string.is_now_available_at) + " " + libraryName)
                 .setSmallIcon(R.drawable.notification_icon);
 

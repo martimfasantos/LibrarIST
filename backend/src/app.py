@@ -67,30 +67,6 @@ def login_user():
 #   - userId: int
 @app.route("/libraries/markers", methods=['GET'])
 def get_libraries_markers():
-
-    global latest_book_title, interested_connections, websocket_connections, latest_library
-
-    print("Current websockets: ", websocket_connections)
-    print("Current interested connections before adding: ", interested_connections)
-
-
-
-    # for connection in websocket_connections:
-    #     interested_connections.append(connection)
-
-    for user  in server.users.values():
-        if(user.sockets != []):
-            print("User sockets not null:", user.sockets)
-            for socket in user.sockets:
-                if(socket not in interested_connections):
-                    interested_connections.append(socket)
-
-    print("Current interested connections: ", interested_connections)
-
-    latest_book_title = "Pachinko"
-    latest_library = "IST-Central"
-
-
     return server.get_libraries_markers(float(request.args.get("lat")), float(request.args.get("lon")),
                                         int(request.args.get("radius")), int(request.args.get("userId")))
 
@@ -200,15 +176,14 @@ def check_in_book(lib_id):
         print("Book: ", book.title)
 
         if not book.hidden:
-            print("AQUI1")
             print(book.users_to_notify)
             for user_id in book.users_to_notify:
-                print("AQUI2")
                 user = server.users[user_id]
                 if bookId not in user.reported_books:
                     for socket in user.sockets:
                         if socket not in interested_connections:
                             interested_connections.append(socket)
+                print("Notifying user: ", user_id)
 
             latest_book_title = book.title
             latest_library = library.name
@@ -398,9 +373,8 @@ def ws(ws, user_id):
 
   for user in server.users.values():
         if user.id == user_id: # and user.password == "":
-            print("Entered loop")
             user.add_socket(ws)
-            print("User sockets??", user.sockets)
+            print("User sockets:", user.sockets)
         # if user.id == user_id and user.password == user_password:
         #     user.add_socket(ws)
 

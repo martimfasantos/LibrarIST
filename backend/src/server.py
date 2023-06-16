@@ -83,19 +83,10 @@ class Server:
 
         photo_path = f'./images/libraries/{lib_id}.jpg'
 
-        print(name)
-        print(location)
-        print(address)
-        print(photo_path)
-
         img = Image.open(BytesIO(photo))
         img.save(photo_path, "JPEG")
 
         self.libraries[lib_id] = Library(lib_id, name, location, address, photo_path)
-        print("ID")
-        print(lib_id)
-        print(self.libraries)
-        print("Users: ", self.users)
         return jsonify({"libId": lib_id}), 200
     
     # List books from library
@@ -155,7 +146,6 @@ class Server:
     def get_library_no_photo(self, lib_id: int, user_id: int):
         library_json = self.library_to_json(self.libraries[lib_id], user_id)
         del library_json["photo"]
-        print(library_json)
         return jsonify(library_json), 200
     
     # Get library photo
@@ -187,14 +177,14 @@ class Server:
     def add_favorite_lib(self, lib_id: int, user_id: int):
         self.users[user_id].add_library(lib_id)
         self.libraries[lib_id].add_favorite_user(user_id)
-        print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
+        # print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
         return jsonify({}), 200
 
     # Remove library from users favorites
     def remove_favorite_lib(self, lib_id: int, user_id: int):
         self.users[user_id].remove_library(lib_id)
         self.libraries[lib_id].remove_favorite_user(user_id)
-        print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
+        # print(f"User: {user_id} \t Fav Lib: {self.users[user_id].favorite_libraries}")
         return jsonify({}), 200
     
     # Report library
@@ -249,7 +239,6 @@ class Server:
     def get_book_no_cover(self, book_id: int, user_id: int):
         book_json = self.book_to_json(self.books[book_id], user_id)
         del book_json["cover"]
-        print(book_json)
         return jsonify(book_json), 200
     
     # Get library photo
@@ -269,7 +258,7 @@ class Server:
             if book.id not in self.users[user_id].reported_books:
                 all_books.append(self.book_to_json(book, user_id))
 
-        print([book_json["bookId"] for book_json in all_books])
+        # print([book_json["bookId"] for book_json in all_books])
         return jsonify(all_books), 200
     
     # Get books by page
@@ -292,7 +281,6 @@ class Server:
     def check_in_book(self, barcode: str, lib_id: int, user_id: int):
         book_id = self.get_book_id_from_barcode(barcode)
         self.libraries[lib_id].add_book(book_id)
-        print(self.books[book_id].users_to_notify)
 
         return self.get_book(book_id, user_id)
     
@@ -309,11 +297,6 @@ class Server:
 
         book_cover = f'./images/books/{book_id}.jpg'
 
-        print(title)
-        print(book_cover)
-        print(barcode)
-        print(lib_id)
-
         if cover is not None:
             img = Image.open(BytesIO(cover))
             img.save(book_cover, "JPEG")
@@ -322,8 +305,6 @@ class Server:
         self.books[book_id] = Book(book_id, title, book_cover, barcode, lib_id)
         # Add book to library
         self.libraries[lib_id].add_book(book_id)
-
-        print(self.libraries[lib_id].available_books)
 
         return jsonify({"bookId": book_id}), 200   
 
@@ -346,7 +327,6 @@ class Server:
             book_json = self.book_to_json(book, user_id)
             del book_json["cover"]
             available_books.append(book_json)
-            print(book.id)
 
         return jsonify(available_books), 200
 
@@ -362,9 +342,6 @@ class Server:
         # remove book from library (note: it is not deleted from server)
         self.libraries[lib_id].remove_book(book_id)
 
-        print(book_id)
-        print(lib_id)
-        print(self.libraries[lib_id].available_books)
         return jsonify({"bookId": book_id}), 200
 
     # Filter book by title
@@ -421,12 +398,12 @@ class Server:
  
 
     # Add user to book notifications
-    def add_user_book_notif(self, user_id, book_id):
+    def add_user_book_notif(self, book_id, user_id):
         self.books[book_id].add_user_to_notify(user_id)
         return jsonify({}), 200
 
     # Remove user from book notifications
-    def remove_user_book_notif(self, user_id, book_id):
+    def remove_user_book_notif(self, book_id, user_id):
         self.books[book_id].remove_user_to_notify(user_id)
         return jsonify({}), 200
 
