@@ -26,7 +26,7 @@ class Server:
         self.users: Dict[int, User] = {0: User(0, "admin", "admin")} # admin user (for testing purposes)
 
         # populate 
-        self.populate()
+        # self.populate()
 
 
     # ------------------------------------------------------------
@@ -453,7 +453,7 @@ class Server:
         l2 = Library(2, "Library 2", (37.42190712476596, -122.08428114652634), 
                      "Near my location", f'./images/populate/library2.jpg')
         l3 = Library(3, "Library 3", (37.42186052743562, -122.08372090011834),
-                     "Near my location", f'./images/populate/library3.jpg')
+                     "Near my location", f'./images/populate/library2.jpg')
 
         self.libraries[0] = l0
         self.libraries[1] = l1

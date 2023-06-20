@@ -128,7 +128,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         updateUserId();
 
         if (areNotificationsEnabled(getApplicationContext())){
-            Log.d("OLA", "OLA");
             notificationsPermission = true;
         }
 
@@ -219,9 +218,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // Define your threshold for significant bounds change
             float significantDistanceThreshold = 10000; // 10km
 
-            Log.d("CENTER", String.valueOf(currentCameraCenter));
             Log.d("NEW CENTER", String.valueOf(newCenter));
-            Log.d("NEW CENTER DIST", String.valueOf(distance[0]));
 
             // Check if the distance exceeds the threshold
             if (distance[0] > significantDistanceThreshold) {
@@ -358,11 +355,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // Remove old marker (if it exists)
             Marker marker = markerCache.getMarker(libId);
 
-            //Log.d("MARKER BEFORE REMOVING", Objects.requireNonNull(marker.getTitle()));
 
             if (marker != null) {
                 markerCache.removeMarker(libId);
-                //Log.d("MARKER AFTER REMOVING", Objects.requireNonNull(marker.getTitle()));
             }
             // Add new marker to the cache
             marker = mMap.addMarker(markerOptions);
@@ -372,7 +367,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // Add marker to the markers cache
             markerCache.addMarker(libId, marker);
 
-            //Log.d("MARKER BEFORE REMOVING", Objects.requireNonNull(marker.getTitle()));
+            // Open marker window if library is close (within 100m)
+            float[] result = new float[10];
+            Location.distanceBetween(currentLocation.getLatitude(), currentLocation.getLongitude(),
+                    marker.getPosition().latitude, marker.getPosition().longitude, result);
+            float distance = result[0];
+            if (distance < closestMarkerDist){
+                closestMarker = marker;
+                closestMarkerDist = distance;
+            }
+        }
+
+        if (closestMarker != null){
+            closestMarker.showInfoWindow();
         }
     }
 
@@ -754,20 +761,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onSaveInstanceState(outState);
     }
 
-
-    //Check if our notificarion service is already running!
-    private boolean isForegroundServiceRunning() {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningAppProcessInfo> runningProcesses = manager.getRunningAppProcesses();
-        if (runningProcesses != null) {
-            for (ActivityManager.RunningAppProcessInfo processInfo : runningProcesses) {
-                if (processInfo.processName.equals("LibrarIST")) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     private boolean areNotificationsEnabled(Context context) {
         NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
