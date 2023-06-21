@@ -81,7 +81,7 @@
         <RelativeLayout
             android:id="@+id/library_map"
             android:layout_width="370dp"
-            android:layout_height="320dp"
+            android:layout_height="290dp"
             android:layout_marginTop="35dp"
             android:layout_marginStart="5dp"
             android:layout_marginBottom="5dp"
@@ -234,7 +234,6 @@
             </ScrollView>
         </LinearLayout>
     </LinearLayout>
-
 
 
 </RelativeLayout>

@@ -87,5 +87,7 @@
     <string name="new_book_available">New book available</string>
     <string name="book">Book </string>
     <string name="is_now_available_at"> is now available at </string>
+    <string name="rate">Rate</string>
+    <string name="cancel">Cancel</string>
 
 </resources>

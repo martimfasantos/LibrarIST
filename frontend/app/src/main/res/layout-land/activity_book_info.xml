@@ -90,7 +90,7 @@
                 android:id="@+id/rate_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Rate"
+                android:text="@string/rate"
                 android:textSize="15sp"
                 android:layout_gravity="center"
                 android:layout_marginStart="20dp"/>

@@ -74,12 +74,28 @@
         android:text="@string/sorted_by_rating"
         android:textSize="12sp" />
 
-    <LinearLayout
-        android:id="@+id/div_books_list"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/book_menu_NSV"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/div_sorted_by"
-        android:orientation="vertical" >
-    </LinearLayout>
+        android:layout_height="match_parent"
+        android:layout_below="@id/div_sorted_by">
+
+        <LinearLayout
+            android:id="@+id/div_books_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/div_sorted_by"
+            android:orientation="vertical" >
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_books_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
 
 </RelativeLayout>
